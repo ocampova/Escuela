@@ -1,4 +1,4 @@
-# Escuela — Plataforma de gestión escolar
+# Escuela — Plataforma de gestión escolar para San Cayetano School (Grecia, Costa Rica)
 
 Plataforma web (móvil y computadora) para administrar los niveles de la escuela y la comunicación con las familias.
 
