@@ -1,4 +1,4 @@
-# Plataforma Escolar San Cayetano School: plan de producto (v0.2)
+# Plataforma Escolar San Cayetano School: plan de producto (v0.3)
 
 > Plan para una plataforma web que se use en el celular y en la computadora, para administrar
 > los niveles de **San Cayetano School (Grecia, Costa Rica)** y la comunicación con las familias.
@@ -96,13 +96,31 @@ Principio clave: **cada familia ve solo a sus hijos** y cada docente solo a sus 
 - Eventos, actos cívicos, feriados nacionales, reuniones de padres y festivales; por escuela, nivel o sección.
 - Recordatorios automáticos.
 
-### M6. Pagos (matrícula y mensualidades)
+### M6. Pagos y estado de cuenta (matrícula y mensualidades)
+
+> **Dato de la directora:** la escuela está integrando el cobro con una **plataforma del Banco Popular**.
+> Todavía no se sabe qué servicio es. Puede ser recaudación por convenio (el padre paga en Popular en Línea
+> o en ventanilla con la cédula del alumno), débito automático o domiciliación, o cobro por SINPE.
+> **La plataforma no reemplaza al banco: lo complementa.** El banco cobra; la plataforma lleva la
+> cuenta de cada familia y se la muestra a los padres.
+
 - Moneda **colones (CRC)**, con opción de dólares (USD).
 - Conceptos: matrícula, mensualidad (normalmente de febrero a diciembre), materiales, uniformes, giras, actividades.
 - Cargos mensuales automáticos, descuento por hermanos, becas, recargo por pago tardío.
-- **Registro de pagos por SINPE Móvil y transferencia**: el padre sube el comprobante y Tesorería lo concilia. También efectivo.
-- Estado de cuenta para cada familia y recordatorios de pago.
-- *Fase 2:* pago con tarjeta en línea y factura electrónica de Hacienda (TRIBU-CR) generada automáticamente.
+- **Estado de cuenta para padres**: cargos, pagos, saldo pendiente, fecha de vencimiento e historial,
+  por alumno y consolidado por familia. Con botón o instrucciones para pagar en el canal del Banco Popular.
+- **Cómo llegan los pagos a la plataforma** (de lo más simple a lo más automático; el diseño soporta los tres):
+  1. **Importar el reporte del banco** (Excel o CSV diario o semanal del Banco Popular): la plataforma lee
+     cada pago, lo asocia al alumno por cédula o número de referencia y lo aplica a sus cargos. Lo que no
+     coincida queda en una bandeja para revisarlo a mano.
+  2. **Exportar los cobros pendientes al banco**: si el convenio requiere que la escuela le cargue al banco
+     los montos por cobrar, la plataforma genera ese archivo en el formato que pida el banco.
+  3. **Integración automática (API o webservice)**, si el Banco Popular la ofrece: el banco consulta el saldo
+     en línea y avisa cada pago al instante.
+- **Pagos fuera del banco**: SINPE Móvil, transferencia o efectivo; el padre sube el comprobante y Tesorería lo confirma.
+- **Recordatorios automáticos** antes del vencimiento y de saldo vencido; reporte de morosidad para la dirección.
+- Recibo digital de cada pago aplicado.
+- *Fase 2:* factura electrónica de Hacienda (TRIBU-CR) generada automáticamente.
 
 ### M7. Seguimiento académico (básico)
 - **Preescolar**: informe descriptivo o cualitativo del desarrollo por periodo, según el programa del MEP.
@@ -168,7 +186,10 @@ School ─┬─ SchoolYear (curso lectivo) ─ Term (periodo)
         ├─ Conversation ─ Message
         ├─ Post (muro) ─ Media
         ├─ Event (calendario, audiencia)
-        └─ FeeConcept ─ Charge (student, month, amount, currency) ─ Payment (method: sinpe|transfer|cash, receipt)
+        ├─ FeeConcept ─ Charge (student, month, amount, currency, due_date, status)
+        │                  └─ PaymentAllocation ─ Payment (method: bank_popular|sinpe|transfer|cash,
+        │                                                  bank_reference, receipt, source: import|api|manual)
+        └─ BankImport (archivo del banco) ─ BankImportLine (matched|unmatched)
 ```
 
 ---
@@ -185,7 +206,7 @@ expedientes listos para el inicio de clases** y mostrar la propuesta durante el 
 | **2. Base** | Autenticación, roles, estructura escolar, alumnos y familias, matrícula en línea | 2–3 semanas |
 | **3. Comunicación** | Avisos con confirmación, mensajería, notificaciones, calendario | 2–3 semanas |
 | **4. Vida diaria** | Asistencia, reporte diario, muro de fotos, recogida | 2 semanas |
-| **5. Pagos** | Mensualidades, cargos, comprobantes SINPE, estados de cuenta | 2 semanas |
+| **5. Pagos** | Mensualidades, cargos, estado de cuenta, importación del reporte del Banco Popular, comprobantes SINPE | 2–3 semanas |
 | **6. Piloto** | Una sección de preescolar la usa a diario; se ajusta con lo que digan | 4 semanas |
 | **7. Académico y fase 2** | Informes al hogar, calificaciones de primaria, factura electrónica | Según prioridades |
 
@@ -197,7 +218,10 @@ expedientes listos para el inicio de clases** y mostrar la propuesta durante el 
 1. ¿Qué niveles abren en 2026 (Materno, Transición, primaria)? ¿Cuántas secciones y cupos?
 2. ¿Es bilingüe? ¿En qué idioma prefieren comunicarse con las familias?
 3. ¿Cómo piensan comunicarse con los padres (WhatsApp, Messenger, cuaderno)? ¿Qué les preocupa más?
-4. ¿Cómo cobrarán matrícula y mensualidades? ¿En colones o dólares? ¿SINPE? ¿Emiten factura electrónica?
+4. **Banco Popular:** ¿qué servicio contrataron exactamente (recaudación por convenio, débito automático, SINPE)?
+   ¿Con qué dato identifica el banco al alumno (cédula, código)? ¿El banco entrega un reporte de pagos
+   (formato y frecuencia) o tiene API? ¿La escuela debe enviarle al banco los montos por cobrar?
+   ¿Cobran en colones o dólares? ¿Emiten factura electrónica?
 5. ¿Habrá descuentos por hermanos, becas o recargos?
 6. ¿Qué datos médicos y de recogida necesitan de cada alumno?
 7. ¿Quieren reporte diario en preescolar o solo avisos?
