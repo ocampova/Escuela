@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "design-taste-frontend": {
+      "source": "nexu-io/open-design",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "71bfa1ae4e018797aa2d0329aca278d3ba9b8796362628c4751ea3683d6e1b01"
+    },
+    "emilkowalski-motion": {
+      "source": "nexu-io/open-design",
+      "sourceType": "github",
+      "skillPath": "skills/emilkowalski-motion/SKILL.md",
+      "computedHash": "aae0a243bd8fb3ef2da24cef006b0017e35e6329ff03ccad560d0ff3a1c0cdef"
+    },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "dc19f9b4d1af690e0915b6294f390a1c30c6444148708b6b07cd64fa2e35a8db"
+    }
+  }
+}
