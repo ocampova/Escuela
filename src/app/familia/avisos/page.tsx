@@ -5,6 +5,7 @@ import { requireGuardian } from "@/lib/auth";
 import { audienceLabel, guardianAnnouncements, guardianStudents } from "@/lib/queries";
 import { relativeDay } from "@/lib/format";
 import { Badge, Card, EmptyState } from "@/components/ui";
+import { AnnouncementThumb } from "@/components/announcement-images";
 
 export const metadata: Metadata = { title: "Avisos" };
 
@@ -37,12 +38,13 @@ export default async function FamilyAnnouncements() {
                   <p className={`min-w-0 ${!read ? "font-semibold" : "font-medium"}`}>{a.title}</p>
                   <span className="shrink-0 pt-0.5 text-xs text-ink-3">{relativeDay(a.createdAt)}</span>
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm text-ink-2">{a.body}</p>
+                {a.body ? <p className="mt-1 line-clamp-2 text-sm text-ink-2">{a.body}</p> : a.images[0] ? <p className="mt-1 text-sm text-ink-2">Aviso con imagen</p> : null}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge>{audienceLabel(a)}</Badge>
                   {needsAck ? <Badge tone="warn">Falta confirmar</Badge> : a.requiresAck ? <Badge tone="ok">Enterado</Badge> : null}
                 </div>
               </div>
+              {a.images[0] && <AnnouncementThumb id={a.images[0].id} className="self-center" />}
               <ChevronRight className="mt-0.5 size-5 shrink-0 self-center text-ink-3" aria-hidden />
             </Link>
           );

@@ -8,6 +8,7 @@ import { AckButton } from "@/components/ack-button";
 import { Avatar, Badge, Card, DemoNotice, SectionChip, SectionHeading } from "@/components/ui";
 import { EventDateTile } from "@/components/event-tile";
 import { PushPrompt } from "@/components/push-prompt";
+import { AnnouncementThumb } from "@/components/announcement-images";
 import { vapidPublicKey } from "@/lib/push";
 
 const ATT: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "neutral" }> = {
@@ -116,7 +117,13 @@ export default async function FamilyHome() {
                       {a.author.name.split(" ").slice(0, 2).join(" ")} · {relativeDay(a.createdAt)}
                     </p>
                   </Link>
-                  {a.section && <SectionChip color={a.section.color} label={gradeSectionName(a.section)} className="shrink-0" />}
+                  {a.images[0] ? (
+                    <Link href={`/familia/avisos/${a.id}`} className="shrink-0" aria-label={`Ver imagen de ${a.title}`}>
+                      <AnnouncementThumb id={a.images[0].id} className="size-16" />
+                    </Link>
+                  ) : (
+                    a.section && <SectionChip color={a.section.color} label={gradeSectionName(a.section)} className="shrink-0" />
+                  )}
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <Link href={`/familia/avisos/${a.id}`} className="text-sm font-medium text-brand hover:underline">

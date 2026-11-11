@@ -7,6 +7,7 @@ import { audienceFilter, audienceLabel, guardianStudents } from "@/lib/queries";
 import { dateTimeLabel, timeLabel } from "@/lib/format";
 import { AckButton } from "@/components/ack-button";
 import { MarkRead } from "@/components/mark-read";
+import { AnnouncementImages } from "@/components/announcement-images";
 import { Avatar, Badge, Card } from "@/components/ui";
 
 const ROLE: Record<string, string> = { ADMIN: "Dirección", STAFF: "Secretaría", TEACHER: "Docente" };
@@ -17,7 +18,7 @@ export default async function FamilyAnnouncement({ params }: { params: Promise<{
   const students = await guardianStudents(user.id);
   const a = await prisma.announcement.findFirst({
     where: { id, schoolId: user.schoolId, ...audienceFilter(students) },
-    include: { author: true, level: true, section: { include: { grade: true } }, reads: { where: { userId: user.id } } },
+    include: { author: true, level: true, section: { include: { grade: true } }, reads: { where: { userId: user.id } }, images: { select: { id: true }, orderBy: { order: "asc" } } },
   });
   if (!a) notFound();
   const ack = a.reads[0]?.acknowledgedAt;
@@ -40,7 +41,8 @@ export default async function FamilyAnnouncement({ params }: { params: Promise<{
             </p>
           </div>
         </div>
-        <div className="mt-5 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed text-ink">{a.body}</div>
+        <AnnouncementImages images={a.images} title={a.title} className="mt-5" />
+        {a.body && <div className="mt-5 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed text-ink">{a.body}</div>}
       </Card>
 
       {a.requiresAck && (

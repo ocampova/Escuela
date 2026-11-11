@@ -78,8 +78,8 @@ export async function saveAttendance(_prev: FormState, form: FormData): Promise<
 /* ---------- Avisos ---------- */
 
 const announcementSchema = z.object({
-  title: z.string().trim().min(3, "Escriba un título de al menos 3 letras.").max(120),
-  body: z.string().trim().min(10, "El mensaje es muy corto.").max(5000),
+  title: z.string().trim().max(120),
+  body: z.string().trim().max(5000),
   target: z.string().min(1, "Elija a quién va dirigido."),
   requiresAck: z.boolean(),
 });
@@ -93,7 +93,19 @@ export async function createAnnouncement(_prev: FormState, form: FormData): Prom
     requiresAck: form.get("requiresAck") === "on",
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { title, body, target, requiresAck } = parsed.data;
+  const { body, target, requiresAck } = parsed.data;
+
+  // Imágenes (un aviso puede ser solo una imagen, p. ej. una circular hecha en Canva)
+  const files = form.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length > 6) return { error: "Adjunte como máximo 6 imágenes." };
+  for (const f of files) {
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(f.type)) return { error: `«${f.name}» no es una imagen JPG, PNG o WebP.` };
+    if (f.size > 8 * 1024 * 1024) return { error: `«${f.name}» pesa más de 8 MB.` };
+  }
+  if (files.length === 0 && body.length < 10) return { error: "Escriba el mensaje o adjunte una imagen." };
+  const today = new Intl.DateTimeFormat("es-CR", { timeZone: "America/Costa_Rica", day: "numeric", month: "long" }).format(new Date());
+  const title = parsed.data.title.length >= 3 ? parsed.data.title : files.length ? `Aviso del ${today}` : "";
+  if (!title) return { error: "Escriba un título de al menos 3 letras." };
 
   let audience: "SCHOOL" | "LEVEL" | "SECTION" = "SCHOOL";
   let levelId: string | undefined;
@@ -113,12 +125,24 @@ export async function createAnnouncement(_prev: FormState, form: FormData): Prom
   }
 
   const a = await prisma.announcement.create({
-    data: { schoolId: user.schoolId, authorId: user.id, title, body, audience, levelId, sectionId, requiresAck },
+    data: {
+      schoolId: user.schoolId,
+      authorId: user.id,
+      title,
+      body,
+      audience,
+      levelId,
+      sectionId,
+      requiresAck,
+      images: {
+        create: await Promise.all(files.map(async (f, i) => ({ mimeType: f.type, size: f.size, order: i, data: new Uint8Array(await f.arrayBuffer()) }))),
+      },
+    },
   });
   const recipients = await announcementRecipients(a);
   notifyLater(
     recipients.map((r) => r.id),
-    { title: `Nuevo aviso: ${title}`, body: body.length > 110 ? body.slice(0, 107) + "…" : body, url: `/familia/avisos/${a.id}`, tag: a.id },
+    { title: `Nuevo aviso: ${title}`, body: body ? (body.length > 110 ? body.slice(0, 107) + "…" : body) : "Toque para ver la imagen del aviso.", url: `/familia/avisos/${a.id}`, tag: a.id },
   );
   revalidatePath("/escuela", "layout");
   revalidatePath("/familia", "layout");

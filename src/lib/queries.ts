@@ -47,6 +47,7 @@ export async function guardianAnnouncements(user: CurrentUser, students: Guardia
       section: { include: { grade: true } },
       level: true,
       reads: { where: { userId: user.id } },
+      images: { select: { id: true }, orderBy: { order: "asc" }, take: 1 },
     },
     orderBy: { createdAt: "desc" },
     take,

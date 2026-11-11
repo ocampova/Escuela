@@ -8,6 +8,7 @@ import { dateTimeLabel, timeLabel } from "@/lib/format";
 import { Avatar, Badge, Card, SectionHeading } from "@/components/ui";
 import { ReadMeter } from "@/components/read-meter";
 import { ShareWhatsApp } from "@/components/share-whatsapp";
+import { AnnouncementImages } from "@/components/announcement-images";
 
 export default async function StaffAnnouncement({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ enviado?: string }> }) {
   const { id } = await params;
@@ -16,7 +17,7 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
   const sections = await staffSections(user);
   const a = await prisma.announcement.findFirst({
     where: { id, schoolId: user.schoolId, ...(isManager(user) ? {} : { OR: [{ sectionId: { in: sections.map((s) => s.id) } }, { authorId: user.id }] }) },
-    include: { author: true, level: true, section: { include: { grade: true } }, reads: true },
+    include: { author: true, level: true, section: { include: { grade: true } }, reads: true, images: { select: { id: true }, orderBy: { order: "asc" } } },
   });
   if (!a) notFound();
   const recipients = await announcementRecipients(a);
@@ -45,7 +46,8 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
           <p className="mt-1 text-sm text-ink-2">
             {a.author.name} · <span className="first-letter:uppercase">{dateTimeLabel(a.createdAt, { weekday: "long", day: "numeric", month: "long" })}</span> a las {timeLabel(a.createdAt)}
           </p>
-          <div className="mt-5 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed">{a.body}</div>
+          <AnnouncementImages images={a.images} title={a.title} className="mt-5" />
+          {a.body && <div className="mt-5 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed">{a.body}</div>}
         </Card>
 
         <div className="space-y-6">

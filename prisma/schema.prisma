@@ -233,6 +233,7 @@ model Announcement {
   requiresAck Boolean            @default(true)
   createdAt   DateTime           @default(now())
   reads       AnnouncementRead[]
+  images      AnnouncementImage[]
 }
 
 model AnnouncementRead {
@@ -463,4 +464,15 @@ model AppSetting {
   key       String   @id
   value     String
   createdAt DateTime @default(now())
+}
+
+/// Imagen de un aviso (muchas circulares son solo una imagen hecha en Canva)
+model AnnouncementImage {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  mimeType       String
+  size           Int
+  data           Bytes
+  order          Int          @default(0)
 }

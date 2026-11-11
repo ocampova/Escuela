@@ -35,7 +35,9 @@ export function ShareWhatsApp({
     const link = window.location.origin + path;
     const summary = body.replace(/\s+/g, " ").trim();
     const short = summary.length > 220 ? summary.slice(0, 217).trimEnd() + "…" : summary;
-    const text = `*${title}*\n\n${short}\n\n👉 Lea el aviso completo y confirme que lo leyó aquí:\n${link}`;
+    const text = short
+      ? `*${title}*\n\n${short}\n\n👉 Lea el aviso completo y confirme que lo leyó aquí:\n${link}`
+      : `*${title}*\n\n👉 Vea el aviso y confirme que lo leyó aquí:\n${link}`;
     setHref(`https://wa.me/?text=${encodeURIComponent(text)}`);
   }, [title, body, path]);
 
