@@ -200,3 +200,11 @@ export async function saveMessageHours(_p: ActionState, f: FormData): Promise<Ac
   revalidatePath("/familia", "layout");
   return done("Horario de atención guardado.");
 }
+
+export async function setMessaging(enabled: boolean) {
+  const u = await manager();
+  if (u.role !== "ADMIN") throw new Error("Solo Dirección cambia esta opción.");
+  await prisma.school.update({ where: { id: u.schoolId }, data: { messagingEnabled: enabled } });
+  revalidatePath("/escuela", "layout");
+  revalidatePath("/familia", "layout");
+}

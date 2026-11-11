@@ -7,6 +7,7 @@ import { announcementRecipients, audienceLabel, staffSections } from "@/lib/quer
 import { dateTimeLabel, timeLabel } from "@/lib/format";
 import { Avatar, Badge, Card, SectionHeading } from "@/components/ui";
 import { ReadMeter } from "@/components/read-meter";
+import { ShareWhatsApp } from "@/components/share-whatsapp";
 
 export default async function StaffAnnouncement({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ enviado?: string }> }) {
   const { id } = await params;
@@ -30,9 +31,12 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
         <ArrowLeft className="size-4" aria-hidden /> Avisos
       </Link>
       {enviado && (
-        <p role="status" className="ack-in mt-3 flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
-          <CheckCircle2 className="size-4" aria-hidden /> Aviso enviado a {recipients.length} familias.
-        </p>
+        <div role="status" className="ack-in mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-ok-soft px-4 py-3">
+          <p className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-ok">
+            <CheckCircle2 className="size-4 shrink-0" aria-hidden /> Aviso publicado para {recipients.length} familias. Compártalo en el grupo de WhatsApp para que lo lean y confirmen.
+          </p>
+          <ShareWhatsApp title={a.title} body={a.body} path={`/familia/avisos/${a.id}`} label="Compartir en el grupo" />
+        </div>
       )}
       <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card className="h-fit p-5 sm:p-6">
@@ -45,6 +49,13 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
         </Card>
 
         <div className="space-y-6">
+          {!enviado && (
+            <Card className="p-4">
+              <p className="mb-1 text-sm font-medium">Grupo de WhatsApp</p>
+              <p className="mb-3 text-sm text-ink-2">Comparta el aviso con un enlace: las familias lo abren, lo leen y tocan «Enterado».</p>
+              <ShareWhatsApp title={a.title} body={a.body} path={`/familia/avisos/${a.id}`} size="sm" />
+            </Card>
+          )}
           {a.requiresAck ? (
             <>
               <Card className="p-4">
@@ -52,7 +63,20 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
                 <ReadMeter done={acked.length} total={rows.length} />
               </Card>
               <section>
-                <SectionHeading title={`Sin confirmar (${pending.length})`} />
+                <SectionHeading
+                  title={`Sin confirmar (${pending.length})`}
+                  action={
+                    pending.length > 0 ? (
+                      <ShareWhatsApp
+                        title={`Recordatorio: ${a.title}`}
+                        body={`Todavía faltan ${pending.length} ${pending.length === 1 ? "familia" : "familias"} de confirmar este aviso. Por favor léanlo y toquen «Enterado».`}
+                        path={`/familia/avisos/${a.id}`}
+                        size="sm"
+                        label="Recordar en el grupo"
+                      />
+                    ) : undefined
+                  }
+                />
                 <Card className="divide-y divide-line">
                   {pending.length === 0 && <p className="px-4 py-3 text-sm text-ok">Todas las familias confirmaron.</p>}
                   {pending.map((r) => (

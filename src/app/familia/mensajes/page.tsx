@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Building2, ChevronRight, Clock } from "lucide-react";
 import { requireGuardian } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: "Mensajes" };
 
 export default async function FamilyMessages() {
   const user = await requireGuardian();
+  if (!user.school.messagingEnabled) redirect("/familia");
   const [students, school, convs] = await Promise.all([
     guardianStudents(user.id),
     prisma.school.findUniqueOrThrow({ where: { id: user.schoolId }, select: { messageHours: true } }),

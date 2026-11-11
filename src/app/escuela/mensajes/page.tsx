@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -11,6 +12,7 @@ export const metadata: Metadata = { title: "Mensajes" };
 
 export default async function StaffMessages({ searchParams }: { searchParams: Promise<{ filtro?: string }> }) {
   const user = await requireStaff();
+  if (!user.school.messagingEnabled) redirect("/escuela");
   const { filtro } = await searchParams;
   const convs = await prisma.conversation.findMany({
     where: { ...conversationScope(user), ...(filtro === "docentes" ? { channel: "TEACHER" } : filtro === "oficina" ? { channel: "OFFICE" } : {}) },

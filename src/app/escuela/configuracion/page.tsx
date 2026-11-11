@@ -10,6 +10,7 @@ import { Avatar, Badge, Card, Field, PageHeader, SectionHeading, cx, inputClass,
 import { addGrade, addLevel, addSection, addStaff, saveBank, saveConcept, saveLevelInfo, saveMessageHours, saveSchoolYear, updateSection } from "./actions";
 import { money } from "@/lib/format";
 import { ActiveToggle } from "./active-toggle";
+import { MessagingToggle } from "./messaging-toggle";
 
 export const metadata: Metadata = { title: "Configuración" };
 
@@ -220,6 +221,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             ))}
           </Card>
           <aside className="space-y-6">
+            <Card className="p-5">
+              <h2 className="mb-1 font-semibold">Mensajes en la plataforma</h2>
+              <p className="mb-4 text-sm text-ink-2">Si la escuela prefiere seguir con WhatsApp para conversar con las familias, apáguelo. Los avisos con «Enterado» siguen funcionando.</p>
+              <MessagingToggle enabled={school.messagingEnabled} canEdit={user.role === "ADMIN"} />
+            </Card>
             <Card className="p-5">
               <h2 className="mb-1 font-semibold">Horario de atención de mensajes</h2>
               <p className="mb-4 text-sm text-ink-2">Las familias lo ven al escribir, para saber cuándo esperar respuesta.</p>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Building2 } from "lucide-react";
 import { requireGuardian } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -16,6 +16,7 @@ export default async function FamilyThread({ params }: { params: Promise<{ stude
   const channel = CANAL[canal as keyof typeof CANAL];
   if (!channel) notFound();
   const user = await requireGuardian();
+  if (!user.school.messagingEnabled) redirect("/familia");
   const student = await prisma.student.findFirst({
     where: { id: studentId, guardians: { some: { userId: user.id } } },
     include: { section: { include: { grade: true, teacher: { select: { name: true } } } } },

@@ -81,6 +81,8 @@ model School {
   paymentNote       String?
   /// Horario en que el personal responde mensajes (informativo para las familias)
   messageHours      String?
+  /// Chat familia ↔ escuela dentro de la plataforma (la escuela puede apagarlo si prefiere WhatsApp)
+  messagingEnabled  Boolean @default(true)
   createdAt DateTime @default(now())
 
   conversations Conversation[]

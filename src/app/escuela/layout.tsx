@@ -18,7 +18,8 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     manager ? prisma.paymentReport.count({ where: { status: "PENDING", student: { section: { schoolYear: { schoolId: user.schoolId } } } } }) : 0,
     manager ? prisma.applicant.count({ where: { schoolId: user.schoolId, status: "NEW" } }) : 0,
   ]);
-  const unread = await unreadConversations(user);
+  const messaging = user.school.messagingEnabled;
+  const unread = messaging ? await unreadConversations(user) : 0;
   const counts = { "/escuela/cobros": pendingReports, "/escuela/matricula": newApplicants, "/escuela/mensajes": unread };
 
   const account = (
@@ -48,7 +49,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             <span className="block text-xs text-white/65">{year?.name ?? "Escuela"}</span>
           </span>
         </Link>
-        <StaffNav manager={manager} variant="rail" counts={counts} />
+        <StaffNav manager={manager} variant="rail" counts={counts} messaging={messaging} />
         <div className="mt-auto border-t border-white/10 px-2 pt-4">{account}</div>
       </aside>
 
@@ -63,7 +64,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             </button>
           </form>
         </div>
-        <StaffNav manager={manager} variant="bar" counts={counts} />
+        <StaffNav manager={manager} variant="bar" counts={counts} messaging={messaging} />
         <BrandStripe />
       </header>
 

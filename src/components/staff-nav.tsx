@@ -17,9 +17,9 @@ const ITEMS = [
   { href: "/escuela/configuracion", label: "Configuración", icon: Settings, managersOnly: true },
 ];
 
-export function StaffNav({ manager, variant, counts = {} }: { manager: boolean; variant: "rail" | "bar"; counts?: Record<string, number> }) {
+export function StaffNav({ manager, variant, counts = {}, messaging = true }: { manager: boolean; variant: "rail" | "bar"; counts?: Record<string, number>; messaging?: boolean }) {
   const path = usePathname();
-  const items = ITEMS.filter((i) => manager || !i.managersOnly);
+  const items = ITEMS.filter((i) => (manager || !i.managersOnly) && (messaging || i.href !== "/escuela/mensajes"));
   return (
     <nav aria-label="Principal">
       <ul className={variant === "rail" ? "space-y-0.5" : "flex gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]"}>

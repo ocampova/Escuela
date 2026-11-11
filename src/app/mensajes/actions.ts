@@ -21,6 +21,7 @@ const schema = z.object({
 export async function sendMessage(_p: SendState, f: FormData): Promise<SendState> {
   const user = await getCurrentUser();
   if (!user) return { error: "Su sesión expiró. Entre de nuevo." };
+  if (!user.school.messagingEnabled) return { error: "La escuela desactivó los mensajes en la plataforma." };
   const p = schema.safeParse(Object.fromEntries(f));
   if (!p.success) return { error: p.error.issues[0].message };
   const d = p.data;

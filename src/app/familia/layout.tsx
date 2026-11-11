@@ -13,7 +13,8 @@ export default async function FamilyLayout({ children }: { children: React.React
   const students = await guardianStudents(user.id);
   const anns = await guardianAnnouncements(user, students);
   const pending = anns.filter((a) => a.requiresAck && !a.reads[0]?.acknowledgedAt).length;
-  const unreadMessages = await unreadConversations(user);
+  const messaging = user.school.messagingEnabled;
+  const unreadMessages = messaging ? await unreadConversations(user) : 0;
 
   return (
     <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
@@ -38,7 +39,7 @@ export default async function FamilyLayout({ children }: { children: React.React
         <BrandStripe />
       </header>
       <main className="mx-auto max-w-xl px-4 pt-5 pb-8">{children}</main>
-      <FamilyTabBar pendingCount={pending} unreadMessages={unreadMessages} />
+      <FamilyTabBar pendingCount={pending} unreadMessages={unreadMessages} messaging={messaging} />
     </div>
   );
 }

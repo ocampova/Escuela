@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: "Nuevo mensaje" };
 export default async function NewThread({ searchParams }: { searchParams: Promise<{ alumno?: string; encargado?: string }> }) {
   const { alumno, encargado } = await searchParams;
   const user = await requireStaff();
+  if (!user.school.messagingEnabled) redirect("/escuela");
   const link = await prisma.studentGuardian.findFirst({
     where: { studentId: alumno, userId: encargado, student: { section: { schoolYear: { schoolId: user.schoolId } } } },
     include: { user: { select: { name: true } }, student: { include: { section: true } } },

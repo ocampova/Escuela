@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, ArrowLeft, Phone } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -14,6 +14,7 @@ export const metadata: Metadata = { title: "Conversación" };
 export default async function StaffThread({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireStaff();
+  if (!user.school.messagingEnabled) redirect("/escuela");
   const conv = await prisma.conversation.findFirst({
     where: { id, ...conversationScope(user) },
     include: { student: { include: { section: { include: { grade: true } } } }, guardian: { select: { name: true, phone: true } } },

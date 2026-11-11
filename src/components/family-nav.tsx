@@ -13,15 +13,16 @@ const TABS = [
   { href: "/familia/cuenta", label: "Cuenta", icon: Wallet },
 ];
 
-export function FamilyTabBar({ pendingCount, unreadMessages = 0 }: { pendingCount: number; unreadMessages?: number }) {
+export function FamilyTabBar({ pendingCount, unreadMessages = 0, messaging = true }: { pendingCount: number; unreadMessages?: number; messaging?: boolean }) {
   const path = usePathname();
+  const tabs = TABS.filter((t) => messaging || t.href !== "/familia/mensajes");
   return (
     <nav
       aria-label="Secciones"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-5">
-        {TABS.map((t) => {
+      <ul className={cx("mx-auto grid max-w-xl", tabs.length === 5 ? "grid-cols-5" : "grid-cols-4")}>
+        {tabs.map((t) => {
           const active = t.exact ? path === t.href : path.startsWith(t.href);
           const Icon = t.icon;
           return (
