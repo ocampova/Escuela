@@ -111,3 +111,84 @@ export async function setUserActive(userId: string, active: boolean) {
   await prisma.user.updateMany({ where: { id: userId, schoolId: u.schoolId, role: { not: "ADMIN" } }, data: { active } });
   revalidatePath("/escuela/configuracion");
 }
+
+/* ---------- Pagos ---------- */
+
+const optText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => v || null);
+
+export async function saveBank(_p: ActionState, f: FormData): Promise<ActionState> {
+  const u = await manager();
+  if (u.role !== "ADMIN") return { error: "Solo Dirección cambia la cuenta bancaria." };
+  const p = z
+    .object({
+      bankName: optText(80),
+      bankAccountHolder: optText(120),
+      bankHolderId: optText(30),
+      bankIban: z
+        .string()
+        .trim()
+        .toUpperCase()
+        .optional()
+        .transform((v) => v || null)
+        .refine((v) => !v || /^CR\d{2}( ?\d{4}){4} ?\d{2}$/.test(v), "El IBAN de Costa Rica tiene el formato CR00 0000 0000 0000 0000 00."),
+      sinpePhone: optText(20),
+      paymentNote: optText(300),
+    })
+    .safeParse(Object.fromEntries(f));
+  if (!p.success) return { error: p.error.issues[0].message };
+  await prisma.school.update({ where: { id: u.schoolId }, data: p.data });
+  return done("Cuenta para pagos guardada. Las familias la ven al reportar un pago.");
+}
+
+const conceptSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().trim().min(3, "Escriba el nombre del concepto."),
+  defaultAmount: z.coerce.number().int().positive("Escriba el monto."),
+  currency: z.enum(["CRC", "USD"]),
+  levelId: z.string().optional(),
+  recurring: z.boolean(),
+  earlyAmount: z.coerce.number().int().positive().optional(),
+  dueNote: optText(120),
+});
+
+export async function saveConcept(_p: ActionState, f: FormData): Promise<ActionState> {
+  const u = await manager();
+  const raw = Object.fromEntries(f) as Record<string, string>;
+  const p = conceptSchema.safeParse({
+    ...raw,
+    defaultAmount: (raw.defaultAmount ?? "").replace(/[^\d]/g, ""),
+    earlyAmount: (raw.earlyAmount ?? "").replace(/[^\d]/g, "") || undefined,
+    recurring: raw.recurring === "on",
+  });
+  if (!p.success) return { error: p.error.issues[0].message };
+  const { id, levelId, earlyAmount, ...d } = p.data;
+  if (levelId && !(await prisma.level.findFirst({ where: { id: levelId, schoolId: u.schoolId } }))) return { error: "Nivel no válido." };
+  const data = { ...d, levelId: levelId || null, earlyAmount: earlyAmount ?? null, earlyMonths: earlyAmount ? [8, 9] : [] };
+  if (id) {
+    const c = await prisma.feeConcept.findFirst({ where: { id, schoolId: u.schoolId } });
+    if (!c) return { error: "Concepto no encontrado." };
+    await prisma.feeConcept.update({ where: { id }, data });
+    return done(`«${d.name}» actualizado. Los cobros nuevos usarán este monto.`);
+  }
+  await prisma.feeConcept.create({ data: { ...data, schoolId: u.schoolId } });
+  return done(`Concepto «${d.name}» creado.`);
+}
+
+export async function saveLevelInfo(_p: ActionState, f: FormData): Promise<ActionState> {
+  const u = await manager();
+  const p = z
+    .object({ id: z.string(), schedule: optText(300), phone: optText(60), address: optText(300), materials: optText(5000) })
+    .safeParse(Object.fromEntries(f));
+  if (!p.success) return { error: p.error.issues[0].message };
+  const { id, ...data } = p.data;
+  const r = await prisma.level.updateMany({ where: { id, schoolId: u.schoolId }, data });
+  if (r.count === 0) return { error: "Nivel no encontrado." };
+  revalidatePath("/familia", "layout");
+  return done("Información del nivel guardada.");
+}

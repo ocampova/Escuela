@@ -61,47 +61,57 @@ export type StatementLine = {
   date: Date;
   description: string;
   amount: number;
+  currency: "CRC" | "USD";
   method?: string;
   reference?: string | null;
   status?: "paid" | "partial" | "due" | "overdue";
   paidAmount?: number;
 };
 
-/** Aplica pagos a cargos en orden de vencimiento (FIFO). */
+type Bucket = { charged: number; paid: number; overdue: number };
+
+export type Statement = Bucket & {
+  charges: StatementLine[];
+  payments: StatementLine[];
+  nextDue?: StatementLine;
+  /** Saldos en dólares (p. ej. paquete de robótica) */
+  usd: Bucket;
+};
+
+/** Aplica pagos a cargos en orden de vencimiento (FIFO), por moneda. */
 export async function statementFor(studentIds: string[]) {
   const [charges, payments] = await Promise.all([
     prisma.charge.findMany({ where: { studentId: { in: studentIds } }, orderBy: { dueDate: "asc" } }),
     prisma.payment.findMany({ where: { studentId: { in: studentIds } }, orderBy: { paidAt: "asc" } }),
   ]);
   const today = keyToDate(todayKey());
-  const byStudent = new Map<string, { charges: StatementLine[]; payments: StatementLine[]; charged: number; paid: number; overdue: number; nextDue?: StatementLine }>();
-  for (const id of studentIds) byStudent.set(id, { charges: [], payments: [], charged: 0, paid: 0, overdue: 0 });
+  const byStudent = new Map<string, Statement>();
 
   for (const id of studentIds) {
-    const entry = byStudent.get(id)!;
-    const ps = payments.filter((p) => p.studentId === id);
-    let credit = ps.reduce((s, p) => s + p.amount, 0);
-    entry.paid = credit;
-    for (const c of charges.filter((c) => c.studentId === id)) {
-      const applied = Math.min(credit, c.amount);
-      credit -= applied;
-      entry.charged += c.amount;
-      const pending = c.amount - applied;
-      const status = pending === 0 ? "paid" : c.dueDate < today ? "overdue" : applied > 0 ? "partial" : "due";
-      if (status === "overdue") entry.overdue += pending;
-      const line: StatementLine = { id: c.id, kind: "charge", date: c.dueDate, description: c.description, amount: c.amount, status, paidAmount: applied };
-      entry.charges.push(line);
-      if (!entry.nextDue && pending > 0) entry.nextDue = line;
+    const entry: Statement = { charges: [], payments: [], charged: 0, paid: 0, overdue: 0, usd: { charged: 0, paid: 0, overdue: 0 } };
+    for (const cur of ["CRC", "USD"] as const) {
+      const bucket: Bucket = cur === "CRC" ? entry : entry.usd;
+      const ps = payments.filter((p) => p.studentId === id && p.currency === cur);
+      let credit = ps.reduce((s, p) => s + p.amount, 0);
+      bucket.paid = credit;
+      for (const c of charges.filter((c) => c.studentId === id && c.currency === cur)) {
+        const applied = Math.min(credit, c.amount);
+        credit -= applied;
+        bucket.charged += c.amount;
+        const pending = c.amount - applied;
+        const status = pending === 0 ? "paid" : c.dueDate < today ? "overdue" : applied > 0 ? "partial" : "due";
+        if (status === "overdue") bucket.overdue += pending;
+        const line: StatementLine = { id: c.id, kind: "charge", date: c.dueDate, description: c.description, amount: c.amount, currency: cur, status, paidAmount: applied };
+        entry.charges.push(line);
+        if (cur === "CRC" && !entry.nextDue && pending > 0) entry.nextDue = line;
+      }
+      entry.payments.push(
+        ...ps.map((p) => ({ id: p.id, kind: "payment" as const, date: p.paidAt, description: p.note ?? "Pago", amount: p.amount, currency: cur, method: p.method, reference: p.reference })),
+      );
     }
-    entry.payments = ps.map((p) => ({
-      id: p.id,
-      kind: "payment",
-      date: p.paidAt,
-      description: p.note ?? "Pago",
-      amount: p.amount,
-      method: p.method,
-      reference: p.reference,
-    }));
+    entry.charges.sort((a, b) => a.date.getTime() - b.date.getTime());
+    entry.payments.sort((a, b) => a.date.getTime() - b.date.getTime());
+    byStudent.set(id, entry);
   }
   return byStudent;
 }
@@ -110,6 +120,7 @@ export const METHOD_LABEL: Record<string, string> = {
   BANCO_POPULAR: "Banco Popular",
   SINPE: "SINPE Móvil",
   TRANSFER: "Transferencia",
+  DEPOSIT: "Depósito",
   CASH: "Efectivo",
 };
 

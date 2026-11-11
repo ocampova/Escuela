@@ -12,7 +12,12 @@ const ROLE: Record<string, string> = { ADMIN: "Dirección", STAFF: "Secretaría"
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const user = await requireStaff();
   const manager = isManager(user);
-  const year = await prisma.schoolYear.findFirst({ where: { schoolId: user.schoolId, active: true } });
+  const [year, pendingReports, newApplicants] = await Promise.all([
+    prisma.schoolYear.findFirst({ where: { schoolId: user.schoolId, active: true } }),
+    manager ? prisma.paymentReport.count({ where: { status: "PENDING", student: { section: { schoolYear: { schoolId: user.schoolId } } } } }) : 0,
+    manager ? prisma.applicant.count({ where: { schoolId: user.schoolId, status: "NEW" } }) : 0,
+  ]);
+  const counts = { "/escuela/cobros": pendingReports, "/escuela/matricula": newApplicants };
 
   const account = (
     <div className="flex items-center gap-3">
@@ -41,7 +46,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             <span className="block text-xs text-white/65">{year?.name ?? "Escuela"}</span>
           </span>
         </Link>
-        <StaffNav manager={manager} variant="rail" />
+        <StaffNav manager={manager} variant="rail" counts={counts} />
         <div className="mt-auto border-t border-white/10 px-2 pt-4">{account}</div>
       </aside>
 
@@ -56,7 +61,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             </button>
           </form>
         </div>
-        <StaffNav manager={manager} variant="bar" />
+        <StaffNav manager={manager} variant="bar" counts={counts} />
         <BrandStripe />
       </header>
 

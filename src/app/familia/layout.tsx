@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { Info, LogOut } from "lucide-react";
 import { requireGuardian } from "@/lib/auth";
 import { guardianAnnouncements, guardianStudents } from "@/lib/queries";
 import { FamilyTabBar } from "@/components/family-nav";
@@ -22,6 +22,9 @@ export default async function FamilyLayout({ children }: { children: React.React
             <span className="truncate text-[15px] font-semibold text-white">San Cayetano School</span>
           </Link>
           <div className="ml-auto flex items-center gap-1">
+            <Link href="/familia/escuela" aria-label="Información de la escuela" title="Información de la escuela" className="flex size-10 items-center justify-center rounded-lg text-white/80 transition-colors hover:bg-white/10 hover:text-white">
+              <Info className="size-5" aria-hidden />
+            </Link>
             <Avatar name={user.name} size={32} color="onBrand" />
             <form action={logout}>
               <button type="submit" className="flex size-10 items-center justify-center rounded-lg text-white/75 transition-colors hover:bg-white/10 hover:text-white" aria-label="Cerrar sesión" title="Cerrar sesión">

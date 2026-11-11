@@ -4,7 +4,7 @@ import { AlertTriangle, ArrowLeft, Pencil, UserCheck, UserPlus } from "lucide-re
 import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { METHOD_LABEL, staffSections, statementFor } from "@/lib/queries";
-import { crc, dateLabel, gradeSectionName } from "@/lib/format";
+import { crc, dateLabel, gradeSectionName, money, usd } from "@/lib/format";
 import { Avatar, Badge, ButtonLink, Card, Field, SectionChip, SectionHeading, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/action-form";
 import { InviteButton } from "@/components/invite-button";
@@ -184,7 +184,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
             <section>
               <SectionHeading
                 title="Estado de cuenta"
-                action={<span className={`tabular text-sm font-semibold ${statement.overdue > 0 ? "text-danger" : "text-ink-2"}`}>{statement.charged - statement.paid > 0 ? `Saldo ${crc(statement.charged - statement.paid)}` : "Al día"}</span>}
+                action={<span className={`tabular text-sm font-semibold ${statement.overdue > 0 ? "text-danger" : "text-ink-2"}`}>{statement.charged - statement.paid > 0 ? `Saldo ${crc(statement.charged - statement.paid)}${statement.usd.charged - statement.usd.paid > 0 ? ` + ${usd(statement.usd.charged - statement.usd.paid)}` : ""}` : "Al día"}</span>}
               />
               <Card className="divide-y divide-line">
                 {statement.charges
@@ -195,7 +195,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                         <p className="font-medium">{c.description}</p>
                         <p className="text-ink-2">Vence {dateLabel(c.date)}</p>
                       </div>
-                      <Badge tone={c.status === "overdue" ? "danger" : "warn"}>{crc(c.amount - (c.paidAmount ?? 0))}</Badge>
+                      <Badge tone={c.status === "overdue" ? "danger" : "warn"}>{money(c.amount - (c.paidAmount ?? 0), c.currency)}</Badge>
                     </div>
                   ))}
                 {[...statement.payments]
@@ -209,7 +209,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                           {dateLabel(p.date)} · {METHOD_LABEL[p.method!]}
                         </p>
                       </div>
-                      <span className="tabular font-medium text-ok">{crc(p.amount)}</span>
+                      <span className="tabular font-medium text-ok">{money(p.amount, p.currency)}</span>
                     </div>
                   ))}
               </Card>

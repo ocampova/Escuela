@@ -45,7 +45,19 @@ enum PaymentMethod {
   BANCO_POPULAR
   SINPE
   TRANSFER
+  DEPOSIT
   CASH
+}
+
+enum Currency {
+  CRC
+  USD
+}
+
+enum ReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model School {
@@ -54,6 +66,14 @@ model School {
   shortName String
   city      String
   currency  String   @default("CRC")
+  email     String?
+  // Cuenta para depósitos y transferencias (se configura en la plataforma)
+  bankName          String?
+  bankAccountHolder String?
+  bankHolderId      String?
+  bankIban          String?
+  sinpePhone        String?
+  paymentNote       String?
   createdAt DateTime @default(now())
 
   users         User[]
@@ -84,6 +104,8 @@ model User {
   reads           AnnouncementRead[]
   attendanceTaken Attendance[]
   paymentsLogged  Payment[]
+  reportsSent     PaymentReport[]    @relation("ReportedPayments")
+  reportsReviewed PaymentReport[]    @relation("ReviewedPayments")
 }
 
 model SchoolYear {
@@ -103,9 +125,14 @@ model Level {
   school        School         @relation(fields: [schoolId], references: [id])
   name          String
   order         Int
+  schedule      String?
+  phone         String?
+  address       String?
+  materials     String?
   grades        Grade[]
   announcements Announcement[]
   events        Event[]
+  feeConcepts   FeeConcept[]
 }
 
 model Grade {
@@ -151,6 +178,7 @@ model Student {
   attendance Attendance[]
   charges    Charge[]
   payments   Payment[]
+  reports    PaymentReport[]
 }
 
 model StudentGuardian {
@@ -240,7 +268,15 @@ model FeeConcept {
   school        School   @relation(fields: [schoolId], references: [id])
   name          String
   defaultAmount Int
+  currency      Currency @default(CRC)
   recurring     Boolean  @default(false)
+  /// Nivel al que aplica (null = todos)
+  levelId       String?
+  level         Level?   @relation(fields: [levelId], references: [id])
+  /// Monto con descuento en los meses indicados (1-12), p. ej. matrícula ago-set
+  earlyAmount   Int?
+  earlyMonths   Int[]
+  dueNote       String?
   charges       Charge[]
 }
 
@@ -253,6 +289,7 @@ model Charge {
   description String
   period      String?
   amount      Int
+  currency    Currency    @default(CRC)
   dueDate     DateTime    @db.Date
   createdAt   DateTime    @default(now())
 
@@ -264,6 +301,7 @@ model Payment {
   studentId   String
   student     Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   amount      Int
+  currency    Currency      @default(CRC)
   method      PaymentMethod
   reference   String?
   paidAt      DateTime      @db.Date
@@ -271,6 +309,34 @@ model Payment {
   loggedById  String?
   loggedBy    User?         @relation(fields: [loggedById], references: [id])
   createdAt   DateTime      @default(now())
+  report      PaymentReport?
+}
+
+/// Pago reportado por una familia con su comprobante; Secretaría lo aprueba o rechaza.
+model PaymentReport {
+  id           String        @id @default(cuid())
+  studentId    String
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  reportedById String
+  reportedBy   User          @relation("ReportedPayments", fields: [reportedById], references: [id])
+  amount       Int
+  currency     Currency      @default(CRC)
+  method       PaymentMethod
+  reference    String?
+  paidAt       DateTime      @db.Date
+  concept      String
+  note         String?
+  fileName     String
+  mimeType     String
+  fileData     Bytes
+  status       ReportStatus  @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?         @relation("ReviewedPayments", fields: [reviewedById], references: [id])
+  reviewNote   String?
+  reviewedAt   DateTime?
+  paymentId    String?       @unique
+  payment      Payment?      @relation(fields: [paymentId], references: [id])
+  createdAt    DateTime      @default(now())
 }
 
 model AuthToken {
@@ -304,6 +370,8 @@ model Applicant {
   guardianPhone    String
   relationship     String
   message          String?
+  transfer         Boolean             @default(false)
+  checklist        String[]
   staffNotes       String?
   studentId        String?             @unique
   createdAt        DateTime            @default(now())

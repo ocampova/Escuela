@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { FileUp } from "lucide-react";
 import { apply, type ApplyState } from "./actions";
+import { ENROLL_DOCS, TRANSFER_DOCS } from "@/lib/enrollment";
 import { Button, Field, inputClass } from "@/components/ui";
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
@@ -37,6 +38,7 @@ function FileField({ name, label, hint }: { name: string; label: string; hint?: 
 export function ApplyForm({ grades }: { grades: { id: string; label: string }[] }) {
   const [state, action, pending] = useActionState<ApplyState, FormData>(apply, {});
   const v = state.fields ?? {};
+  const [transfer, setTransfer] = useState(v.transfer === "on");
   return (
     <form action={action} className="space-y-8" key={JSON.stringify(v)}>
       <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
@@ -99,9 +101,18 @@ export function ApplyForm({ grades }: { grades: { id: string; label: string }[] 
       </Group>
 
       <Group title="Documentos (puede enviarlos después)">
-        <FileField name="docBirth" label="Constancia de nacimiento" />
-        <FileField name="docVaccines" label="Carné de vacunas" />
-        <FileField name="docOther" label="Otro documento" hint="Ej.: informe de la escuela anterior" />
+        <p className="-mt-2 text-sm text-ink-2">Adelante lo que tenga a mano. Los originales y el resto se entregan al formalizar la matrícula.</p>
+        {ENROLL_DOCS.map((d) => (
+          <FileField key={d.field} name={d.field} label={d.kind} hint={d.field === "docInsurance" ? "Si ya la adquirió. PDF o foto, hasta 5 MB" : undefined} />
+        ))}
+        <label className="flex items-start gap-3 rounded-lg bg-canvas p-3 text-sm">
+          <input type="checkbox" name="transfer" checked={transfer} onChange={(e) => setTransfer(e.target.checked)} className="mt-0.5 size-4" />
+          <span>
+            <span className="block font-medium">Viene trasladado de otra institución</span>
+            <span className="text-ink-2">Se pide además el título de preescolar (si entra a primaria) y una carta de comportamiento.</span>
+          </span>
+        </label>
+        {transfer && TRANSFER_DOCS.map((d) => <FileField key={d.field} name={d.field} label={d.kind} />)}
       </Group>
 
       <label className="flex items-start gap-3 rounded-lg bg-canvas p-3 text-sm">

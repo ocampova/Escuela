@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { isManager, requireStaff } from "@/lib/auth";
 import type { ActionState } from "@/components/action-form";
+import { FORMAL_STEPS } from "@/lib/enrollment";
 
 const STATUSES = ["NEW", "CONTACTED", "VISIT", "ACCEPTED", "REJECTED"] as const;
 
@@ -21,7 +22,11 @@ export async function updateApplicant(_p: ActionState, f: FormData): Promise<Act
   if (a.status === "ENROLLED") return { error: "Esta solicitud ya está matriculada." };
   const status = String(f.get("status"));
   if (!STATUSES.includes(status as (typeof STATUSES)[number])) return { error: "Estado no válido." };
-  await prisma.applicant.update({ where: { id: a.id }, data: { status: status as (typeof STATUSES)[number], staffNotes: String(f.get("staffNotes") ?? "").trim() || null } });
+  const checklist = f.getAll("checklist").map(String).filter((k) => FORMAL_STEPS.some((s) => s.key === k));
+  await prisma.applicant.update({
+    where: { id: a.id },
+    data: { status: status as (typeof STATUSES)[number], staffNotes: String(f.get("staffNotes") ?? "").trim() || null, checklist },
+  });
   revalidatePath("/escuela/matricula", "layout");
   return { ok: "Cambios guardados." };
 }
@@ -49,6 +54,25 @@ export async function enrollApplicant(_p: ActionState, f: FormData): Promise<Act
         pickups: a.guardianIdNumber ? { create: { name: a.guardianName, idNumber: a.guardianIdNumber, relationship: a.relationship, phone: a.guardianPhone } } : undefined,
       },
     });
+    // Cobro de matrícula según el precio vigente (con descuento en los meses indicados)
+    const concept = await tx.feeConcept.findFirst({ where: { schoolId: u.schoolId, name: { equals: "Matrícula", mode: "insensitive" } } });
+    if (concept) {
+      const month = new Date().getMonth() + 1;
+      const early = concept.earlyAmount && concept.earlyMonths.includes(month);
+      const due = new Date();
+      due.setUTCDate(due.getUTCDate() + 15);
+      await tx.charge.create({
+        data: {
+          studentId: st.id,
+          conceptId: concept.id,
+          description: `Matrícula ${a.forYear}${early ? " (con descuento)" : ""}`,
+          period: a.forYear,
+          amount: early ? concept.earlyAmount! : concept.defaultAmount,
+          currency: concept.currency,
+          dueDate: new Date(due.toISOString().slice(0, 10)),
+        },
+      });
+    }
     await tx.applicant.update({ where: { id: a.id }, data: { status: "ENROLLED", studentId: st.id } });
     return st.id;
   });

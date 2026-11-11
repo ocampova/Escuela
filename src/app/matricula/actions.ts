@@ -4,16 +4,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
+import { ENROLL_DOCS, TRANSFER_DOCS } from "@/lib/enrollment";
 
 export type ApplyState = { error?: string; fields?: Record<string, string> };
 
 const MAX = 5 * 1024 * 1024;
 const TYPES = ["application/pdf", "image/jpeg", "image/png", "image/heic", "image/webp"];
-const DOCS = [
-  ["docBirth", "Constancia de nacimiento"],
-  ["docVaccines", "Carné de vacunas"],
-  ["docOther", "Otro documento"],
-] as const;
+const DOCS = [...ENROLL_DOCS, ...TRANSFER_DOCS].map((d) => [d.field, d.kind, d.step] as const);
 
 const schema = z.object({
   gradeId: z.string().min(1, "Elija el grado al que desea matricular."),
@@ -42,11 +39,13 @@ export async function apply(_p: ApplyState, f: FormData): Promise<ApplyState> {
   if (!grade) return { error: "Grado no válido.", fields };
 
   const docs: { kind: string; filename: string; mimeType: string; size: number; data: Uint8Array<ArrayBuffer> }[] = [];
-  for (const [name, kind] of DOCS) {
+  const steps = new Set<string>(["expediente"]);
+  for (const [name, kind, step] of DOCS) {
     const file = f.get(name);
     if (!(file instanceof File) || file.size === 0) continue;
     if (file.size > MAX) return { error: `«${kind}» pesa más de 5 MB.`, fields };
     if (!TYPES.includes(file.type)) return { error: `«${kind}» debe ser PDF o foto (JPG o PNG).`, fields };
+    steps.add(step);
     docs.push({ kind, filename: file.name.slice(0, 120), mimeType: file.type, size: file.size, data: new Uint8Array(await file.arrayBuffer()) });
   }
 
@@ -71,6 +70,8 @@ export async function apply(_p: ApplyState, f: FormData): Promise<ApplyState> {
       guardianEmail: d.guardianEmail,
       guardianPhone: d.guardianPhone,
       message: d.message || null,
+      transfer: f.get("transfer") === "on",
+      checklist: [...steps],
       documents: { create: docs },
     },
   });

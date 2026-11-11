@@ -4,6 +4,15 @@ export function crc(amount: number) {
   return "₡" + new Intl.NumberFormat("es-CR", { maximumFractionDigits: 0 }).format(amount).replace(/ | /g, " ");
 }
 
+export function usd(amount: number) {
+  return "US$" + new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(amount);
+}
+
+/** Monto con su moneda (colones o dólares). */
+export function money(amount: number, currency: string = "CRC") {
+  return currency === "USD" ? usd(amount) : crc(amount);
+}
+
 export function fullName(p: { firstName: string; lastName: string }) {
   return `${p.firstName} ${p.lastName}`;
 }

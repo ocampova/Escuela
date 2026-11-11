@@ -9,6 +9,7 @@ import { ActionForm } from "@/components/action-form";
 import { Badge, ButtonLink, Card, Field, SectionHeading, buttonClass, inputClass } from "@/components/ui";
 import { enrollApplicant, updateApplicant } from "../actions";
 import { STATUS } from "../status";
+import { FORMAL_STEPS } from "@/lib/enrollment";
 
 export const metadata: Metadata = { title: "Solicitud de matrícula" };
 
@@ -41,7 +42,10 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
     ["Nacimiento", `${dateLabel(a.childBirthDate, { day: "numeric", month: "long", year: "numeric" })} · ${age(a.childBirthDate)} años`],
     ["Cédula", a.childIdNumber ?? "Sin dato"],
     ["Escuela anterior", a.previousSchool ?? "Sin dato"],
+    ["Traslado", a.transfer ? "Sí, viene de otra institución" : "No"],
   ];
+  const steps = FORMAL_STEPS.filter((s) => !s.transferOnly || a.transfer);
+  const done = steps.filter((s) => a.checklist.includes(s.key)).length;
   const guardian: [string, string][] = [
     ["Nombre", `${a.guardianName} (${a.relationship})`],
     ["Correo", a.guardianEmail],
@@ -141,6 +145,22 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
                         ))}
                     </select>
                   </Field>
+                  <fieldset>
+                    <legend className="mb-2 flex w-full items-center justify-between text-sm font-medium">
+                      Formalización
+                      <span className="tabular text-xs font-normal text-ink-2">
+                        {done} de {steps.length}
+                      </span>
+                    </legend>
+                    <div className="space-y-1.5">
+                      {steps.map((st) => (
+                        <label key={st.key} className="flex items-start gap-2 text-sm">
+                          <input type="checkbox" name="checklist" value={st.key} defaultChecked={a.checklist.includes(st.key)} className="mt-0.5 size-4" />
+                          <span>{st.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
                   <Field label="Notas internas" htmlFor="staffNotes" hint="Solo las ve el personal.">
                     <textarea id="staffNotes" name="staffNotes" rows={4} defaultValue={a.staffNotes ?? ""} className={inputClass} placeholder="Ej.: visita el jueves a las 10:00" />
                   </Field>
@@ -148,7 +168,14 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
               </Card>
               <Card className="p-5">
                 <h2 className="mb-1 font-semibold">Matricular</h2>
-                <p className="mb-4 text-sm text-ink-2">Crea al alumno y la cuenta del encargado con estos datos. Después podrá invitar a la familia.</p>
+                <p className="mb-4 text-sm text-ink-2">
+                  Crea al alumno, la cuenta del encargado y el cobro de matrícula {a.forYear} (con descuento si es agosto o setiembre). Después podrá invitar a la familia.
+                </p>
+                {done < steps.length && (
+                  <p className="mb-4 rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
+                    Faltan {steps.length - done} requisitos de formalización.
+                  </p>
+                )}
                 {sections.length === 0 ? (
                   <p className="text-sm text-warn">No hay secciones abiertas para este grado. Créelas en Configuración.</p>
                 ) : (

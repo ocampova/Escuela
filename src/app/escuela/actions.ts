@@ -182,23 +182,104 @@ export async function generateMonthlyCharges(_prev: FormState, form: FormData): 
   if (!isManager(user)) return { error: "Solo Dirección y Secretaría generan cobros." };
   const month = String(form.get("month") ?? "");
   if (!/^\d{4}-\d{2}$/.test(month)) return { error: "Elija el mes." };
-  const concept = await prisma.feeConcept.findFirst({ where: { schoolId: user.schoolId, recurring: true } });
-  if (!concept) return { error: "No hay un concepto de mensualidad configurado." };
+  const concepts = await prisma.feeConcept.findMany({ where: { schoolId: user.schoolId, recurring: true } });
+  if (concepts.length === 0) return { error: "No hay un concepto de mensualidad configurado." };
   const [y, m] = month.split("-").map(Number);
-  const students = await prisma.student.findMany({ where: { section: { schoolYear: { schoolId: user.schoolId, active: true } } }, select: { id: true } });
-  const result = await prisma.charge.createMany({
-    data: students.map((s) => ({
-      studentId: s.id,
-      conceptId: concept.id,
-      description: `Mensualidad ${MONTHS[m - 1].slice(0, 3)}`,
-      period: month,
-      amount: concept.defaultAmount,
-      dueDate: new Date(Date.UTC(y, m - 1, 10)),
-    })),
-    skipDuplicates: true,
+  const students = await prisma.student.findMany({
+    where: { section: { schoolYear: { schoolId: user.schoolId, active: true } } },
+    select: { id: true, section: { select: { grade: { select: { levelId: true } } } } },
   });
+  const data = students.flatMap((s) => {
+    // Mensualidad del nivel del alumno; si no hay, la general
+    const concept = concepts.find((c) => c.levelId === s.section.grade.levelId) ?? concepts.find((c) => !c.levelId);
+    if (!concept) return [];
+    return [
+      {
+        studentId: s.id,
+        conceptId: concept.id,
+        description: `Mensualidad ${MONTHS[m - 1].slice(0, 3)}`,
+        period: month,
+        amount: concept.defaultAmount,
+        currency: concept.currency,
+        dueDate: new Date(Date.UTC(y, m - 1, 10)),
+      },
+    ];
+  });
+  const result = await prisma.charge.createMany({ data, skipDuplicates: true });
   revalidatePath("/escuela/cobros");
   revalidatePath("/familia", "layout");
   if (result.count === 0) return { ok: `La mensualidad de ${MONTHS[m - 1]} ya estaba generada para todos los alumnos.` };
-  return { ok: `Se generó la mensualidad de ${MONTHS[m - 1]} para ${result.count} alumnos.` };
+  return { ok: `Se generó la mensualidad de ${MONTHS[m - 1]} para ${result.count} alumnos, según el precio de cada nivel.` };
+}
+
+/** Carga un cobro (materiales, robótica, matrícula…) a todos los alumnos del nivel del concepto. */
+export async function chargeConcept(_prev: FormState, form: FormData): Promise<FormState> {
+  const user = await requireStaff();
+  if (!isManager(user)) return { error: "Solo Dirección y Secretaría generan cobros." };
+  const concept = await prisma.feeConcept.findFirst({ where: { id: String(form.get("conceptId") ?? ""), schoolId: user.schoolId }, include: { level: true } });
+  if (!concept) return { error: "Elija el concepto." };
+  const due = String(form.get("dueDate") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) return { error: "Elija la fecha de vencimiento." };
+  const label = String(form.get("label") ?? "").trim() || concept.name;
+  // El periodo identifica el cobro: volver a cargar la misma descripción no lo duplica
+  const period = label.slice(0, 60);
+  const students = await prisma.student.findMany({
+    where: { section: { schoolYear: { schoolId: user.schoolId, active: true }, ...(concept.levelId ? { grade: { levelId: concept.levelId } } : {}) } },
+    select: { id: true },
+  });
+  const result = await prisma.charge.createMany({
+    data: students.map((s) => ({ studentId: s.id, conceptId: concept.id, description: label, period, amount: concept.defaultAmount, currency: concept.currency, dueDate: new Date(due) })),
+    skipDuplicates: true,
+  });
+  revalidatePath("/escuela", "layout");
+  revalidatePath("/familia", "layout");
+  const who = concept.level ? `los alumnos de ${concept.level.name}` : "todos los alumnos";
+  if (result.count === 0) return { ok: `«${label}» ya estaba cargado a ${who}.` };
+  return { ok: `Se cargó «${label}» a ${result.count} alumnos (${who}).` };
+}
+
+/* ---------- Pagos reportados por las familias ---------- */
+
+export async function approveReport(_prev: FormState, form: FormData): Promise<FormState> {
+  const user = await requireStaff();
+  if (!isManager(user)) return { error: "Solo Dirección y Secretaría aprueban pagos." };
+  const report = await prisma.paymentReport.findFirst({
+    where: { id: String(form.get("id")), status: "PENDING", student: { section: { schoolYear: { schoolId: user.schoolId } } } },
+  });
+  if (!report) return { error: "Este reporte ya fue revisado." };
+  const amount = Number(String(form.get("amount") ?? "").replace(/[^\d]/g, ""));
+  if (!Number.isInteger(amount) || amount <= 0) return { error: "Revise el monto." };
+  await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.create({
+      data: {
+        studentId: report.studentId,
+        amount,
+        currency: report.currency,
+        method: report.method,
+        reference: report.reference,
+        paidAt: report.paidAt,
+        note: report.concept,
+        loggedById: user.id,
+      },
+    });
+    await tx.paymentReport.update({ where: { id: report.id }, data: { status: "APPROVED", reviewedById: user.id, reviewedAt: new Date(), paymentId: payment.id } });
+  });
+  revalidatePath("/escuela", "layout");
+  revalidatePath("/familia", "layout");
+  redirect("/escuela/cobros?revisado=aprobado");
+}
+
+export async function rejectReport(_prev: FormState, form: FormData): Promise<FormState> {
+  const user = await requireStaff();
+  if (!isManager(user)) return { error: "Solo Dirección y Secretaría revisan pagos." };
+  const note = String(form.get("reviewNote") ?? "").trim();
+  if (note.length < 5) return { error: "Explique a la familia por qué se rechaza (ej.: el monto no coincide)." };
+  const r = await prisma.paymentReport.updateMany({
+    where: { id: String(form.get("id")), status: "PENDING", student: { section: { schoolYear: { schoolId: user.schoolId } } } },
+    data: { status: "REJECTED", reviewNote: note, reviewedById: user.id, reviewedAt: new Date() },
+  });
+  if (r.count === 0) return { error: "Este reporte ya fue revisado." };
+  revalidatePath("/escuela", "layout");
+  revalidatePath("/familia", "layout");
+  redirect("/escuela/cobros?revisado=rechazado");
 }

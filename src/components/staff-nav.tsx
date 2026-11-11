@@ -16,7 +16,7 @@ const ITEMS = [
   { href: "/escuela/configuracion", label: "Configuración", icon: Settings, managersOnly: true },
 ];
 
-export function StaffNav({ manager, variant }: { manager: boolean; variant: "rail" | "bar" }) {
+export function StaffNav({ manager, variant, counts = {} }: { manager: boolean; variant: "rail" | "bar"; counts?: Record<string, number> }) {
   const path = usePathname();
   const items = ITEMS.filter((i) => manager || !i.managersOnly);
   return (
@@ -38,6 +38,12 @@ export function StaffNav({ manager, variant }: { manager: boolean; variant: "rai
               >
                 <Icon className="size-[18px]" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
                 {i.label}
+                {(counts[i.href] ?? 0) > 0 && (
+                  <span className="tabular ml-auto rounded-full bg-scs-orange-strong px-1.5 py-0.5 text-[11px] leading-none font-semibold text-white">
+                    {counts[i.href]}
+                    <span className="sr-only"> pendientes</span>
+                  </span>
+                )}
               </Link>
             </li>
           );

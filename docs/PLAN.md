@@ -98,6 +98,8 @@ Principio clave: **cada familia ve solo a sus hijos** y cada docente solo a sus 
 
 ### M6. Pagos y estado de cuenta (matrícula y mensualidades)
 
+> **Actualización (folletos 2027):** los pagos se hacen por depósito o transferencia a una cuenta del **BCR** y las familias deben **reportarlos en la plataforma** con fecha y nombre del estudiante (ya implementado: «Reportar pago»). Queda por confirmar si la integración con el Banco Popular sigue en pie.
+>
 > **Dato de la directora:** la escuela está integrando el cobro con una **plataforma del Banco Popular**.
 > Todavía no se sabe qué servicio es. Puede ser recaudación por convenio (el padre paga en Popular en Línea
 > o en ventanilla con la cédula del alumno), débito automático o domiciliación, o cobro por SINPE.

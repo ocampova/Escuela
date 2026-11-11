@@ -7,7 +7,8 @@ import { dateLabel } from "@/lib/format";
 import { ActionForm } from "@/components/action-form";
 import { InviteButton } from "@/components/invite-button";
 import { Avatar, Badge, Card, Field, PageHeader, SectionHeading, cx, inputClass, sectionSolid } from "@/components/ui";
-import { addGrade, addLevel, addSection, addStaff, saveSchoolYear, updateSection } from "./actions";
+import { addGrade, addLevel, addSection, addStaff, saveBank, saveConcept, saveLevelInfo, saveSchoolYear, updateSection } from "./actions";
+import { money } from "@/lib/format";
 import { ActiveToggle } from "./active-toggle";
 
 export const metadata: Metadata = { title: "Configuración" };
@@ -15,6 +16,7 @@ export const metadata: Metadata = { title: "Configuración" };
 const TABS = [
   { key: "estructura", label: "Niveles y secciones" },
   { key: "personal", label: "Personal" },
+  { key: "pagos", label: "Pagos y precios" },
   { key: "curso", label: "Curso lectivo" },
 ];
 const ROLE: Record<string, string> = { ADMIN: "Dirección", STAFF: "Secretaría", TEACHER: "Docente" };
@@ -25,7 +27,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   if (!isManager(user)) redirect("/escuela");
   const { tab = "estructura" } = await searchParams;
 
-  const [year, levels, staff] = await Promise.all([
+  const [school, concepts, year, levels, staff] = await Promise.all([
+    prisma.school.findUniqueOrThrow({ where: { id: user.schoolId } }),
+    prisma.feeConcept.findMany({ where: { schoolId: user.schoolId }, include: { level: true }, orderBy: [{ recurring: "desc" }, { name: "asc" }] }),
     prisma.schoolYear.findFirst({ where: { schoolId: user.schoolId, active: true } }),
     prisma.level.findMany({
       where: { schoolId: user.schoolId },
@@ -67,6 +71,28 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             {levels.map((l) => (
               <section key={l.id}>
                 <SectionHeading title={l.name} />
+                <details className="mb-3 rounded-xl bg-surface shadow-card">
+                  <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-brand">Horario, contacto y lista de materiales de {l.name}</summary>
+                  <div className="border-t border-line p-4">
+                    <ActionForm action={saveLevelInfo} submitLabel="Guardar" resetOnOk={false}>
+                      <input type="hidden" name="id" value={l.id} />
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Field label="Horario" htmlFor={`sch-${l.id}`}>
+                          <textarea id={`sch-${l.id}`} name="schedule" rows={2} defaultValue={l.schedule ?? ""} className={inputClass} />
+                        </Field>
+                        <Field label="Teléfonos" htmlFor={`ph-${l.id}`}>
+                          <input id={`ph-${l.id}`} name="phone" defaultValue={l.phone ?? ""} className={inputClass} />
+                        </Field>
+                      </div>
+                      <Field label="Dirección de la sede" htmlFor={`ad-${l.id}`}>
+                        <input id={`ad-${l.id}`} name="address" defaultValue={l.address ?? ""} className={inputClass} />
+                      </Field>
+                      <Field label="Lista de materiales" htmlFor={`mt-${l.id}`} hint="Un material por línea. Las familias la ven en Información.">
+                        <textarea id={`mt-${l.id}`} name="materials" rows={6} defaultValue={l.materials ?? ""} className={inputClass} />
+                      </Field>
+                    </ActionForm>
+                  </div>
+                </details>
                 <Card className="divide-y divide-line">
                   {l.grades.length === 0 && <p className="px-4 py-3 text-sm text-ink-2">Todavía no tiene grados.</p>}
                   {l.grades.map((g) => (
@@ -220,6 +246,71 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
+      {tab === "pagos" && (
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <section>
+            <SectionHeading title="Precios y conceptos de cobro" />
+            <Card className="divide-y divide-line">
+              {concepts.map((c) => (
+                <details key={c.id} className="group">
+                  <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-canvas">
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium">{c.name}</span>
+                      <span className="block text-xs text-ink-2">
+                        {c.level ? c.level.name : "Todos los niveles"}
+                        {c.recurring ? " · mensual" : ""}
+                        {c.earlyAmount ? ` · ${money(c.earlyAmount, c.currency)} en agosto y setiembre` : ""}
+                        {c.dueNote ? ` · ${c.dueNote}` : ""}
+                      </span>
+                    </span>
+                    <span className="tabular font-semibold">{money(c.defaultAmount, c.currency)}</span>
+                  </summary>
+                  <div className="border-t border-line bg-canvas/60 p-4">
+                    <ConceptFields concept={c} levels={levels} />
+                  </div>
+                </details>
+              ))}
+            </Card>
+            <details className="mt-3 rounded-xl bg-surface shadow-card">
+              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-brand">Agregar concepto</summary>
+              <div className="border-t border-line p-4">
+                <ConceptFields levels={levels} />
+              </div>
+            </details>
+          </section>
+          <aside>
+            <Card className="p-5">
+              <h2 className="mb-1 font-semibold">Cuenta para pagos</h2>
+              <p className="mb-4 text-sm text-ink-2">Se muestra a las familias cuando reportan un depósito o transferencia.</p>
+              {user.role === "ADMIN" ? (
+                <ActionForm action={saveBank} submitLabel="Guardar cuenta" resetOnOk={false}>
+                  <Field label="Banco" htmlFor="b-name">
+                    <input id="b-name" name="bankName" defaultValue={school.bankName ?? ""} placeholder="Banco de Costa Rica (BCR)" className={inputClass} />
+                  </Field>
+                  <Field label="A nombre de" htmlFor="b-holder">
+                    <input id="b-holder" name="bankAccountHolder" defaultValue={school.bankAccountHolder ?? ""} className={inputClass} />
+                  </Field>
+                  <Field label="Cédula del titular" htmlFor="b-id">
+                    <input id="b-id" name="bankHolderId" defaultValue={school.bankHolderId ?? ""} className={inputClass} />
+                  </Field>
+                  <Field label="IBAN (colones)" htmlFor="b-iban">
+                    <input id="b-iban" name="bankIban" defaultValue={school.bankIban ?? ""} placeholder="CR00 0000 0000 0000 0000 00" className={cx(inputClass, "tabular")} />
+                  </Field>
+                  <Field label="SINPE Móvil (opcional)" htmlFor="b-sinpe">
+                    <input id="b-sinpe" name="sinpePhone" defaultValue={school.sinpePhone ?? ""} className={inputClass} />
+                  </Field>
+                  <Field label="Indicaciones para las familias" htmlFor="b-note">
+                    <textarea id="b-note" name="paymentNote" rows={3} defaultValue={school.paymentNote ?? ""} className={inputClass} />
+                  </Field>
+                </ActionForm>
+              ) : (
+                <p className="text-sm text-ink-2">Solo Dirección puede cambiar la cuenta bancaria.</p>
+              )}
+            </Card>
+          </aside>
+        </div>
+      )}
+
       {tab === "curso" && (
         <Card className="max-w-lg p-5">
           <h2 className="mb-1 font-semibold">Curso lectivo activo</h2>
@@ -242,5 +333,50 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </Card>
       )}
     </div>
+  );
+}
+
+function ConceptFields({
+  concept,
+  levels,
+}: {
+  concept?: { id: string; name: string; defaultAmount: number; currency: string; levelId: string | null; recurring: boolean; earlyAmount: number | null; dueNote: string | null };
+  levels: { id: string; name: string }[];
+}) {
+  return (
+    <ActionForm action={saveConcept} submitLabel={concept ? "Guardar" : "Crear concepto"} resetOnOk={!concept}>
+      {concept && <input type="hidden" name="id" value={concept.id} />}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Nombre" htmlFor={`cn-${concept?.id ?? "new"}`}>
+          <input id={`cn-${concept?.id ?? "new"}`} name="name" required defaultValue={concept?.name} className={inputClass} />
+        </Field>
+        <Field label="Nivel" htmlFor={`cl-${concept?.id ?? "new"}`}>
+          <select id={`cl-${concept?.id ?? "new"}`} name="levelId" defaultValue={concept?.levelId ?? ""} className={inputClass}>
+            <option value="">Todos los niveles</option>
+            {levels.map((l) => (
+              <option key={l.id} value={l.id}>{l.name}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Monto" htmlFor={`ca-${concept?.id ?? "new"}`}>
+          <input id={`ca-${concept?.id ?? "new"}`} name="defaultAmount" required inputMode="numeric" defaultValue={concept?.defaultAmount} className={cx(inputClass, "tabular")} />
+        </Field>
+        <Field label="Moneda" htmlFor={`cc-${concept?.id ?? "new"}`}>
+          <select id={`cc-${concept?.id ?? "new"}`} name="currency" defaultValue={concept?.currency ?? "CRC"} className={inputClass}>
+            <option value="CRC">Colones (₡)</option>
+            <option value="USD">Dólares (US$)</option>
+          </select>
+        </Field>
+        <Field label="Monto con descuento en agosto y setiembre (opcional)" htmlFor={`ce-${concept?.id ?? "new"}`}>
+          <input id={`ce-${concept?.id ?? "new"}`} name="earlyAmount" inputMode="numeric" defaultValue={concept?.earlyAmount ?? ""} className={cx(inputClass, "tabular")} />
+        </Field>
+        <Field label="Nota (opcional)" htmlFor={`cd-${concept?.id ?? "new"}`}>
+          <input id={`cd-${concept?.id ?? "new"}`} name="dueNote" defaultValue={concept?.dueNote ?? ""} placeholder="Ej.: antes del 15 de diciembre" className={inputClass} />
+        </Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="recurring" defaultChecked={concept?.recurring} className="size-4" /> Es la mensualidad (se cobra cada mes)
+      </label>
+    </ActionForm>
   );
 }

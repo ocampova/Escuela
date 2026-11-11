@@ -18,6 +18,13 @@ A web platform that works on both phone and computer, for managing the school's 
 - **Invitations and passwords:** single-use activation link (14 days). It can be copied, sent by WhatsApp, or emailed if Resend is configured. "Olvidé mi contraseña" (forgot password) link valid for 2 hours.
 - **Online enrollment:** a public form at `/matricula` with documents (PDF/photos), and an inbox with statuses (new, contacted, visit scheduled, accepted). "Matricular" creates the student and the guardian account.
 
+## Real school data (2027 brochures)
+
+- Levels: **Preescolar** (Kinder, Preparatoria) and **Primaria** I and II Ciclo (1st to 6th grade, bilingual), each with its own schedule, phones and campus address.
+- Prices by level: monthly fee ₡148,000 (preescolar) or ₡192,000 (primaria); annual enrollment ₡150,000 (₡120,000 in August and September); materials ₡40,000 or ₡50,000; Tecnikids robotics US$85. All of them can be edited in Configuración › Pagos y precios.
+- **"Reportar pago" (report a payment):** the family uploads the deposit or transfer receipt with the date and the student; Secretaría approves it (the payment is applied) or rejects it with a reason.
+- The bank account is configured in the platform (Configuración › Pagos). **It is not saved in the code**, because the repository is public. The seed uses a demo account.
+
 Roles: Dirección (ADMIN), Secretaría (STAFF), Docente (TEACHER, sees only their sections) and Familia (GUARDIAN, sees only their own children).
 
 ## Stack
@@ -41,7 +48,7 @@ Demo accounts (password `demo1234`):
 | Family (2 children) | familia@demo.scs.cr |
 | Dirección | directora@demo.scs.cr |
 | Secretaría | secretaria@demo.scs.cr |
-| Docente, Transición A | schaves@demo.scs.cr |
+| Docente, Preparatoria A | schaves@demo.scs.cr |
 
 All names, ID numbers and amounts in the seed are **fictional**.
 

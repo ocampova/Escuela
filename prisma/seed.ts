@@ -29,10 +29,47 @@ function weekday(offset: number) {
   return dow === 6 ? offset - 1 : dow === 0 ? offset + 1 : offset;
 }
 
+const PRESCHOOL_MATERIALS = [
+  "1 caja plástica transparente rotulada, para los materiales de Artes Plásticas",
+  "1 caja de pinturas (Pintolán) y delantal",
+  "3 pinceles gruesos",
+  "4 láminas de papel periódico blanco",
+  "2 resmas de 500 hojas bond",
+  "2 paquetes de hojas duras (opalina blanca)",
+  "1 paquete de papel de colores variados",
+  "3 unidades de plastilina Play-Doh",
+  "2 gomas en barra grandes (Pritt), 1 en la cartuchera",
+  "1 goma líquida pequeña",
+  "2 pinturas acrílicas de 250 ml (cualquier color)",
+  "1 caja de lápices de color de 12 unidades",
+  "1 caja de lápices de grafito #2",
+  "1 caja de marcadores acrílicos, rotulados con el nombre",
+  "Maquinilla con depósito y borrador, rotulados con el nombre",
+  "1 libro de cuentos infantiles",
+  "1 ábaco contador",
+  "1 cartuchera",
+  "2 fólderes plásticos emplasticados y rotulados con el nombre (inglés y español)",
+  "Tijeras de punta redonda",
+  "Libro de lectura «Cheito 2 Primeras Lecturas» (solo Preparatoria)",
+  "2 cuadernos grandes de 100 hojas, cosidos, emplasticados y rotulados: rojo para lectoescritura, amarillo para matemáticas (solo Preparatoria)",
+  "Instrumento solicitado por la docente de música, se vende en la institución (solo Preparatoria)",
+  "Bulto para llevar y traer artículos personales",
+  "Pasta dental, cepillo de dientes y pañito, rotulados con el nombre",
+  "2 Lysol grandes",
+  "1 paquete grande de toallas húmedas",
+  "1 colonia Mennen",
+].join("\n");
+
+// PNG de 1×1 px como comprobante de demostración
+const DEMO_RECEIPT = new Uint8Array(
+  Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64"),
+);
+
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"];
 
 async function main() {
   await prisma.$transaction([
+    prisma.paymentReport.deleteMany(),
     prisma.applicantDocument.deleteMany(),
     prisma.applicant.deleteMany(),
     prisma.authToken.deleteMany(),
@@ -59,7 +96,18 @@ async function main() {
   const year = now.getFullYear();
 
   const school = await prisma.school.create({
-    data: { name: "San Cayetano School", shortName: "SCS", city: "Grecia, Costa Rica" },
+    data: {
+      name: "San Cayetano School",
+      shortName: "SCS",
+      city: "Grecia, Costa Rica",
+      email: "scayetanoschool@gmail.com",
+      // Cuenta de DEMOSTRACIÓN. La cuenta real se configura en Configuración › Pagos.
+      bankName: "Banco de Costa Rica (BCR)",
+      bankAccountHolder: "Cuenta de demostración",
+      bankHolderId: "0-0000-0000",
+      bankIban: "CR00 0000 0000 0000 0000 00",
+      paymentNote: "Reporte cada depósito en la plataforma indicando la fecha y el nombre completo del estudiante.",
+    },
   });
 
   const user = (role: "ADMIN" | "STAFF" | "TEACHER" | "GUARDIAN", name: string, email: string, phone?: string) =>
@@ -82,11 +130,35 @@ async function main() {
     },
   });
 
-  const pre = await prisma.level.create({ data: { schoolId: school.id, name: "Preescolar", order: 1 } });
-  const pri = await prisma.level.create({ data: { schoolId: school.id, name: "Primaria", order: 2 } });
-  const gInter = await prisma.grade.create({ data: { levelId: pre.id, name: "Interactivo II", order: 1 } });
-  const gTrans = await prisma.grade.create({ data: { levelId: pre.id, name: "Transición", order: 2 } });
+  // Datos públicos de los folletos 2027 de la escuela
+  const pre = await prisma.level.create({
+    data: {
+      schoolId: school.id,
+      name: "Preescolar",
+      order: 1,
+      schedule: "Lunes a viernes de 8:00 a. m. a 12:30 p. m.",
+      phone: "2444-0484 / 8885-0761",
+      address: "100 m noroeste del Templo Católico de Santa Gertrudis Norte, Grecia.",
+      materials: PRESCHOOL_MATERIALS,
+    },
+  });
+  const pri = await prisma.level.create({
+    data: {
+      schoolId: school.id,
+      name: "Primaria",
+      order: 2,
+      schedule: "Lunes a jueves de 7:30 a. m. a 2:45 p. m.\nViernes de 7:30 a. m. a 1:50 p. m.",
+      phone: "2444-2323 / 8643-0452",
+      address: "De la Estación de Servicio Santa Lucía, en Santa Gertrudis Norte, 200 m norte y 500 m oeste, Grecia.",
+    },
+  });
+  // gInter = Kinder, gTrans = Preparatoria
+  const gInter = await prisma.grade.create({ data: { levelId: pre.id, name: "Kinder", order: 1 } });
+  const gTrans = await prisma.grade.create({ data: { levelId: pre.id, name: "Preparatoria", order: 2 } });
   const gPrimero = await prisma.grade.create({ data: { levelId: pri.id, name: "Primer grado", order: 1 } });
+  for (const [i, name] of ["Segundo grado", "Tercer grado", "Cuarto grado", "Quinto grado", "Sexto grado"].entries()) {
+    await prisma.grade.create({ data: { levelId: pri.id, name, order: i + 2 } });
+  }
 
   const section = (gradeId: string, name: string, color: string, teacherId: string) =>
     prisma.section.create({ data: { gradeId, schoolYearId: sy.id, name, color, teacherId } });
@@ -113,14 +185,14 @@ async function main() {
     { last: "Alvarado Soto", guardians: [["Paola Soto Méndez", "psoto@demo.scs.cr", "Madre"]], kids: [{ first: "Emma", section: sTransA.id, birthYear: year - 6 }] },
     { last: "Murillo Zúñiga", guardians: [["Jorge Murillo Arce", "jmurillo@demo.scs.cr", "Padre"]], kids: [{ first: "Santiago", section: sTransA.id, birthYear: year - 6 }] },
     { last: "Salas Picado", guardians: [["Marcela Picado Ruiz", "mpicado@demo.scs.cr", "Madre"]], kids: [{ first: "Isabella", section: sTransA.id, birthYear: year - 6, allergies: "Lactosa" }] },
-    { last: "Fallas Monge", guardians: [["Diego Fallas León", "dfallas@demo.scs.cr", "Padre"]], kids: [{ first: "Thiago", section: sTransA.id, birthYear: year - 6 }, { first: "Lucía", section: sInter.id, birthYear: year - 5 }] },
+    { last: "Fallas Monge", guardians: [["Diego Fallas León", "dfallas@demo.scs.cr", "Padre"]], kids: [{ first: "Thiago", section: sTransA.id, birthYear: year - 6 }, { first: "Lucía", section: sInter.id, birthYear: year - 4 }] },
     { last: "Cordero Víquez", guardians: [["Rebeca Víquez Sáenz", "rviquez@demo.scs.cr", "Madre"]], kids: [{ first: "Sofía", section: sTransB.id, birthYear: year - 6 }] },
     { last: "Badilla Porras", guardians: [["Kevin Badilla Mora", "kbadilla@demo.scs.cr", "Padre"]], kids: [{ first: "Gael", section: sTransB.id, birthYear: year - 6 }] },
     { last: "Esquivel Rojas", guardians: [["Natalia Rojas Cubero", "nrojas@demo.scs.cr", "Madre"]], kids: [{ first: "Mía", section: sTransB.id, birthYear: year - 6 }] },
     { last: "Hidalgo Calvo", guardians: [["Ana Calvo Segura", "acalvo@demo.scs.cr", "Madre"]], kids: [{ first: "Sebastián", section: sTransB.id, birthYear: year - 6 }] },
-    { last: "Ramírez Elizondo", guardians: [["Luis Ramírez Torres", "lramirez@demo.scs.cr", "Padre"]], kids: [{ first: "Amanda", section: sInter.id, birthYear: year - 5 }] },
-    { last: "Vega Barquero", guardians: [["Silvia Barquero Núñez", "sbarquero@demo.scs.cr", "Madre"]], kids: [{ first: "Joaquín", section: sInter.id, birthYear: year - 5 }] },
-    { last: "Castro Navarro", guardians: [["Felipe Castro Ortiz", "fcastro@demo.scs.cr", "Padre"]], kids: [{ first: "Camila", section: sInter.id, birthYear: year - 5 }] },
+    { last: "Ramírez Elizondo", guardians: [["Luis Ramírez Torres", "lramirez@demo.scs.cr", "Padre"]], kids: [{ first: "Amanda", section: sInter.id, birthYear: year - 4 }] },
+    { last: "Vega Barquero", guardians: [["Silvia Barquero Núñez", "sbarquero@demo.scs.cr", "Madre"]], kids: [{ first: "Joaquín", section: sInter.id, birthYear: year - 4 }] },
+    { last: "Castro Navarro", guardians: [["Felipe Castro Ortiz", "fcastro@demo.scs.cr", "Padre"]], kids: [{ first: "Camila", section: sInter.id, birthYear: year - 4 }] },
     { last: "Mora Sibaja", guardians: [["Daniela Sibaja Vindas", "dsibaja@demo.scs.cr", "Madre"]], kids: [{ first: "Benjamín", section: sPrimero.id, birthYear: year - 7 }] },
     { last: "León Arias", guardians: [["Roberto León Pérez", "rleon@demo.scs.cr", "Padre"]], kids: [{ first: "Victoria", section: sPrimero.id, birthYear: year - 7 }] },
     { last: "Solano Ugalde", guardians: [["Mónica Ugalde Ramos", "mugalde@demo.scs.cr", "Madre"]], kids: [{ first: "Martín", section: sPrimero.id, birthYear: year - 7, allergies: "Penicilina" }] },
@@ -168,7 +240,7 @@ async function main() {
   for (let off = -21; off <= 0; off++) {
     const d = day(off, 12);
     if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
-    // Hoy: Transición B todavía no ha pasado lista (estado útil para la demo)
+    // Hoy: Preparatoria B todavía no ha pasado lista (estado útil para la demo)
     for (const s of studentRows) {
       if (off === 0 && s.sectionId === sTransB.id) continue;
       const r = rand();
@@ -185,28 +257,48 @@ async function main() {
     }
   }
 
-  // Cobros
-  const matricula = await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Matrícula", defaultAmount: 150000 } });
-  const mensualidad = await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Mensualidad", defaultAmount: 185000, recurring: true } });
-  const materiales = await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Materiales", defaultAmount: 45000 } });
+  // Cobros (precios 2027 de la escuela)
+  const conceptos = {
+    matricula: await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Matrícula", defaultAmount: 150000, earlyAmount: 120000, earlyMonths: [8, 9], dueNote: "Descuento en agosto y setiembre." } }),
+    mensualidadPre: await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Mensualidad", defaultAmount: 148000, recurring: true, levelId: pre.id } }),
+    mensualidadPri: await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Mensualidad", defaultAmount: 192000, recurring: true, levelId: pri.id } }),
+    materialesPre: await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Materiales", defaultAmount: 40000, levelId: pre.id, dueNote: "Antes del 15 de diciembre." } }),
+    materialesPri: await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Materiales", defaultAmount: 50000, levelId: pri.id, dueNote: "Antes del 15 de diciembre." } }),
+    robotica: await prisma.feeConcept.create({ data: { schoolId: school.id, name: "Paquete de robótica Tecnikids", defaultAmount: 85, currency: "USD", levelId: pri.id, dueNote: "Se cancela en diciembre." } }),
+  };
+  const preSections = new Set([sInter.id, sTransA.id, sTransB.id]);
+  const studentSection = new Map((await prisma.student.findMany({ select: { id: true, sectionId: true } })).map((x) => [x.id, x.sectionId]));
 
   const lastMonth = Math.min(now.getMonth(), 11); // 0-based, mensualidades de feb..mes actual
-  const methods: PaymentMethod[] = ["BANCO_POPULAR", "BANCO_POPULAR", "BANCO_POPULAR", "SINPE", "TRANSFER"];
+  const methods: PaymentMethod[] = ["DEPOSIT", "TRANSFER", "TRANSFER", "SINPE", "DEPOSIT"];
   for (const st of allStudents) {
+    const isPre = preSections.has(studentSection.get(st.id)!);
+    const monthly = isPre ? conceptos.mensualidadPre : conceptos.mensualidadPri;
+    const mats = isPre ? conceptos.materialesPre : conceptos.materialesPri;
     const charges = [
-      { conceptId: matricula.id, description: "Matrícula", period: `${year}`, amount: 150000, dueDate: new Date(Date.UTC(year, 0, 20)) },
-      { conceptId: materiales.id, description: "Materiales del curso", period: `${year}`, amount: 45000, dueDate: new Date(Date.UTC(year, 1, 15)) },
+      { conceptId: conceptos.matricula.id, description: "Matrícula", period: `${year}`, amount: 150000, dueDate: new Date(Date.UTC(year, 0, 20)) },
+      { conceptId: mats.id, description: "Materiales del curso", period: `${year}`, amount: mats.defaultAmount, dueDate: new Date(Date.UTC(year, 1, 15)) },
     ];
     for (let m = 1; m <= Math.max(lastMonth, 1); m++) {
       charges.push({
-        conceptId: mensualidad.id,
+        conceptId: monthly.id,
         description: `Mensualidad ${MONTHS[m]}`,
         period: `${year}-${String(m + 1).padStart(2, "0")}`,
-        amount: 185000,
+        amount: monthly.defaultAmount,
         dueDate: new Date(Date.UTC(year, m, 10)),
       });
     }
     for (const c of charges) await prisma.charge.create({ data: { studentId: st.id, ...c } });
+
+    // Próximos cobros del curso siguiente (vencen en diciembre)
+    await prisma.charge.create({
+      data: { studentId: st.id, conceptId: mats.id, description: `Materiales ${year + 1}`, period: `${year + 1}`, amount: mats.defaultAmount, dueDate: new Date(Date.UTC(year, 11, 15)) },
+    });
+    if (!isPre) {
+      await prisma.charge.create({
+        data: { studentId: st.id, conceptId: conceptos.robotica.id, description: `Robótica Tecnikids ${year + 1}`, period: `${year + 1}`, amount: 85, currency: "USD", dueDate: new Date(Date.UTC(year, 11, 15)) },
+      });
+    }
 
     // Pagos: todo pagado excepto el mes actual (familia demo) o los dos últimos (morosos)
     const unpaid = st.owing ? 2 : st.demo ? 1 : now.getDate() > 10 ? 0 : 1;
@@ -220,7 +312,7 @@ async function main() {
           studentId: st.id,
           amount: c.amount,
           method,
-          reference: method === "CASH" ? null : `${method === "SINPE" ? "SP" : "BP"}${Math.floor(10000000 + rand() * 89999999)}`,
+          reference: method === "CASH" ? null : `${method === "SINPE" ? "SP" : "BCR"}${Math.floor(10000000 + rand() * 89999999)}`,
           paidAt: paid,
           note: c.description,
         },
@@ -297,7 +389,7 @@ async function main() {
     0.8,
   );
   await ann(
-    "Transición A: materiales para el proyecto de reciclaje",
+    "Preparatoria A: materiales para el proyecto de reciclaje",
     "Para el proyecto «Cuidamos nuestro planeta» necesitamos que cada niño traiga el miércoles: 2 tubos de papel higiénico, 1 caja de cereal vacía y tapas plásticas limpias.\n\n¡Muchas gracias!",
     1,
     "SECTION",
@@ -322,10 +414,10 @@ async function main() {
         sectionId: opts.sectionId,
       },
     });
-  await ev("Reunión de padres de Transición", 2, { hour: 17, endHour: 18, kind: "reunion", audience: "LEVEL", levelId: pre.id, description: "Aula de Transición A. Entrega de informes al hogar del periodo." });
+  await ev("Reunión de padres de Preparatoria", 2, { hour: 17, endHour: 18, kind: "reunion", audience: "LEVEL", levelId: pre.id, description: "Aula de Preparatoria A. Entrega de informes al hogar del periodo." });
   await ev("Gira al Museo de los Niños", 4, { hour: 7, endHour: 13, kind: "gira", audience: "SECTION", sectionId: sPrimero.id });
   await ev("Semana de la lectura", 7, { kind: "actividad", audience: "LEVEL", levelId: pre.id });
-  await ev("Vence mensualidad", 10 - now.getDate() > 0 ? 10 - now.getDate() : 30 - now.getDate() + 10, { kind: "pago", description: "Pago por Banco Popular, SINPE Móvil o transferencia." });
+  await ev("Vence mensualidad", 10 - now.getDate() > 0 ? 10 - now.getDate() : 30 - now.getDate() + 10, { kind: "pago", description: "Deposite o transfiera y reporte el pago en la plataforma." });
   await ev("Festival de fin de año", 24, { hour: 9, endHour: 12, kind: "evento", description: "Gimnasio de la escuela. Presentaciones de todas las secciones." });
   await ev("Último día de clases", 31, { kind: "feriado" });
   await ev("Consejo de profesores (no hay lecciones)", 14, { kind: "feriado" });
@@ -337,7 +429,7 @@ async function main() {
   const nextYear = String(now.getMonth() >= 6 ? year + 1 : year);
   const apps: [string, string, string, number, string, string, string, "NEW" | "CONTACTED" | "VISIT" | "ACCEPTED", number, string | null][] = [
     ["Emilia", "Araya Quesada", gTrans.id, year - 5, "Gabriela Quesada Solís", "gquesada@demo.scs.cr", "8812-4410", "NEW", 0, "Nos interesa mucho el enfoque bilingüe. ¿Tienen transporte desde Grecia centro?"],
-    ["Tomás", "Villalobos Rojas", gInter.id, year - 4, "Andrés Villalobos Mora", "avillalobos@demo.scs.cr", "8723-9051", "NEW", 1, null],
+    ["Tomás", "Villalobos Rojas", gInter.id, year - 3, "Andrés Villalobos Mora", "avillalobos@demo.scs.cr", "8723-9051", "NEW", 1, null],
     ["Renata", "Chacón Alfaro", gPrimero.id, year - 6, "María José Alfaro Ruiz", "mjalfaro@demo.scs.cr", "8654-1187", "CONTACTED", 4, null],
     ["Lucas", "Montero Salas", gTrans.id, year - 5, "Priscilla Salas Vega", "psalas@demo.scs.cr", "8899-3020", "VISIT", 6, null],
   ];
@@ -361,6 +453,25 @@ async function main() {
       },
     });
   }
+
+  // Un pago reportado por la familia demo, pendiente de revisión
+  const valeria = allStudents.find((x) => x.demo && preSections.has(studentSection.get(x.id)!) === false)!;
+  const carolina = await prisma.user.findUniqueOrThrow({ where: { email: "familia@demo.scs.cr" } });
+  await prisma.paymentReport.create({
+    data: {
+      studentId: valeria.id,
+      reportedById: carolina.id,
+      amount: 192000,
+      method: "TRANSFER",
+      reference: "BCR20261109",
+      paidAt: day(-1, 12),
+      concept: `Mensualidad ${MONTHS[now.getMonth()]}`,
+      fileName: "comprobante-demo.png",
+      mimeType: "image/png",
+      fileData: DEMO_RECEIPT,
+      createdAt: day(0, 8),
+    },
+  });
 
   console.log(`Seed listo. Contraseña de todas las cuentas: ${PASSWORD}`);
 }

@@ -28,7 +28,7 @@ export function PaymentForm({ students, selected, today }: { students: { id: str
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Monto (₡)" htmlFor="pay-amount">
-          <input id="pay-amount" name="amount" inputMode="numeric" required defaultValue={sel?.due || ""} placeholder="185000" className={`${inputClass} tabular`} />
+          <input id="pay-amount" name="amount" inputMode="numeric" required defaultValue={sel?.due || ""} placeholder="148000" className={`${inputClass} tabular`} />
         </Field>
         <Field label="Fecha" htmlFor="pay-date">
           <input id="pay-date" name="paidAt" type="date" required defaultValue={today} max={today} className={inputClass} />
@@ -36,7 +36,7 @@ export function PaymentForm({ students, selected, today }: { students: { id: str
       </div>
       <Field label="Medio de pago" htmlFor="pay-method">
         <select id="pay-method" name="method" className={inputClass} defaultValue="SINPE">
-          <option value="BANCO_POPULAR">Banco Popular</option>
+          <option value="DEPOSIT">Depósito</option>
           <option value="SINPE">SINPE Móvil</option>
           <option value="TRANSFER">Transferencia</option>
           <option value="CASH">Efectivo</option>

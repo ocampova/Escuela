@@ -8,7 +8,7 @@ import { Button, Field, inputClass } from "@/components/ui";
 const DEMO = [
   { label: "Familia", email: "familia@demo.scs.cr", who: "Carolina, mamá de Mateo y Valeria" },
   { label: "Dirección", email: "directora@demo.scs.cr", who: "Laura Méndez, directora" },
-  { label: "Docente", email: "schaves@demo.scs.cr", who: "Sofía Chaves, Transición A" },
+  { label: "Docente", email: "schaves@demo.scs.cr", who: "Sofía Chaves, Preparatoria A" },
 ];
 
 export function LoginForm({ next }: { next?: string }) {
