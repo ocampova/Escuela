@@ -6,7 +6,11 @@ import { requireGuardian } from "@/lib/auth";
 import { dateLabel, gradeSectionName } from "@/lib/format";
 import { Avatar, Badge, Card, SectionHeading } from "@/components/ui";
 
-const sectionBand: Record<string, string> = { orange: "bg-scs-orange-strong", green: "bg-scs-green-strong", blue: "bg-scs-blue-strong" };
+const sectionBand: Record<string, string> = {
+  orange: "bg-scs-orange-strong [--bleed-color:var(--color-scs-orange-strong)]",
+  green: "bg-scs-green-strong [--bleed-color:var(--color-scs-green-strong)]",
+  blue: "bg-scs-blue-strong [--bleed-color:var(--color-scs-blue-strong)]",
+};
 import { AttendanceStrip } from "@/components/attendance-strip";
 
 export default async function ChildPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,7 +32,7 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-8">
-      <div className={`full-bleed -mt-5 pt-3 pb-6 text-white md:-mt-8 md:pt-6 md:pb-10 ${sectionBand[s.section.color] ?? "bg-brand"}`}>
+      <div className={`full-bleed -mt-5 pt-3 pb-6 text-white md:-mt-8 md:pt-6 md:pb-10 ${sectionBand[s.section.color] ?? "bg-brand [--bleed-color:var(--color-brand)]"}`}>
         <Link href="/familia" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-white/85 hover:bg-white/10 hover:text-white">
           <ArrowLeft className="size-4" aria-hidden /> Inicio
         </Link>

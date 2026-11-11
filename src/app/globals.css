@@ -48,7 +48,6 @@
 
 @layer base {
   html {
-    overflow-x: clip;
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
     text-size-adjust: 100%;
@@ -88,6 +87,14 @@
   p {
     text-wrap: pretty;
   }
+  /* Las columnas de una cuadrícula nunca ensanchan la página: lo ancho (tablas) se desplaza dentro de su tarjeta */
+  .grid > * {
+    min-width: 0;
+  }
+  /* Todo contenedor con desplazamiento horizontal contiene a sus textos ocultos (sr-only) */
+  .overflow-x-auto {
+    position: relative;
+  }
   * {
     scrollbar-color: var(--color-line-strong) transparent;
   }
@@ -102,10 +109,14 @@
   }
 }
 
-/* Banda a todo el ancho de la ventana, alineando el contenido con el contenedor */
+/*
+ * Banda a todo el ancho de la ventana sin ensanchar la página: el fondo se
+ * extiende con una sombra recortada a los lados, así ningún elemento mide más
+ * que la pantalla (en celulares, eso hacía que la página se viera achicada).
+ */
 .full-bleed {
-  margin-inline: calc(50% - 50vw);
-  padding-inline: calc(50vw - 50%);
+  box-shadow: 0 0 0 100vmax var(--bleed-color, currentColor);
+  clip-path: inset(0 -100vmax);
 }
 
 /* Entrada de cada página al navegar: breve, sin bloquear la lectura */

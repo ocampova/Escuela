@@ -79,7 +79,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                 {info.map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-4 px-4 py-3 text-sm">
                     <dt className="text-ink-2">{k}</dt>
-                    <dd className="text-right font-medium">{v}</dd>
+                    <dd className="min-w-0 text-right font-medium break-words">{v}</dd>
                   </div>
                 ))}
               </dl>
@@ -97,7 +97,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                       {g.user.name}
                       {!g.user.passwordHash && <Badge tone="warn" className="ml-2 align-middle">Sin activar</Badge>}
                     </p>
-                    <p className="truncate text-ink-2">
+                    <p className="break-words text-ink-2">
                       {g.relationship}
                       {g.isPrimary ? " · Principal" : ""} · {g.user.email}
                       {g.user.phone ? ` · ${g.user.phone}` : ""}

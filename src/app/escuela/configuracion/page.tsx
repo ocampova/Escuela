@@ -50,7 +50,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   return (
     <div>
       <PageHeader title="Configuración" description="Estructura de la escuela, cuentas del personal y curso lectivo." />
-      <nav aria-label="Secciones de configuración" className="mb-6 flex gap-1 border-b border-line">
+      <nav aria-label="Secciones de configuración" className="relative mb-6 flex gap-1 overflow-x-auto border-b border-line whitespace-nowrap [scrollbar-width:none]">
         {TABS.map((t) => (
           <Link
             key={t.key}

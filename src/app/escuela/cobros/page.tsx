@@ -116,7 +116,7 @@ export default async function ChargesPage({ searchParams }: { searchParams: Prom
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div>
-          <nav aria-label="Filtro" className="mb-3 flex gap-1.5">
+          <nav aria-label="Filtro" className="mb-3 flex flex-wrap gap-1.5">
             {tabs.map((t) => (
               <Link
                 key={t.label}

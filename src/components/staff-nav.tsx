@@ -22,7 +22,7 @@ export function StaffNav({ manager, variant, counts = {}, messaging = true }: { 
   const items = ITEMS.filter((i) => (manager || !i.managersOnly) && (messaging || i.href !== "/escuela/mensajes"));
   return (
     <nav aria-label="Principal">
-      <ul className={variant === "rail" ? "space-y-0.5" : "flex gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]"}>
+      <ul className={variant === "rail" ? "space-y-0.5" : "relative flex max-w-full gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]"}>
         {items.map((i) => {
           const active = i.exact ? path === i.href : path.startsWith(i.href);
           const Icon = i.icon;

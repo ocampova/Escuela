@@ -47,7 +47,7 @@ export default async function FamilyHome() {
 
   return (
     <div className="space-y-8 md:space-y-10">
-      <div className="full-bleed -mt-5 bg-brand pt-5 pb-6 text-white md:-mt-8 md:pt-8 md:pb-10">
+      <div className="full-bleed -mt-5 bg-brand [--bleed-color:var(--color-brand)] pt-5 pb-6 text-white md:-mt-8 md:pt-8 md:pb-10">
         <h1 className="text-[1.75rem] leading-tight font-semibold md:text-4xl">Hola, {firstName}</h1>
         <p className="mt-1 text-sm text-white/75 first-letter:uppercase md:text-base">{weekday}</p>
 
