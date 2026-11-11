@@ -166,6 +166,13 @@
       "description": "Notice acknowledgment.",
       "html": "<button class=\"ds-ack\">✓ Enterado</button>",
       "css": ".ds-ack{background:#12463a;color:#fff;height:36px;padding:0 14px;border:0;border-radius:8px;font:500 14px Inter,system-ui,sans-serif;transition:transform .15s}.ds-ack:active{transform:scale(.97)}.ds-ack:focus-visible{outline:2px solid #12463a;outline-offset:2px}"
+    },
+    {
+      "name": "SCS Stripe",
+      "kind": "custom",
+      "description": "Signature: logo letters as a stripe under headers.",
+      "html": "<div class=\"ds-stripe\"><i></i><i></i><i></i></div>",
+      "css": ".ds-stripe{display:flex;height:4px;width:240px}.ds-stripe i{flex:1}.ds-stripe i:nth-child(1){background:#d9581f}.ds-stripe i:nth-child(2){background:#3b8f31}.ds-stripe i:nth-child(3){background:#1f7fb8}"
     }
   ],
   "narrative": {
@@ -174,6 +181,7 @@
     "keyCharacteristics": [
       "Cool green-tinted canvas, white borderless cards.",
       "One accent: SCS forest green.",
+      "The SCS stripe: the logo's three letters as a 4px stripe under every header.",
       "Letter colours only for section/child identity.",
       "Red and amber only for states that need action.",
       "One sans (Inter), tabular numerals."
@@ -182,6 +190,11 @@
       {
         "name": "The One Accent Rule",
         "body": "Green is the only action colour. Letter colours never mean click here.",
+        "section": "colors"
+      },
+      {
+        "name": "The Identity Not Action Rule",
+        "body": "Section colours say whose (which child, which section). They never mean do this; actions stay green.",
         "section": "colors"
       },
       {

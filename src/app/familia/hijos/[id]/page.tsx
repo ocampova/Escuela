@@ -4,7 +4,9 @@ import { AlertTriangle, ArrowLeft, Phone, UserCheck } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireGuardian } from "@/lib/auth";
 import { dateLabel, gradeSectionName } from "@/lib/format";
-import { Avatar, Badge, Card, SectionChip, SectionHeading } from "@/components/ui";
+import { Avatar, Badge, Card, SectionHeading } from "@/components/ui";
+
+const sectionBand: Record<string, string> = { orange: "bg-scs-orange-strong", green: "bg-scs-green-strong", blue: "bg-scs-blue-strong" };
 import { AttendanceStrip } from "@/components/attendance-strip";
 
 export default async function ChildPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,20 +28,20 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link href="/familia" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-ink-2 hover:bg-surface hover:text-ink">
+      <div className={`-mx-4 -mt-5 px-4 pt-3 pb-6 text-white ${sectionBand[s.section.color] ?? "bg-brand"}`}>
+        <Link href="/familia" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-white/85 hover:bg-white/10 hover:text-white">
           <ArrowLeft className="size-4" aria-hidden /> Inicio
         </Link>
         <div className="mt-3 flex items-center gap-4">
-          <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={64} />
-          <div>
+          <Avatar name={`${s.firstName} ${s.lastName}`} color="onBrand" size={64} className="ring-2 ring-white/30" />
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold">
               {s.firstName} {s.lastName}
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <SectionChip color={s.section.color} label={gradeSectionName(s.section)} />
-              {s.section.teacher && <span className="text-sm text-ink-2">Docente: {s.section.teacher.name}</span>}
-            </div>
+            <p className="mt-1 text-sm text-white/85">
+              {gradeSectionName(s.section)}
+              {s.section.teacher && ` · Docente: ${s.section.teacher.name}`}
+            </p>
           </div>
         </div>
       </div>

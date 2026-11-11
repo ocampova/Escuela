@@ -4,7 +4,7 @@ import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { capitalize, dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
-import { Card, PageHeader, cx, inputClass } from "@/components/ui";
+import { Card, PageHeader, cx, inputClass, sectionSolid } from "@/components/ui";
 import { AttendanceForm } from "./attendance-form";
 
 export const metadata: Metadata = { title: "Asistencia" };
@@ -40,9 +40,10 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
               aria-current={s.id === section?.id ? "page" : undefined}
               className={cx(
                 "inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium ring-1 ring-inset transition-colors",
-                s.id === section?.id ? "bg-brand text-white ring-brand" : "bg-surface text-ink-2 ring-line-strong hover:bg-canvas",
+                s.id === section?.id ? `${sectionSolid[s.color] ?? "bg-brand ring-brand"} text-white` : "bg-surface text-ink-2 ring-line-strong hover:bg-canvas",
               )}
             >
+              {s.id !== section?.id && <span aria-hidden className={cx("mr-2 size-2 rounded-full", sectionSolid[s.color]?.split(" ")[0])} />}
               {gradeSectionName(s)}
             </Link>
           ))}

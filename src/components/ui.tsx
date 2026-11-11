@@ -108,9 +108,9 @@ export function SectionChip({ color, label, className }: { color: string; label:
 /* ---------- Avatares ---------- */
 
 const avatarTones: Record<string, string> = {
-  orange: "bg-scs-orange-soft text-scs-orange-ink",
-  green: "bg-scs-green-soft text-scs-green-ink",
-  blue: "bg-scs-blue-soft text-scs-blue-ink",
+  orange: "bg-scs-orange-strong text-white",
+  green: "bg-scs-green-strong text-white",
+  blue: "bg-scs-blue-strong text-white",
   brand: "bg-brand-soft text-brand-ink",
   onBrand: "bg-white/15 text-white",
 };
@@ -164,3 +164,22 @@ export function DemoNotice({ className }: { className?: string }) {
     </p>
   );
 }
+
+/* ---------- Franja SCS ---------- */
+
+/** Las tres letras del logo como franja: el sello visual de la plataforma. */
+export function BrandStripe({ className }: { className?: string }) {
+  return (
+    <div aria-hidden className={cx("flex h-1", className)}>
+      <span className="flex-1 bg-scs-orange" />
+      <span className="flex-1 bg-scs-green" />
+      <span className="flex-1 bg-scs-blue" />
+    </div>
+  );
+}
+
+export const sectionSolid: Record<string, string> = {
+  orange: "bg-scs-orange-strong ring-scs-orange-strong",
+  green: "bg-scs-green-strong ring-scs-green-strong",
+  blue: "bg-scs-blue-strong ring-scs-blue-strong",
+};

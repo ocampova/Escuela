@@ -14,6 +14,9 @@ colors:
   canvas: "#f5f7f6"
   surface: "#ffffff"
   scs-orange: "#d9581f"
+  scs-orange-strong: "#c24e1a"
+  scs-green-strong: "#2e7a27"
+  scs-blue-strong: "#1a6fa3"
   scs-orange-soft: "#fdeee6"
   scs-orange-ink: "#8f3510"
   scs-green: "#3b8f31"
@@ -35,6 +38,11 @@ typography:
     fontWeight: 600
     lineHeight: 1.25
     letterSpacing: "-0.015em"
+  title-lg:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "17px"
+    fontWeight: 600
+    lineHeight: 1.35
   title:
     fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
@@ -55,7 +63,18 @@ typography:
     fontSize: "0.75rem"
     fontWeight: 500
     lineHeight: 1.33
+  micro:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "11px"
+    fontWeight: 500
+    lineHeight: 1.2
+  micro-xs:
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "10px"
+    fontWeight: 600
+    lineHeight: 1
 rounded:
+  focus: "6px"
   control: "8px"
   card: "12px"
   sheet: "16px"
@@ -94,6 +113,10 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.control}"
     padding: "10px 12px"
+  avatar-section-orange:
+    backgroundColor: "{colors.scs-orange-strong}"
+    textColor: "{colors.surface}"
+    rounded: "{rounded.pill}"
   staff-rail:
     backgroundColor: "{colors.brand}"
     textColor: "{colors.surface}"
@@ -110,8 +133,9 @@ The category standard played straight, at the craft level of Brightwheel and Cla
 
 **Key Characteristics:**
 - Cool, green-tinted canvas with white cards that need no borders.
-- One accent (SCS forest green) for primary actions, selection and the staff rail.
-- The logo's orange, green and blue appear only as section and child identity.
+- One accent (SCS forest green) for primary actions, selection, headers and the staff rail.
+- **The SCS stripe:** the logo's three letters (orange, green, blue) as a 4px three-segment stripe under every header and at the top of the staff rail. It is the platform's signature.
+- The logo's orange, green and blue mark section and child identity boldly: solid avatars, the active section tab and the child-profile band take the section's strong colour.
 - Red and amber appear only where something needs action (overdue, absent, late, not confirmed).
 - One sans (Inter), a tight scale and tabular numerals for money and counts.
 
@@ -121,7 +145,9 @@ The category standard played straight, at the craft level of Brightwheel and Cla
 - **Bosque SCS** (`brand`, #12463a): the green of the logo's ring. Used for primary buttons, current selection, the staff sidebar and the family balance header.
 
 ### Secondary
-- **Letras SCS** (`scs-orange`, `scs-green`, `scs-blue`, with `-soft` grounds and `-ink` text): section and child identity only (chips, avatars). Event-type tiles reuse these tints too; that use is accepted drift, not a rule.
+- **Letras SCS** (`scs-orange`, `scs-green`, `scs-blue`): the SCS stripe and chip dots.
+- **Letras fuertes** (`scs-*-strong`: #c24e1a, #2e7a27, #1a6fa3): solid fills carrying white text (≥4.5:1). Used for child avatars, the active section tab and the child-profile band.
+- **Letras suaves** (`-soft` grounds with `-ink` text): section chips. Event-type tiles reuse these tints too; that use is accepted drift, not a rule.
 
 ### Neutral
 - **Lienzo** (`canvas`, #f5f7f6): the page field, tinted from the ring green so white cards separate without borders.
@@ -130,6 +156,7 @@ The category standard played straight, at the craft level of Brightwheel and Cla
 
 ### Named Rules
 **The One Accent Rule.** Green is the only action colour. Letter colours never mean "click here".
+**The Identity Not Action Rule.** Section colours say "whose" (which child, which section). They never mean "do this"; actions stay green.
 **The Earned Alarm Rule.** Red and amber appear only where they carry a state a person must act on.
 
 ## Typography
@@ -141,14 +168,16 @@ The category standard played straight, at the craft level of Brightwheel and Cla
 - **Title** (600, 15px): section headings above cards.
 - **Body** (400, 15px, 1.6): notices and descriptions, capped at 65ch.
 - **Label** (500, 14px): buttons, table cells, list primaries.
+- **Title large** (600, 17px): a child's name on their home card.
 - **Caption** (500, 12px): chips, metadata, table headers.
+- **Micro** (500, 11px; 600, 10px): tab bar labels, badge counts and the month in date tiles only.
 
 ### Named Rules
 **The Tabular Money Rule.** Every amount and count uses `tabular-nums`. Colones are written ₡185 000.
 
 ## Layout
 
-- **Family:** a single column, max-width 36rem, top bar plus a fixed 4-tab bottom bar that respects the safe area. The things that need action come first.
+- **Family:** a single column, max-width 36rem. A green header with the SCS stripe and a fixed 4-tab bottom bar that respects the safe area. The home screen opens on a green band (greeting plus a children carousel of white cards); the child profile opens on a band in that child's section colour. The things that need action come right after.
 - **Staff:** a fixed 256px green rail at lg and up. Below lg it becomes a green header with horizontally scrolling nav. Content max-width is 72rem; dashboards use a 3:2 grid at xl.
 - Grid children carry `min-w-0`. Wide tables scroll inside their card and never scroll the page.
 - Spacing: 32px between sections, 12px between cards, 16px of card padding.

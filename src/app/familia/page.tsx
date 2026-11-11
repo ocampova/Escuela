@@ -44,41 +44,38 @@ export default async function FamilyHome() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="-mx-4 -mt-5 bg-brand px-4 pt-5 pb-6 text-white">
         <h1 className="text-2xl font-semibold">Hola, {firstName}</h1>
-        <p className="mt-1 text-sm text-ink-2 first-letter:uppercase">{weekday}</p>
-      </div>
+        <p className="mt-1 text-sm text-white/75 first-letter:uppercase">{weekday}</p>
 
-      {/* Hijos */}
-      <section aria-label="Mis hijos" className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-        {students.map((s) => {
-          const att = attendance.find((a) => a.studentId === s.id);
-          const st = att ? ATT[att.status] : null;
-          return (
-            <Link
-              key={s.id}
-              href={`/familia/hijos/${s.id}`}
-              className="flex min-w-[78%] snap-start items-center gap-3 rounded-xl bg-surface p-4 shadow-card transition-shadow hover:shadow-pop sm:min-w-[calc(50%-6px)]"
-            >
-              <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={48} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{s.firstName}</p>
-                <p className="truncate text-sm text-ink-2">{gradeSectionName(s.section)}</p>
-                <div className="mt-2">
-                  {st ? (
-                    <Badge tone={st.tone}>
-                      {st.label}
-                    </Badge>
-                  ) : (
-                    <Badge>Sin registro de asistencia hoy</Badge>
-                  )}
+        {/* Hijos */}
+        <section aria-label="Mis hijos" className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+          {students.map((s) => {
+            const att = attendance.find((a) => a.studentId === s.id);
+            const st = att ? ATT[att.status] : null;
+            return (
+              <Link
+                key={s.id}
+                href={`/familia/hijos/${s.id}`}
+                className="flex min-w-[80%] snap-start flex-col rounded-xl bg-surface text-ink shadow-pop transition-transform active:scale-[0.99] sm:min-w-[calc(50%-6px)]"
+              >
+                <div className="flex items-center gap-3 p-4">
+                  <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={48} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[17px] font-semibold">{s.firstName}</p>
+                    <SectionChip color={s.section.color} label={gradeSectionName(s.section)} className="mt-1" />
+                  </div>
+                  <ChevronRight className="size-5 shrink-0 text-ink-3" aria-hidden />
                 </div>
-              </div>
-              <ChevronRight className="size-5 shrink-0 text-ink-3" aria-hidden />
-            </Link>
-          );
-        })}
-      </section>
+                <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-sm">
+                  <span className="truncate text-ink-2">{s.section.teacher ? `Docente: ${s.section.teacher.name.split(" ").slice(0, 2).join(" ")}` : "Sin docente asignada"}</span>
+                  {st ? <Badge tone={st.tone}>{st.label}</Badge> : <Badge>Sin registro hoy</Badge>}
+                </div>
+              </Link>
+            );
+          })}
+        </section>
+      </div>
 
       {/* Pendiente */}
       {(pending.length > 0 || due > 0) && (

@@ -20,12 +20,15 @@
 
   /* Letras del logo: identidad de secciones */
   --color-scs-orange: #d9581f;
+  --color-scs-orange-strong: #c24e1a;
   --color-scs-orange-soft: #fdeee6;
   --color-scs-orange-ink: #8f3510;
   --color-scs-green: #3b8f31;
+  --color-scs-green-strong: #2e7a27;
   --color-scs-green-soft: #eaf5e7;
   --color-scs-green-ink: #245a1d;
   --color-scs-blue: #1f7fb8;
+  --color-scs-blue-strong: #1a6fa3;
   --color-scs-blue-soft: #e5f2fa;
   --color-scs-blue-ink: #134d70;
 

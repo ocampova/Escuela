@@ -4,7 +4,7 @@ import { LogOut } from "lucide-react";
 import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { StaffNav } from "@/components/staff-nav";
-import { Avatar } from "@/components/ui";
+import { Avatar, BrandStripe } from "@/components/ui";
 import { logout } from "@/app/login/actions";
 
 const ROLE: Record<string, string> = { ADMIN: "Dirección", STAFF: "Secretaría", TEACHER: "Docente" };
@@ -32,7 +32,8 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-dvh lg:pl-64">
       {/* Barra lateral (computadora) */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand px-3 py-4 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand px-3 pb-4 lg:flex">
+        <BrandStripe className="-mx-3 mb-4" />
         <Link href="/escuela" className="mb-6 flex items-center gap-2.5 px-2">
           <Image src="/logo-scs.png" alt="" width={36} height={36} className="rounded-full bg-white" />
           <span className="leading-tight">
@@ -56,6 +57,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
           </form>
         </div>
         <StaffNav manager={manager} variant="bar" />
+        <BrandStripe />
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{children}</main>
