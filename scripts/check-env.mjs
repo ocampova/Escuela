@@ -4,6 +4,10 @@ if (!process.env.DATABASE_URL) {
   problems.push(
     "Falta DATABASE_URL. En Railway: servicio de la app → Variables → New Variable → nombre DATABASE_URL, valor: escriba ${{ y elija su servicio de PostgreSQL → DATABASE_URL. Luego toque Deploy.",
   );
+} else if (process.env.RAILWAY_ENVIRONMENT && /@(localhost|127\.0\.0\.1)[:/]/.test(process.env.DATABASE_URL)) {
+  problems.push(
+    "DATABASE_URL apunta a localhost: es el valor de ejemplo del código, no su base de Railway. Cambie el valor por la referencia: escriba ${{ y elija su servicio de PostgreSQL → DATABASE_URL. Luego toque Deploy.",
+  );
 } else if (!/^postgres(ql)?:\/\//.test(process.env.DATABASE_URL)) {
   problems.push("DATABASE_URL no parece una dirección de PostgreSQL (debe empezar con postgresql://). Revise que la referencia apunte al servicio correcto.");
 }
