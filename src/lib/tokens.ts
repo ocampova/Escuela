@@ -27,7 +27,10 @@ export async function findValidToken(token: string) {
 }
 
 export function appUrl(path: string) {
-  const base = process.env.APP_URL ?? (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "http://localhost:3000");
+  const railway = process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null;
+  // Un APP_URL de localhost en producción es un valor de ejemplo copiado por error: se ignora
+  const appUrl = process.env.APP_URL && !(process.env.NODE_ENV === "production" && /localhost/.test(process.env.APP_URL)) ? process.env.APP_URL : null;
+  const base = appUrl ?? railway ?? "http://localhost:3000";
   return base.replace(/\/$/, "") + path;
 }
 

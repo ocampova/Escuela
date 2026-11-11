@@ -8,6 +8,9 @@ export type SessionPayload = { userId: string; role: "ADMIN" | "STAFF" | "TEACHE
 function key() {
   const secret = process.env.AUTH_SECRET;
   if (!secret || secret.length < 32) throw new Error("AUTH_SECRET debe tener al menos 32 caracteres");
+  if (process.env.NODE_ENV === "production" && /cambie-esto|change-me|dev-secret/i.test(secret)) {
+    throw new Error("AUTH_SECRET tiene el valor de ejemplo. Use un secreto aleatorio (en Railway: ${{secret(48)}}).");
+  }
   return new TextEncoder().encode(secret);
 }
 
