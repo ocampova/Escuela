@@ -1,15 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, UserCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Pencil, UserCheck, UserPlus } from "lucide-react";
 import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { METHOD_LABEL, staffSections, statementFor } from "@/lib/queries";
 import { crc, dateLabel, gradeSectionName } from "@/lib/format";
-import { Avatar, Badge, Card, SectionChip, SectionHeading } from "@/components/ui";
+import { Avatar, Badge, ButtonLink, Card, Field, SectionChip, SectionHeading, inputClass } from "@/components/ui";
+import { ActionForm } from "@/components/action-form";
+import { InviteButton } from "@/components/invite-button";
+import { addGuardian, addPickup } from "../actions";
+import { RemoveButton } from "../remove-button";
 import { AttendanceStrip } from "@/components/attendance-strip";
 
-export default async function StaffStudent({ params }: { params: Promise<{ id: string }> }) {
+export default async function StaffStudent({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ nuevo?: string }> }) {
   const { id } = await params;
+  const { nuevo } = await searchParams;
   const user = await requireStaff();
   const sections = await staffSections(user);
   const s = await prisma.student.findFirst({
@@ -30,6 +35,7 @@ export default async function StaffStudent({ params }: { params: Promise<{ id: s
     ["Nacimiento", dateLabel(s.birthDate, { day: "numeric", month: "long", year: "numeric" })],
     ["Tipo de sangre", s.bloodType ?? "Sin dato"],
     ["Docente guía", s.section.teacher?.name ?? "Sin asignar"],
+    ...(s.medicalNotes ? ([["Notas médicas", s.medicalNotes]] as [string, string][]) : []),
   ];
 
   return (
@@ -37,6 +43,11 @@ export default async function StaffStudent({ params }: { params: Promise<{ id: s
       <Link href="/escuela/alumnos" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-ink-2 hover:bg-surface hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden /> Alumnos
       </Link>
+      {nuevo && (
+        <p role="status" className="ack-in mt-3 rounded-xl bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
+          Alumno creado. Agregue a los encargados abajo y envíeles la invitación.
+        </p>
+      )}
       <div className="mt-3 mb-8 flex flex-wrap items-center gap-4">
         <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={64} />
         <div>
@@ -52,6 +63,11 @@ export default async function StaffStudent({ params }: { params: Promise<{ id: s
             )}
           </div>
         </div>
+        {manager && (
+          <ButtonLink href={`/escuela/alumnos/${s.id}/editar`} variant="secondary" className="ml-auto">
+            <Pencil className="size-4" aria-hidden /> Editar datos
+          </ButtonLink>
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
@@ -72,34 +88,85 @@ export default async function StaffStudent({ params }: { params: Promise<{ id: s
           <section>
             <SectionHeading title="Encargados" />
             <Card className="divide-y divide-line">
+              {s.guardians.length === 0 && <p className="px-4 py-3 text-sm text-ink-2">Todavía no tiene encargados.</p>}
               {s.guardians.map((g) => (
-                <div key={g.userId} className="flex items-center gap-3 px-4 py-3">
+                <div key={g.userId} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                   <Avatar name={g.user.name} size={36} />
-                  <div className="min-w-0 flex-1 text-sm">
-                    <p className="font-medium">{g.user.name}</p>
-                    <p className="text-ink-2">
+                  <div className="min-w-0 flex-1 basis-[60%] text-sm">
+                    <p className="font-medium">
+                      {g.user.name}
+                      {!g.user.passwordHash && <Badge tone="warn" className="ml-2 align-middle">Sin activar</Badge>}
+                    </p>
+                    <p className="truncate text-ink-2">
                       {g.relationship}
                       {g.isPrimary ? " · Principal" : ""} · {g.user.email}
+                      {g.user.phone ? ` · ${g.user.phone}` : ""}
                     </p>
                   </div>
-                  <span className="tabular text-sm text-ink-2">{g.user.phone}</span>
+                  {manager && <RemoveButton kind="guardian" studentId={s.id} id={g.userId} label={g.user.name} />}
+                  {manager && (
+                    <div className="w-full pl-12">
+                      <InviteButton userId={g.userId} activated={!!g.user.passwordHash} />
+                    </div>
+                  )}
                 </div>
               ))}
             </Card>
+            {manager && (
+              <details className="group mt-3 rounded-xl bg-surface shadow-card">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-brand">
+                  <UserPlus className="size-4" aria-hidden /> Agregar encargado
+                </summary>
+                <div className="border-t border-line p-4">
+                  <ActionForm action={addGuardian} submitLabel="Agregar">
+                    <input type="hidden" name="studentId" value={s.id} />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Nombre completo" htmlFor="g-name"><input id="g-name" name="name" required className={inputClass} /></Field>
+                      <Field label="Parentesco" htmlFor="g-rel"><input id="g-rel" name="relationship" required placeholder="Madre, Padre, Abuela…" className={inputClass} /></Field>
+                      <Field label="Correo" htmlFor="g-email" hint="Si ya tiene cuenta por un hermano, se vincula."><input id="g-email" name="email" type="email" required className={inputClass} /></Field>
+                      <Field label="Teléfono" htmlFor="g-phone"><input id="g-phone" name="phone" inputMode="tel" placeholder="8888-8888" className={inputClass} /></Field>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" name="isPrimary" defaultChecked={s.guardians.length === 0} className="size-4" /> Encargado principal
+                    </label>
+                  </ActionForm>
+                </div>
+              </details>
+            )}
           </section>
           <section>
             <SectionHeading title="Autorizados para recoger" />
             <Card className="divide-y divide-line">
+              {s.pickups.length === 0 && <p className="px-4 py-3 text-sm text-ink-2">Nadie autorizado todavía.</p>}
               {s.pickups.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                <div key={p.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                   <UserCheck className="size-4 shrink-0 text-brand" aria-hidden />
                   <p className="min-w-0 flex-1 font-medium">{p.name}</p>
                   <span className="text-ink-2">
                     {p.relationship} · {p.idNumber}
                   </span>
+                  {manager && <RemoveButton kind="pickup" studentId={s.id} id={p.id} label={p.name} />}
                 </div>
               ))}
             </Card>
+            {manager && (
+              <details className="group mt-3 rounded-xl bg-surface shadow-card">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-brand">
+                  <UserPlus className="size-4" aria-hidden /> Autorizar a otra persona
+                </summary>
+                <div className="border-t border-line p-4">
+                  <ActionForm action={addPickup} submitLabel="Autorizar">
+                    <input type="hidden" name="studentId" value={s.id} />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Nombre completo" htmlFor="p-name"><input id="p-name" name="name" required className={inputClass} /></Field>
+                      <Field label="Cédula" htmlFor="p-id"><input id="p-id" name="idNumber" required className={inputClass} /></Field>
+                      <Field label="Parentesco" htmlFor="p-rel"><input id="p-rel" name="relationship" required className={inputClass} /></Field>
+                      <Field label="Teléfono" htmlFor="p-phone"><input id="p-phone" name="phone" inputMode="tel" className={inputClass} /></Field>
+                    </div>
+                  </ActionForm>
+                </div>
+              </details>
+            )}
           </section>
         </div>
 

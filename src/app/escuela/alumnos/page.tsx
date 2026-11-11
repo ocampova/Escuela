@@ -1,11 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { AlertTriangle, Search } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { AlertTriangle, FileSpreadsheet, Plus, Search } from "lucide-react";
+import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { gradeSectionName } from "@/lib/format";
-import { Avatar, Badge, Card, EmptyState, PageHeader, SectionChip, cx, inputClass } from "@/components/ui";
+import { Avatar, Badge, ButtonLink, Card, EmptyState, PageHeader, SectionChip, cx, inputClass } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Alumnos" };
 
@@ -35,7 +35,22 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <PageHeader title="Alumnos" description={`${students.length} ${students.length === 1 ? "alumno" : "alumnos"}${seccion ? " en esta sección" : ""}`} />
+      <PageHeader
+        title="Alumnos"
+        description={`${students.length} ${students.length === 1 ? "alumno" : "alumnos"}${seccion ? " en esta sección" : ""}`}
+        actions={
+          isManager(user) && (
+            <>
+              <ButtonLink href="/escuela/alumnos/importar" variant="secondary">
+                <FileSpreadsheet className="size-4" aria-hidden /> Importar desde Excel
+              </ButtonLink>
+              <ButtonLink href="/escuela/alumnos/nuevo">
+                <Plus className="size-4" aria-hidden /> Nuevo alumno
+              </ButtonLink>
+            </>
+          )
+        }
+      />
       <form className="mb-4 flex flex-wrap gap-3">
         <label className="relative min-w-[240px] flex-1">
           <span className="sr-only">Buscar</span>

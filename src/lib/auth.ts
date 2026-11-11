@@ -9,8 +9,8 @@ export const getCurrentUser = cache(async () => {
   const store = await cookies();
   const session = await decodeSession(store.get(SESSION_COOKIE)?.value);
   if (!session) return null;
-  return prisma.user.findUnique({
-    where: { id: session.userId },
+  return prisma.user.findFirst({
+    where: { id: session.userId, active: true },
     select: { id: true, name: true, email: true, role: true, schoolId: true, school: true },
   });
 });

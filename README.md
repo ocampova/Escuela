@@ -11,6 +11,13 @@ A web platform that works on both phone and computer, for managing the school's 
 
 **School (computer, also works on phone):** dashboard (today's attendance, notice confirmations, overdue fees), one-tap attendance, notices with tracking of who has not confirmed, students, calendar, and fees (payment recording, monthly fee generation).
 
+## Phase 2 (the school runs it on its own)
+
+- **Configuración:** school year, levels, grades and sections (colour and homeroom teacher), and staff accounts (create, invite, deactivate).
+- **Students and families:** create and edit records, add guardians (siblings are linked automatically by email), people authorized for pickup, and **import from Excel/CSV** with a preview and per-row errors.
+- **Invitations and passwords:** single-use activation link (14 days). It can be copied, sent by WhatsApp, or emailed if Resend is configured. "Olvidé mi contraseña" (forgot password) link valid for 2 hours.
+- **Online enrollment:** a public form at `/matricula` with documents (PDF/photos), and an inbox with statuses (new, contacted, visit scheduled, accepted). "Matricular" creates the student and the guardian account.
+
 Roles: Dirección (ADMIN), Secretaría (STAFF), Docente (TEACHER, sees only their sections) and Familia (GUARDIAN, sees only their own children).
 
 ## Stack
@@ -41,6 +48,6 @@ All names, ID numbers and amounts in the seed are **fictional**.
 ## Deploy on Railway
 
 1. Create a project with a **PostgreSQL** service and a service from this repository.
-2. Variables on the app service: `DATABASE_URL` (reference to Postgres) and `AUTH_SECRET` (32+ random characters).
+2. Variables on the app service: `DATABASE_URL` (reference to Postgres) and `AUTH_SECRET` (32+ random characters). Optional: `RESEND_API_KEY` and `MAIL_FROM` to send emails; `APP_URL` if you use your own domain.
 3. Railway runs `npm run build`; `npm start` applies migrations (`prisma migrate deploy`) and starts the server.
 4. Optional, to load demo data: `npx prisma db seed` from the Railway shell.

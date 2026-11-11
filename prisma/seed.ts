@@ -33,6 +33,9 @@ const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "
 
 async function main() {
   await prisma.$transaction([
+    prisma.applicantDocument.deleteMany(),
+    prisma.applicant.deleteMany(),
+    prisma.authToken.deleteMany(),
     prisma.payment.deleteMany(),
     prisma.charge.deleteMany(),
     prisma.feeConcept.deleteMany(),
@@ -326,6 +329,38 @@ async function main() {
   await ev("Festival de fin de año", 24, { hour: 9, endHour: 12, kind: "evento", description: "Gimnasio de la escuela. Presentaciones de todas las secciones." });
   await ev("Último día de clases", 31, { kind: "feriado" });
   await ev("Consejo de profesores (no hay lecciones)", 14, { kind: "feriado" });
+
+  // Una familia todavía sin activar su cuenta (invitación pendiente)
+  await prisma.user.update({ where: { email: "mugalde@demo.scs.cr" }, data: { passwordHash: null } });
+
+  // Solicitudes de matrícula en línea
+  const nextYear = String(now.getMonth() >= 6 ? year + 1 : year);
+  const apps: [string, string, string, number, string, string, string, "NEW" | "CONTACTED" | "VISIT" | "ACCEPTED", number, string | null][] = [
+    ["Emilia", "Araya Quesada", gTrans.id, year - 5, "Gabriela Quesada Solís", "gquesada@demo.scs.cr", "8812-4410", "NEW", 0, "Nos interesa mucho el enfoque bilingüe. ¿Tienen transporte desde Grecia centro?"],
+    ["Tomás", "Villalobos Rojas", gInter.id, year - 4, "Andrés Villalobos Mora", "avillalobos@demo.scs.cr", "8723-9051", "NEW", 1, null],
+    ["Renata", "Chacón Alfaro", gPrimero.id, year - 6, "María José Alfaro Ruiz", "mjalfaro@demo.scs.cr", "8654-1187", "CONTACTED", 4, null],
+    ["Lucas", "Montero Salas", gTrans.id, year - 5, "Priscilla Salas Vega", "psalas@demo.scs.cr", "8899-3020", "VISIT", 6, null],
+  ];
+  for (const [first, last, gradeId, by, gName, gEmail, gPhone, status, ago, message] of apps) {
+    await prisma.applicant.create({
+      data: {
+        schoolId: school.id,
+        gradeId,
+        forYear: nextYear,
+        status,
+        childFirstName: first,
+        childLastName: last,
+        childBirthDate: new Date(Date.UTC(by, Math.floor(rand() * 12), 1 + Math.floor(rand() * 27))),
+        guardianName: gName,
+        guardianEmail: gEmail,
+        guardianPhone: gPhone,
+        relationship: gName.startsWith("Andrés") ? "Padre" : "Madre",
+        message,
+        staffNotes: status === "VISIT" ? "Visita agendada para el jueves a las 9:00 a. m." : null,
+        createdAt: day(-ago, 9),
+      },
+    });
+  }
 
   console.log(`Seed listo. Contraseña de todas las cuentas: ${PASSWORD}`);
 }

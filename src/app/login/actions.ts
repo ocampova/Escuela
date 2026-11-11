@@ -15,7 +15,10 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
   if (!email || !password) return { error: "Escriba su correo y su contraseña.", email };
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (user && user.active && !user.passwordHash) {
+    return { error: "Su cuenta todavía no está activada. Use el enlace de invitación que le envió la escuela.", email };
+  }
+  if (!user || !user.active || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
     return { error: "El correo o la contraseña no coinciden. Revise e intente de nuevo.", email };
   }
 

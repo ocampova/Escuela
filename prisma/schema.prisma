@@ -27,6 +27,20 @@ enum AttendanceStatus {
   EXCUSED
 }
 
+enum TokenPurpose {
+  INVITE
+  RESET
+}
+
+enum ApplicantStatus {
+  NEW
+  CONTACTED
+  VISIT
+  ACCEPTED
+  ENROLLED
+  REJECTED
+}
+
 enum PaymentMethod {
   BANCO_POPULAR
   SINPE
@@ -43,6 +57,7 @@ model School {
   createdAt DateTime @default(now())
 
   users         User[]
+  applicants    Applicant[]
   schoolYears   SchoolYear[]
   levels        Level[]
   announcements Announcement[]
@@ -58,9 +73,11 @@ model User {
   name         String
   email        String   @unique
   phone        String?
-  passwordHash String
+  passwordHash String?
+  active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 
+  tokens          AuthToken[]
   guardianOf      StudentGuardian[]
   teacherOf       Section[]          @relation("SectionTeacher")
   announcements   Announcement[]
@@ -97,7 +114,8 @@ model Grade {
   level    Level     @relation(fields: [levelId], references: [id])
   name     String
   order    Int
-  sections Section[]
+  sections   Section[]
+  applicants Applicant[]
 }
 
 model Section {
@@ -253,4 +271,54 @@ model Payment {
   loggedById  String?
   loggedBy    User?         @relation(fields: [loggedById], references: [id])
   createdAt   DateTime      @default(now())
+}
+
+model AuthToken {
+  id        String       @id @default(cuid())
+  tokenHash String       @unique
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   TokenPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+}
+
+model Applicant {
+  id               String              @id @default(cuid())
+  schoolId         String
+  school           School              @relation(fields: [schoolId], references: [id])
+  status           ApplicantStatus     @default(NEW)
+  gradeId          String?
+  grade            Grade?              @relation(fields: [gradeId], references: [id])
+  forYear          String
+  childFirstName   String
+  childLastName    String
+  childIdNumber    String?
+  childBirthDate   DateTime            @db.Date
+  allergies        String?
+  previousSchool   String?
+  guardianName     String
+  guardianIdNumber String?
+  guardianEmail    String
+  guardianPhone    String
+  relationship     String
+  message          String?
+  staffNotes       String?
+  studentId        String?             @unique
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  documents        ApplicantDocument[]
+}
+
+model ApplicantDocument {
+  id          String    @id @default(cuid())
+  applicantId String
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  kind        String
+  filename    String
+  mimeType    String
+  size        Int
+  data        Bytes
+  createdAt   DateTime  @default(now())
 }
