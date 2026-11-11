@@ -6,6 +6,8 @@ import { eventFilter, guardianStudents } from "@/lib/queries";
 import { capitalize, dateTimeLabel, dayKey, gradeSectionName, timeLabel } from "@/lib/format";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { EventDateTile, KIND_LABEL } from "@/components/event-tile";
+import { CalendarSubscribe } from "@/components/calendar-subscribe";
+import { calendarLinks, calendarToken } from "@/lib/ics";
 
 export const metadata: Metadata = { title: "Calendario" };
 
@@ -19,6 +21,7 @@ export default async function FamilyCalendar() {
     include: { section: { include: { grade: true } }, level: true },
     orderBy: { startsAt: "asc" },
   });
+  const links = calendarLinks(await calendarToken(user.id));
 
   const months = new Map<string, typeof events>();
   for (const e of events) {
@@ -29,7 +32,8 @@ export default async function FamilyCalendar() {
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-semibold">Calendario</h1>
-      <p className="mt-1 text-sm text-ink-2">Actividades, reuniones y fechas de pago de sus hijos.</p>
+      <p className="mt-1 text-sm text-ink-2">Actividades, reuniones y fechas importantes de sus hijos.</p>
+      <CalendarSubscribe links={links} className="mt-5" />
       {events.length === 0 && (
         <Card className="mt-5">
           <EmptyState icon={<CalendarDays className="size-5" />} title="No hay eventos próximos">

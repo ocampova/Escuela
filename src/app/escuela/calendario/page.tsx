@@ -6,6 +6,8 @@ import { capitalize, dateTimeLabel, dayKey, gradeSectionName, timeLabel, todayKe
 import { Badge, Card, PageHeader, SectionHeading } from "@/components/ui";
 import { EventDateTile, KIND_LABEL } from "@/components/event-tile";
 import { EventForm } from "./event-form";
+import { CalendarSubscribe } from "@/components/calendar-subscribe";
+import { calendarLinks, calendarToken } from "@/lib/ics";
 
 export const metadata: Metadata = { title: "Calendario" };
 
@@ -21,6 +23,7 @@ export default async function StaffCalendar() {
     include: { level: true, section: { include: { grade: true } } },
     orderBy: { startsAt: "asc" },
   });
+  const links = calendarLinks(await calendarToken(user.id));
   const months = new Map<string, typeof events>();
   for (const e of events) {
     const k = dayKey(e.startsAt).slice(0, 7);
@@ -63,10 +66,13 @@ export default async function StaffCalendar() {
           ))}
         </div>
         <aside>
-          <Card className="p-5 lg:sticky lg:top-8">
-            <h2 className="mb-4 font-semibold">Agregar evento</h2>
-            <EventForm targets={targets} today={todayKey()} />
-          </Card>
+          <div className="space-y-4 lg:sticky lg:top-8">
+            <Card className="p-5">
+              <h2 className="mb-4 font-semibold">Agregar evento</h2>
+              <EventForm targets={targets} today={todayKey()} />
+            </Card>
+            <CalendarSubscribe links={links} />
+          </div>
         </aside>
       </div>
     </div>
