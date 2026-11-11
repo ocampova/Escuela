@@ -74,8 +74,8 @@ export default async function ProfilePage() {
               <label className="flex items-start gap-3 text-sm">
                 <input type="checkbox" name="emailReceipts" defaultChecked={user.emailReceipts} className="mt-0.5 size-4" />
                 <span>
-                  <span className="block font-medium">Recibos de pago</span>
-                  <span className="text-ink-2">Cada vez que la escuela aplica un pago.</span>
+                  <span className="block font-medium">Recibos y recordatorios de pago</span>
+                  <span className="text-ink-2">Cuando la escuela aplica un pago y antes de que venza una mensualidad.</span>
                 </span>
               </label>
             </fieldset>

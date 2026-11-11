@@ -348,3 +348,21 @@ export async function rejectReport(_prev: FormState, form: FormData): Promise<Fo
   revalidatePath("/familia", "layout");
   redirect("/escuela/cobros?revisado=rechazado");
 }
+
+/* ---------- Recordatorios de cobro ---------- */
+
+export async function sendRemindersNow(): Promise<FormState> {
+  const user = await requireStaff();
+  if (!isManager(user)) return { error: "Solo Dirección y Secretaría envían recordatorios." };
+  const { runPaymentReminders } = await import("@/lib/reminders");
+  const r = await runPaymentReminders({ schoolId: user.schoolId, force: true });
+  if (r.families === 0) return { ok: r.skipped ? "Esas familias ya recibieron un recordatorio hoy." : "No hay familias con montos vencidos ni por vencer en los próximos 3 días." };
+  return { ok: `Recordatorio enviado a ${r.families} ${r.families === 1 ? "familia" : "familias"} (${r.overdue} cobros vencidos, ${r.soon} por vencer)${r.emails ? `, ${r.emails} por correo` : ""}.` };
+}
+
+export async function setReminders(enabled: boolean) {
+  const user = await requireStaff();
+  if (user.role !== "ADMIN") throw new Error("Solo Dirección cambia esta opción.");
+  await prisma.school.update({ where: { id: user.schoolId }, data: { remindersEnabled: enabled } });
+  revalidatePath("/escuela", "layout");
+}

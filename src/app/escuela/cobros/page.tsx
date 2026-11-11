@@ -11,6 +11,7 @@ import { ActionForm } from "@/components/action-form";
 import { Avatar, Badge, Card, Field, PageHeader, SectionHeading, cx, inputClass } from "@/components/ui";
 import { approveReport, chargeConcept, rejectReport } from "../actions";
 import { MonthlyChargesForm, PaymentForm } from "./payment-forms";
+import { RemindersCard } from "./reminders-card";
 
 export const metadata: Metadata = { title: "Cobros" };
 
@@ -43,6 +44,7 @@ export default async function ChargesPage({ searchParams }: { searchParams: Prom
   const totalOverdue = overdueRows.reduce((a, r) => a + r.overdue, 0);
   const totalPending = pendingRows.reduce((a, r) => a + r.balance, 0);
   const today = todayKey();
+  const sentToday = await prisma.reminderLog.count({ where: { day: new Date(today), guardianId: { in: (await prisma.user.findMany({ where: { schoolId: user.schoolId, role: "GUARDIAN" }, select: { id: true } })).map((u) => u.id) } } });
 
   const tabs = [
     { key: undefined, label: "Todos", n: rows.length },
@@ -200,6 +202,7 @@ export default async function ChargesPage({ searchParams }: { searchParams: Prom
             <p className="mb-4 text-sm text-ink-2">Crea el cargo de mensualidad para todos los alumnos. No duplica cargos ya creados.</p>
             <MonthlyChargesForm month={today.slice(0, 7)} />
           </Card>
+          <RemindersCard enabled={user.school.remindersEnabled} canToggle={user.role === "ADMIN"} sentToday={sentToday} />
           <Card className="p-5">
             <h2 className="mb-1 font-semibold">Cargar un cobro</h2>
             <p className="mb-4 text-sm text-ink-2">Materiales, robótica u otro concepto, a todos los alumnos del nivel que corresponde.</p>

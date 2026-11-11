@@ -88,6 +88,8 @@ model School {
   messageHours      String?
   /// Chat familia ↔ escuela dentro de la plataforma (la escuela puede apagarlo si prefiere WhatsApp)
   messagingEnabled  Boolean @default(true)
+  /// Recordatorios automáticos de cobro (3 días antes y días 1, 8, 15 y 30 de atraso)
+  remindersEnabled  Boolean @default(true)
   createdAt DateTime @default(now())
 
   conversations Conversation[]
@@ -527,4 +529,16 @@ model PermissionResponse {
   respondedAt    DateTime         @default(now())
 
   @@id([announcementId, studentId])
+}
+
+/// Registro de recordatorios enviados, para no repetirlos el mismo día.
+model ReminderLog {
+  id         String   @id @default(cuid())
+  guardianId String
+  kind       String
+  day        DateTime @db.Date
+  detail     String?
+  createdAt  DateTime @default(now())
+
+  @@unique([guardianId, kind, day])
 }

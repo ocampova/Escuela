@@ -35,6 +35,11 @@ A web platform that works on both phone and computer, for managing the school's 
 - **Parent profile:** email, phone, password, email preferences and photo authorization.
 - **Emails (Resend):** invitations, password reset, notices and permissions, receipts and enrollment confirmations, with a template carrying the SCS identity. Setup guide in [docs/CORREO.md](docs/CORREO.md).
 
+## Reports and reminders
+
+- **Reports (Excel):** monthly attendance per section (one column per school day, P/T/A/J and % attendance, one sheet per section; teachers only for their own sections), student list with guardians and health data, balances and overdue amounts, and payments for the month with receipt number. Under School › Reportes.
+- **Payment reminders:** notification and email 3 days before the due date and on days 1, 8, 15 and 30 of delay, one message per family, never repeated on the same day. Manual "Enviar ahora" button and on/off switch in Cobros. Daily schedule: [docs/RECORDATORIOS.md](docs/RECORDATORIOS.md).
+
 ## Real school data (2027 brochures)
 
 - Levels: **Preescolar** (Kinder, Preparatoria) and **Primaria** I and II Ciclo (1st to 6th grade, bilingual), each with its own schedule, phones and campus address.

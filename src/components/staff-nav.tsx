@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, ClipboardCheck, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
+import { Bell, CalendarDays, ClipboardCheck, FileSpreadsheet, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
 import { cx } from "./ui";
 
 const ITEMS = [
@@ -13,6 +13,7 @@ const ITEMS = [
   { href: "/escuela/alumnos", label: "Alumnos", icon: Users },
   { href: "/escuela/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/escuela/cobros", label: "Cobros", icon: Wallet, managersOnly: true },
+  { href: "/escuela/reportes", label: "Reportes", icon: FileSpreadsheet },
   { href: "/escuela/matricula", label: "Matrícula", icon: Inbox, managersOnly: true },
   { href: "/escuela/configuracion", label: "Configuración", icon: Settings, managersOnly: true },
 ];
