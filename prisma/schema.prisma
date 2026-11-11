@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  TEACHER
+  GUARDIAN
+}
+
+enum Audience {
+  SCHOOL
+  LEVEL
+  SECTION
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum PaymentMethod {
+  BANCO_POPULAR
+  SINPE
+  TRANSFER
+  CASH
+}
+
+model School {
+  id        String   @id @default(cuid())
+  name      String
+  shortName String
+  city      String
+  currency  String   @default("CRC")
+  createdAt DateTime @default(now())
+
+  users         User[]
+  schoolYears   SchoolYear[]
+  levels        Level[]
+  announcements Announcement[]
+  events        Event[]
+  feeConcepts   FeeConcept[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id])
+  role         Role
+  name         String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  guardianOf      StudentGuardian[]
+  teacherOf       Section[]          @relation("SectionTeacher")
+  announcements   Announcement[]
+  reads           AnnouncementRead[]
+  attendanceTaken Attendance[]
+  paymentsLogged  Payment[]
+}
+
+model SchoolYear {
+  id       String    @id @default(cuid())
+  schoolId String
+  school   School    @relation(fields: [schoolId], references: [id])
+  name     String
+  startsOn DateTime  @db.Date
+  endsOn   DateTime  @db.Date
+  active   Boolean   @default(false)
+  sections Section[]
+}
+
+model Level {
+  id            String         @id @default(cuid())
+  schoolId      String
+  school        School         @relation(fields: [schoolId], references: [id])
+  name          String
+  order         Int
+  grades        Grade[]
+  announcements Announcement[]
+  events        Event[]
+}
+
+model Grade {
+  id       String    @id @default(cuid())
+  levelId  String
+  level    Level     @relation(fields: [levelId], references: [id])
+  name     String
+  order    Int
+  sections Section[]
+}
+
+model Section {
+  id            String         @id @default(cuid())
+  gradeId       String
+  grade         Grade          @relation(fields: [gradeId], references: [id])
+  schoolYearId  String
+  schoolYear    SchoolYear     @relation(fields: [schoolYearId], references: [id])
+  name          String
+  color         String         @default("green")
+  teacherId     String?
+  teacher       User?          @relation("SectionTeacher", fields: [teacherId], references: [id])
+  students      Student[]
+  announcements Announcement[]
+  events        Event[]
+}
+
+model Student {
+  id           String   @id @default(cuid())
+  sectionId    String
+  section      Section  @relation(fields: [sectionId], references: [id])
+  firstName    String
+  lastName     String
+  idNumber     String?
+  birthDate    DateTime @db.Date
+  bloodType    String?
+  allergies    String?
+  medicalNotes String?
+  createdAt    DateTime @default(now())
+
+  guardians  StudentGuardian[]
+  pickups    AuthorizedPickup[]
+  attendance Attendance[]
+  charges    Charge[]
+  payments   Payment[]
+}
+
+model StudentGuardian {
+  studentId    String
+  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relationship String
+  isPrimary    Boolean @default(false)
+
+  @@id([studentId, userId])
+}
+
+model AuthorizedPickup {
+  id           String  @id @default(cuid())
+  studentId    String
+  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  name         String
+  idNumber     String
+  relationship String
+  phone        String?
+}
+
+model Announcement {
+  id          String             @id @default(cuid())
+  schoolId    String
+  school      School             @relation(fields: [schoolId], references: [id])
+  authorId    String
+  author      User               @relation(fields: [authorId], references: [id])
+  title       String
+  body        String
+  audience    Audience
+  levelId     String?
+  level       Level?             @relation(fields: [levelId], references: [id])
+  sectionId   String?
+  section     Section?           @relation(fields: [sectionId], references: [id])
+  requiresAck Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  reads       AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now())
+  acknowledgedAt DateTime?
+
+  @@id([announcementId, userId])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id])
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  allDay      Boolean  @default(false)
+  kind        String   @default("evento")
+  audience    Audience @default(SCHOOL)
+  levelId     String?
+  level       Level?   @relation(fields: [levelId], references: [id])
+  sectionId   String?
+  section     Section? @relation(fields: [sectionId], references: [id])
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  studentId    String
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date         DateTime         @db.Date
+  status       AttendanceStatus
+  note         String?
+  recordedById String?
+  recordedBy   User?            @relation(fields: [recordedById], references: [id])
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([studentId, date])
+}
+
+model FeeConcept {
+  id            String   @id @default(cuid())
+  schoolId      String
+  school        School   @relation(fields: [schoolId], references: [id])
+  name          String
+  defaultAmount Int
+  recurring     Boolean  @default(false)
+  charges       Charge[]
+}
+
+model Charge {
+  id          String      @id @default(cuid())
+  studentId   String
+  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  conceptId   String?
+  concept     FeeConcept? @relation(fields: [conceptId], references: [id])
+  description String
+  period      String?
+  amount      Int
+  dueDate     DateTime    @db.Date
+  createdAt   DateTime    @default(now())
+
+  @@unique([studentId, conceptId, period])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  studentId   String
+  student     Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount      Int
+  method      PaymentMethod
+  reference   String?
+  paidAt      DateTime      @db.Date
+  note        String?
+  loggedById  String?
+  loggedBy    User?         @relation(fields: [loggedById], references: [id])
+  createdAt   DateTime      @default(now())
+}

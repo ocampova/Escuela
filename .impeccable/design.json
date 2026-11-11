@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-11T00:07:24.005261Z",
+  "title": "Design System: San Cayetano School",
+  "extensions": {
+    "colorMeta": {
+      "brand": {
+        "role": "primary",
+        "displayName": "Bosque SCS",
+        "canonical": "#12463a",
+        "tonalRamp": [
+          "#0a2a22",
+          "#0f3d32",
+          "#12463a",
+          "#1f5c4d",
+          "#3d7a6a",
+          "#7aa89a",
+          "#bcd6cd",
+          "#e7f0ec"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Lienzo",
+        "canonical": "#f5f7f6",
+        "tonalRamp": [
+          "#16231e",
+          "#2c3a34",
+          "#44554d",
+          "#5f6f68",
+          "#9aa8a1",
+          "#cbd5d0",
+          "#e2e8e5",
+          "#f5f7f6"
+        ]
+      },
+      "scs-orange": {
+        "role": "secondary",
+        "displayName": "Letra naranja SCS",
+        "canonical": "#d9581f",
+        "tonalRamp": [
+          "#5a2209",
+          "#8f3510",
+          "#b84819",
+          "#d9581f",
+          "#e98457",
+          "#f3b493",
+          "#f8d6c4",
+          "#fdeee6"
+        ]
+      },
+      "scs-green": {
+        "role": "secondary",
+        "displayName": "Letra verde SCS",
+        "canonical": "#3b8f31",
+        "tonalRamp": [
+          "#163a12",
+          "#245a1d",
+          "#2f7527",
+          "#3b8f31",
+          "#64ad5a",
+          "#9ccb94",
+          "#cfe7c9",
+          "#eaf5e7"
+        ]
+      },
+      "scs-blue": {
+        "role": "secondary",
+        "displayName": "Letra azul SCS",
+        "canonical": "#1f7fb8",
+        "tonalRamp": [
+          "#0c3048",
+          "#134d70",
+          "#196894",
+          "#1f7fb8",
+          "#4f9fd0",
+          "#8fc3e4",
+          "#c6e2f3",
+          "#e5f2fa"
+        ]
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 1px 2px rgb(18 70 58 / 0.06), 0 4px 12px -4px rgb(18 70 58 / 0.08)",
+        "purpose": "Resting cards on the canvas."
+      },
+      {
+        "name": "pop",
+        "value": "0 4px 8px -2px rgb(18 70 58 / 0.1), 0 16px 32px -8px rgb(18 70 58 / 0.18)",
+        "purpose": "Hovered link cards."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Enterado confirmation and inline reveals, 220ms."
+      },
+      {
+        "name": "state",
+        "value": "150ms",
+        "purpose": "Hover, press, colour transitions."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action.",
+      "html": "<button class=\"ds-btn-primary\">Enviar aviso</button>",
+      "css": ".ds-btn-primary{background:var(--color-brand,#12463a);color:#fff;height:40px;padding:0 16px;border:0;border-radius:8px;font:500 14px Inter,system-ui,sans-serif;box-shadow:0 1px 2px rgb(18 70 58/.25);transition:background .15s,transform .15s}.ds-btn-primary:hover{background:#0d382e}.ds-btn-primary:active{transform:scale(.98)}.ds-btn-primary:focus-visible{outline:2px solid #12463a;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary action.",
+      "html": "<button class=\"ds-btn-secondary\">Pasar lista</button>",
+      "css": ".ds-btn-secondary{background:#fff;color:#16231e;height:40px;padding:0 16px;border:0;border-radius:8px;box-shadow:inset 0 0 0 1px #cbd5d0;font:500 14px Inter,system-ui,sans-serif;transition:background .15s}.ds-btn-secondary:hover{background:#f5f7f6}.ds-btn-secondary:focus-visible{outline:2px solid #12463a;outline-offset:2px}"
+    },
+    {
+      "name": "Section Chip",
+      "kind": "chip",
+      "refersTo": "chip-section-orange",
+      "description": "Section identity.",
+      "html": "<span class=\"ds-chip\"><i></i>Primer grado A</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px;border-radius:9999px;background:#fdeee6;color:#8f3510;box-shadow:inset 0 0 0 1px #f8d6c4;font:500 12px Inter,system-ui,sans-serif}.ds-chip i{width:6px;height:6px;border-radius:50%;background:#d9581f}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White container on canvas.",
+      "html": "<div class=\"ds-card\"><b>Reunión de padres</b><p>Jueves · 5:00 p. m.</p></div>",
+      "css": ".ds-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 2px rgb(18 70 58/.06),0 4px 12px -4px rgb(18 70 58/.08);font:15px Inter,system-ui,sans-serif;color:#16231e}.ds-card p{margin:4px 0 0;color:#44554d;font-size:14px}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field.",
+      "html": "<input class=\"ds-input\" placeholder=\"Correo electrónico\">",
+      "css": ".ds-input{background:#fff;border:0;border-radius:8px;padding:10px 12px;box-shadow:inset 0 0 0 1px #cbd5d0;font:15px Inter,system-ui,sans-serif;color:#16231e}.ds-input:focus{outline:0;box-shadow:inset 0 0 0 2px #12463a}"
+    },
+    {
+      "name": "Enterado",
+      "kind": "custom",
+      "description": "Notice acknowledgment.",
+      "html": "<button class=\"ds-ack\">✓ Enterado</button>",
+      "css": ".ds-ack{background:#12463a;color:#fff;height:36px;padding:0 14px;border:0;border-radius:8px;font:500 14px Inter,system-ui,sans-serif;transition:transform .15s}.ds-ack:active{transform:scale(.97)}.ds-ack:focus-visible{outline:2px solid #12463a;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "El cuaderno bien llevado",
+    "overview": "The category standard played straight, at the craft bar of Brightwheel and ClassDojo. Identity lives in precise details: the logo's ring green, the logo's letter colours as section identity, and the Enterado confirmation.",
+    "keyCharacteristics": [
+      "Cool green-tinted canvas, white borderless cards.",
+      "One accent: SCS forest green.",
+      "Letter colours only for section/child identity.",
+      "Red and amber only for states that need action.",
+      "One sans (Inter), tabular numerals."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "Green is the only action colour. Letter colours never mean click here.",
+        "section": "colors"
+      },
+      {
+        "name": "The Earned Alarm Rule",
+        "body": "Red and amber appear only where they carry a state a person must act on.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Every amount and count uses tabular-nums. Colones written ₡185 000.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do put what needs action first (pending notices, amount due), then today, then later.",
+      "Do label demo data as fictional.",
+      "Do use lucide icons at 1.75 stroke, 2.25 when active."
+    ],
+    "donts": [
+      "Don't put an eyebrow or date kicker above headings; the date goes below the greeting.",
+      "Don't use hero-metric tiles, gradients or decorative colour.",
+      "Don't use logo letter colours for actions or alerts.",
+      "Don't show times the data does not truly represent."
+    ]
+  }
+}

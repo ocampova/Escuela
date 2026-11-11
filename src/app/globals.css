@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Neutrales con un leve tinte del verde SCS */
+  --color-ink: #16231e;
+  --color-ink-2: #44554d;
+  --color-ink-3: #5f6f68;
+  --color-line: #e2e8e5;
+  --color-line-strong: #cbd5d0;
+  --color-canvas: #f5f7f6;
+  --color-surface: #ffffff;
+
+  /* Verde del aro del logo */
+  --color-brand: #12463a;
+  --color-brand-hover: #0d382e;
+  --color-brand-soft: #e7f0ec;
+  --color-brand-ink: #0f3d32;
+
+  /* Letras del logo: identidad de secciones */
+  --color-scs-orange: #d9581f;
+  --color-scs-orange-soft: #fdeee6;
+  --color-scs-orange-ink: #8f3510;
+  --color-scs-green: #3b8f31;
+  --color-scs-green-soft: #eaf5e7;
+  --color-scs-green-ink: #245a1d;
+  --color-scs-blue: #1f7fb8;
+  --color-scs-blue-soft: #e5f2fa;
+  --color-scs-blue-ink: #134d70;
+
+  /* Estados */
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-warn: #a15c07;
+  --color-warn-soft: #fef4e2;
+  --color-ok: #1d7044;
+  --color-ok-soft: #e6f4ec;
+
+  --shadow-card: 0 1px 2px rgb(18 70 58 / 0.06), 0 4px 12px -4px rgb(18 70 58 / 0.08);
+  --shadow-pop: 0 4px 8px -2px rgb(18 70 58 / 0.1), 0 16px 32px -8px rgb(18 70 58 / 0.18);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  input,
+  select,
+  textarea {
+    caret-color: var(--color-brand);
+    accent-color: var(--color-brand);
+  }
+  a {
+    text-underline-offset: 3px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+  * {
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@keyframes ack-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ack-in {
+  animation: ack-in 220ms var(--ease-out-expo);
+}

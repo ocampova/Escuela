@@ -202,7 +202,7 @@ expedientes listos para el inicio de clases** y mostrar la propuesta durante el 
 | Fase | Contenido | Duración estimada* |
 |---|---|---|
 | **0. Validación** | Reunión con la dirección: confirmar necesidades, niveles, cupos, forma de cobro e idioma | 1 semana |
-| **1. Prototipo para mostrar** | Prototipo navegable con logo y colores SCS y datos de ejemplo | 1–2 semanas |
+| **1. Prototipo para mostrar** ✅ | Hecho: app Next.js + PostgreSQL con vista de familias (inicio, avisos con Enterado, calendario, estado de cuenta, ficha del hijo) y de escuela (panel, asistencia, avisos con seguimiento, alumnos, calendario, cobros) | 1–2 semanas |
 | **2. Base** | Autenticación, roles, estructura escolar, alumnos y familias, matrícula en línea | 2–3 semanas |
 | **3. Comunicación** | Avisos con confirmación, mensajería, notificaciones, calendario | 2–3 semanas |
 | **4. Vida diaria** | Asistencia, reporte diario, muro de fotos, recogida | 2 semanas |
