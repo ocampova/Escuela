@@ -87,7 +87,7 @@ export default async function StaffHome() {
         </div>
       </div>
 
-      <PushPrompt vapidKey={vapidPublicKey()} className="mb-8 max-w-xl" />
+      <PushPrompt vapidKey={await vapidPublicKey()} className="mb-8 max-w-xl" />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="min-w-0 space-y-8">

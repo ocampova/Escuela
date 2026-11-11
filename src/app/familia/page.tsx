@@ -79,7 +79,7 @@ export default async function FamilyHome() {
         </section>
       </div>
 
-      <PushPrompt vapidKey={vapidPublicKey()} />
+      <PushPrompt vapidKey={await vapidPublicKey()} />
 
       {/* Pendiente */}
       {(pending.length > 0 || due > 0) && (

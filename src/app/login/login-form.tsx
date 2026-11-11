@@ -11,7 +11,7 @@ const DEMO = [
   { label: "Docente", email: "schaves@demo.scs.cr", who: "Sofía Chaves, Preparatoria A" },
 ];
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({ next, demo = false }: { next?: string; demo?: boolean }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
 
   function fill(email: string) {
@@ -45,6 +45,7 @@ export function LoginForm({ next }: { next?: string }) {
         </p>
       </form>
 
+      {demo && (
       <div className="mt-8 border-t border-line pt-6">
         <p className="text-sm font-medium text-ink">Entrar con una cuenta de demostración</p>
         <div className="mt-3 grid gap-2">
@@ -65,6 +66,7 @@ export function LoginForm({ next }: { next?: string }) {
           ))}
         </div>
       </div>
+      )}
     </>
   );
 }

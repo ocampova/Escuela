@@ -157,7 +157,11 @@ export function Field({ label, hint, children, htmlFor }: { label: string; hint?
   );
 }
 
+/** Modo demostración: datos ficticios y cuentas de prueba (variable SEED_DEMO o entorno local). */
+export const isDemo = () => process.env.SEED_DEMO === "true" || process.env.NODE_ENV !== "production";
+
 export function DemoNotice({ className }: { className?: string }) {
+  if (!isDemo()) return null;
   return (
     <p className={cx("text-xs text-ink-3", className)}>
       Prototipo con datos de demostración. Las personas, cédulas y montos son ficticios.
