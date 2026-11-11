@@ -12,6 +12,8 @@ const sectionBand: Record<string, string> = {
   blue: "bg-scs-blue-strong [--bleed-color:var(--color-scs-blue-strong)]",
 };
 import { AttendanceStrip } from "@/components/attendance-strip";
+import { DailyReportView, PickupLine } from "@/components/daily-report";
+import { capitalize } from "@/lib/format";
 
 export default async function ChildPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ausencia?: string }> }) {
   const { id } = await params;
@@ -25,9 +27,21 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       guardians: { include: { user: true } },
       attendance: { orderBy: { date: "desc" }, take: 20 },
       absenceNotices: { where: { dateTo: { gte: keyToDate(todayKey()) } }, orderBy: { dateFrom: "asc" } },
+      dailyReports: { where: { sentAt: { not: null } }, orderBy: { day: "desc" }, take: 5 },
+      pickupLogs: { orderBy: { day: "desc" }, take: 5 },
     },
   });
   if (!s) notFound();
+  const albums = await prisma.album.findMany({
+    where: { sectionId: s.sectionId },
+    include: { photos: { select: { id: true }, orderBy: { order: "asc" }, take: 1 }, _count: { select: { photos: true } } },
+    orderBy: [{ day: "desc" }, { createdAt: "desc" }],
+    take: 3,
+  });
+  const today = keyToDate(todayKey());
+  const pickupFor = (day: Date) => s.pickupLogs.find((p) => p.day.getTime() === day.getTime());
+  const todayPickup = pickupFor(today);
+  const lastReport = s.dailyReports[0];
 
   const counts = { PRESENT: 0, LATE: 0, ABSENT: 0, EXCUSED: 0 } as Record<string, number>;
   s.attendance.forEach((a) => counts[a.status]++);
@@ -76,6 +90,28 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       )}
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8">
+      {(lastReport || todayPickup) && (
+        <section>
+          <SectionHeading title={lastReport && lastReport.day.getTime() !== today.getTime() ? `Reporte del ${dateLabel(lastReport.day, { weekday: "long", day: "numeric", month: "short" })}` : "Hoy en clase"} />
+          <Card className="p-4">
+            {lastReport ? <DailyReportView report={lastReport} pickup={pickupFor(lastReport.day)} /> : todayPickup && <PickupLine pickup={todayPickup} />}
+          </Card>
+          {s.dailyReports.length > 1 && (
+            <details className="group mt-2">
+              <summary className="cursor-pointer list-none text-sm font-medium text-brand hover:underline">Días anteriores</summary>
+              <div className="mt-2 space-y-3">
+                {s.dailyReports.slice(1).map((r) => (
+                  <Card key={r.id} tone="flat" className="p-4">
+                    <p className="mb-2 text-sm font-medium">{capitalize(dateLabel(r.day, { weekday: "long", day: "numeric", month: "short" }))}</p>
+                    <DailyReportView report={r} pickup={pickupFor(r.day)} compact />
+                  </Card>
+                ))}
+              </div>
+            </details>
+          )}
+        </section>
+      )}
+
       <section>
         <SectionHeading title="Asistencia de las últimas 4 semanas" />
         <Card className="p-4">
@@ -122,6 +158,35 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
 
         </div>
         <div className="min-w-0 space-y-8">
+      {albums.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Fotos de la sección"
+            action={
+              <Link href="/familia/fotos" className="text-sm font-medium text-brand hover:underline">
+                Ver todas
+              </Link>
+            }
+          />
+          <ul className="grid grid-cols-3 gap-2">
+            {albums.map((a) => (
+              <li key={a.id}>
+                <Link href={`/familia/fotos/${a.id}`} className="group block">
+                  <div className="aspect-square overflow-hidden rounded-xl bg-canvas">
+                    {a.photos[0] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={`/fotos/${a.photos[0].id}`} alt="" loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
+                    )}
+                  </div>
+                  <p className="mt-1 truncate text-xs font-medium">{a.title}</p>
+                  <p className="text-xs text-ink-3">{a._count.photos} fotos</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section>
         <SectionHeading title="Personas autorizadas para recoger" />
         <Card className="divide-y divide-line">

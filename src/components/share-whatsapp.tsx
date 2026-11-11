@@ -22,6 +22,7 @@ export function ShareWhatsApp({
   size = "md",
   className,
   label = "Compartir en WhatsApp",
+  cta,
 }: {
   title: string;
   body: string;
@@ -29,17 +30,21 @@ export function ShareWhatsApp({
   size?: "sm" | "md" | "lg";
   className?: string;
   label?: string;
+  /** Texto antes del enlace; por defecto, el de los avisos. */
+  cta?: string;
 }) {
   const [href, setHref] = useState<string | null>(null);
   useEffect(() => {
     const link = window.location.origin + path;
     const summary = body.replace(/\s+/g, " ").trim();
     const short = summary.length > 220 ? summary.slice(0, 217).trimEnd() + "…" : summary;
-    const text = short
+    const text = cta
+      ? `*${title}*${short ? `\n\n${short}` : ""}\n\n👉 ${cta}\n${link}`
+      : short
       ? `*${title}*\n\n${short}\n\n👉 Lea el aviso completo y confirme que lo leyó aquí:\n${link}`
       : `*${title}*\n\n👉 Vea el aviso y confirme que lo leyó aquí:\n${link}`;
     setHref(`https://wa.me/?text=${encodeURIComponent(text)}`);
-  }, [title, body, path]);
+  }, [title, body, path, cta]);
 
   return (
     <a

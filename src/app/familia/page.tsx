@@ -10,6 +10,7 @@ import { EventDateTile } from "@/components/event-tile";
 import { PushPrompt } from "@/components/push-prompt";
 import { AnnouncementThumb } from "@/components/announcement-images";
 import { vapidPublicKey } from "@/lib/push";
+import { DailyReportView } from "@/components/daily-report";
 
 const ATT: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "neutral" }> = {
   PRESENT: { label: "Presente hoy", tone: "ok" },
@@ -24,7 +25,7 @@ export default async function FamilyHome() {
   const ids = students.map((s) => s.id);
   const today = keyToDate(todayKey());
 
-  const [anns, attendance, events, statements] = await Promise.all([
+  const [anns, attendance, events, statements, reports, pickups, albums] = await Promise.all([
     guardianAnnouncements(user, students),
     prisma.attendance.findMany({ where: { studentId: { in: ids }, date: today } }),
     prisma.event.findMany({
@@ -34,6 +35,14 @@ export default async function FamilyHome() {
       take: 4,
     }),
     statementFor(ids),
+    prisma.dailyReport.findMany({ where: { studentId: { in: ids }, day: today, sentAt: { not: null } } }),
+    prisma.pickupLog.findMany({ where: { studentId: { in: ids }, day: today } }),
+    prisma.album.findMany({
+      where: { sectionId: { in: students.map((s) => s.sectionId) }, day: { gte: new Date(today.getTime() - 14 * 86_400_000) } },
+      include: { photos: { select: { id: true }, orderBy: { order: "asc" }, take: 3 }, _count: { select: { photos: true } } },
+      orderBy: [{ day: "desc" }, { createdAt: "desc" }],
+      take: 2,
+    }),
   ]);
 
   const pending = anns.filter((a) => isPending(a, students));
@@ -165,6 +174,35 @@ export default async function FamilyHome() {
         </Card>
       )}
 
+      {/* Hoy en clase */}
+      {(reports.length > 0 || pickups.length > 0) && (
+        <section>
+          <SectionHeading title="Hoy en clase" />
+          <div className="space-y-3">
+            {students.map((s) => {
+              const r = reports.find((x) => x.studentId === s.id);
+              const p = pickups.find((x) => x.studentId === s.id);
+              if (!r && !p) return null;
+              return (
+                <Link key={s.id} href={`/familia/hijos/${s.id}`} className="block">
+                  <Card className="p-4 transition-shadow hover:shadow-pop">
+                    <div className="mb-3 flex items-center gap-2.5">
+                      <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={28} />
+                      <p className="font-medium">{s.firstName}</p>
+                    </div>
+                    {r ? (
+                      <DailyReportView report={r} pickup={p} />
+                    ) : (
+                      p && <DailyReportView report={{ day: today, mood: null, meal: null, participation: null, bathroom: null, note: null, activity: null }} pickup={p} />
+                    )}
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Avisos recientes */}
       {recent.length > 0 && (
         <section>
@@ -192,6 +230,37 @@ export default async function FamilyHome() {
 
         </div>
         <div className="min-w-0 space-y-8 lg:sticky lg:top-24">
+      {albums.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Fotos nuevas"
+            action={
+              <Link href="/familia/fotos" className="text-sm font-medium text-brand hover:underline">
+                Ver todas
+              </Link>
+            }
+          />
+          <div className="space-y-3">
+            {albums.map((a) => (
+              <Link key={a.id} href={`/familia/fotos/${a.id}`} className="block">
+                <Card tone="flat" className="p-3 transition-shadow hover:shadow-pop">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {a.photos.map((p) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={p.id} src={`/fotos/${p.id}`} alt="" loading="lazy" className="aspect-square w-full rounded-lg object-cover" />
+                    ))}
+                  </div>
+                  <p className="mt-2 truncate text-sm font-medium">{a.title}</p>
+                  <p className="text-xs text-ink-2">
+                    {relativeDay(a.day)} · {a._count.photos} fotos
+                  </p>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Próximos eventos */}
       <section>
         <SectionHeading

@@ -5,6 +5,7 @@
  */
 import { PrismaClient, AttendanceStatus, PaymentMethod } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { deflateSync } from "node:zlib";
 
 const prisma = new PrismaClient();
 const PASSWORD = "demo1234";
@@ -27,6 +28,47 @@ function day(offset: number, hour = 0, minute = 0) {
 function weekday(offset: number) {
   const dow = day(offset, 12).getUTCDay();
   return dow === 6 ? offset - 1 : dow === 0 ? offset + 1 : offset;
+}
+
+/** Ilustración PNG simple (sin fotos reales de niños): cielo, sol, colinas y figuras de colores. */
+function demoPicture(variant: number, w = 800, h = 600) {
+  const palettes = [
+    [[253, 238, 230], [217, 88, 31], [59, 143, 49], [31, 127, 184]],
+    [[229, 242, 250], [31, 127, 184], [217, 88, 31], [59, 143, 49]],
+    [[234, 245, 231], [59, 143, 49], [31, 127, 184], [217, 88, 31]],
+  ];
+  const [bg, a, b, c] = palettes[variant % 3];
+  const raw = Buffer.alloc((w * 3 + 1) * h);
+  const sunX = w * (0.2 + 0.15 * (variant % 4)), sunY = h * 0.25, sunR = h * 0.1;
+  for (let y = 0; y < h; y++) {
+    raw[y * (w * 3 + 1)] = 0;
+    for (let x = 0; x < w; x++) {
+      let col = bg;
+      const hill1 = h * 0.62 + Math.sin(x / (90 + variant * 7) + variant) * 40;
+      const hill2 = h * 0.75 + Math.cos(x / 120 + variant * 2) * 30;
+      if ((x - sunX) ** 2 + (y - sunY) ** 2 < sunR ** 2) col = a;
+      if (y > hill1) col = b;
+      if (y > hill2) col = c;
+      for (let k = 0; k < 3; k++) {
+        const fx = w * (0.3 + k * 0.2), fy = hill2 - 50;
+        if (Math.abs(x - fx) < 14 && y > fy && y < hill2) col = [255, 255, 255];
+        if ((x - fx) ** 2 + (y - fy + 18) ** 2 < 400) col = [255, 255, 255];
+      }
+      const o = y * (w * 3 + 1) + 1 + x * 3;
+      raw[o] = col[0]; raw[o + 1] = col[1]; raw[o + 2] = col[2];
+    }
+  }
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc32 = (buf: Buffer) => { let c = 0xffffffff; for (const byte of buf) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type: string, data: Buffer) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type), data]);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td));
+    return Buffer.concat([len, td, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+  return new Uint8Array(Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]));
 }
 
 const PRESCHOOL_MATERIALS = [
@@ -69,6 +111,9 @@ const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "
 
 async function main() {
   await prisma.$transaction([
+    prisma.dailyReport.deleteMany(),
+    prisma.pickupLog.deleteMany(),
+    prisma.album.deleteMany(),
     prisma.permissionResponse.deleteMany(),
     prisma.absenceNotice.deleteMany(),
     prisma.pushSubscription.deleteMany(),
@@ -547,6 +592,52 @@ async function main() {
   await prisma.user.updateMany({ where: { role: "GUARDIAN", passwordHash: { not: null } }, data: { privacyAcceptedAt: day(-30, 9) } });
   for (const st of await prisma.student.findMany({ select: { id: true } })) {
     await prisma.student.update({ where: { id: st.id }, data: { photoConsent: rand() < 0.85 } });
+  }
+
+  // Vida diaria: reportes de Preparatoria A (hoy y días anteriores), salidas y álbumes de fotos
+  const prepKids = await prisma.student.findMany({ where: { sectionId: sTransA.id }, include: { pickups: true, guardians: { include: { user: true } } }, orderBy: { firstName: "asc" } });
+  const moods = ["contento", "contento", "tranquilo", "contento", "cansado"];
+  const meals = ["todo", "todo", "mitad", "todo", "poco"];
+  const activities = [
+    "Conocimos los colores primarios y pintamos con témperas.",
+    "Contamos semillas del 1 al 10 y sembramos frijoles en un vaso.",
+    "Cuento de la tortuga y la liebre; dramatizamos la historia.",
+  ];
+  const dateOnly = (d: Date) => new Date(d.toISOString().slice(0, 10));
+  for (const [n, off] of [weekday(-2), weekday(-1), weekday(0)].entries()) {
+    const d = dateOnly(day(off, 12));
+    if (d > dateOnly(day(0, 12))) continue;
+    for (const [i, k] of prepKids.entries()) {
+      const r = (i + n) % 5;
+      await prisma.dailyReport.create({
+        data: {
+          studentId: k.id, day: d, mood: moods[r], meal: meals[r], participation: r === 4 ? "apoyo" : r % 2 ? "buena" : "muy-activa", bathroom: "normal",
+          note: k.firstName === "Mateo" && n === 2 ? "Hoy ayudó a repartir los materiales y estaba muy orgulloso. 😊" : null,
+          activity: activities[n], authorId: tSofia.id, sentAt: day(off, 11, 30),
+        },
+      });
+      if (n < 2) {
+        const p = k.pickups[0];
+        const g = k.guardians[0];
+        await prisma.pickupLog.create({
+          data: { studentId: k.id, day: d, at: day(off, 11, 50 + (i % 9)), personName: p && i % 3 === 0 ? p.name : g?.user.name ?? "Encargado", relation: p && i % 3 === 0 ? p.relationship : g?.relationship ?? null, kind: p && i % 3 === 0 ? "AUTHORIZED" : "GUARDIAN", staffId: tSofia.id },
+        });
+      }
+    }
+  }
+  const albums: [string, string, number, number, number][] = [
+    [sTransA.id, "Siembra de frijoles", weekday(-1), 6, 0],
+    [sTransA.id, "Pintamos con témperas", weekday(-2), 4, 1],
+    [sPrimero.id, "Feria de ciencias del aula", weekday(-3), 5, 2],
+  ];
+  for (const [sectionId, title, off, count, v] of albums) {
+    const teacher = sectionId === sTransA.id ? tSofia.id : tDaniel.id;
+    await prisma.album.create({
+      data: {
+        sectionId, title, day: dateOnly(day(off, 12)), authorId: teacher, createdAt: day(off, 13),
+        photos: { create: Array.from({ length: count }, (_, i) => { const data = demoPicture(v + i); return { mimeType: "image/png", size: data.length, data, order: i }; }) },
+      },
+    });
   }
 
   console.log(`Seed listo. Contraseña de todas las cuentas: ${PASSWORD}`);

@@ -135,6 +135,9 @@ model User {
   pushSubs        PushSubscription[]
   absenceNotices  AbsenceNotice[]
   permissionAnswers PermissionResponse[]
+  dailyReports    DailyReport[]
+  albums          Album[]
+  pickupLogs      PickupLog[]
   reportsReviewed PaymentReport[]    @relation("ReviewedPayments")
 }
 
@@ -188,6 +191,7 @@ model Section {
   students      Student[]
   announcements Announcement[]
   events        Event[]
+  albums        Album[]
 }
 
 model Student {
@@ -213,6 +217,8 @@ model Student {
   reports    PaymentReport[]
   conversations Conversation[]
   absenceNotices AbsenceNotice[]
+  dailyReports DailyReport[]
+  pickupLogs   PickupLog[]
   permissionAnswers PermissionResponse[]
 }
 
@@ -543,4 +549,67 @@ model ReminderLog {
   createdAt  DateTime @default(now())
 
   @@unique([guardianId, kind, day])
+}
+
+/// Reporte diario (preescolar): cómo le fue al niño hoy.
+model DailyReport {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  day       DateTime @db.Date
+  mood      String?
+  meal      String?
+  participation String?
+  /// "Hoy trabajamos": la actividad del día, igual para toda la sección
+  activity  String?
+  bathroom  String?
+  note      String?
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  /// Cuándo se notificó a la familia (null = guardado sin enviar)
+  sentAt    DateTime?
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, day])
+}
+
+/// Álbum de fotos privado de una sección.
+model Album {
+  id        String       @id @default(cuid())
+  sectionId String
+  section   Section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title     String
+  day       DateTime     @db.Date
+  authorId  String
+  author    User         @relation(fields: [authorId], references: [id])
+  createdAt DateTime     @default(now())
+  photos    AlbumPhoto[]
+}
+
+model AlbumPhoto {
+  id       String @id @default(cuid())
+  albumId  String
+  album    Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  mimeType String
+  size     Int
+  data     Bytes
+  order    Int    @default(0)
+}
+
+/// Registro de salida: quién recogió al alumno y a qué hora.
+model PickupLog {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  day        DateTime @db.Date
+  at         DateTime @default(now())
+  personName String
+  relation   String?
+  /// GUARDIAN = encargado con cuenta, AUTHORIZED = lista de autorizados, OTHER = no estaba en la lista
+  kind       String
+  note       String?
+  staffId    String
+  staff      User     @relation(fields: [staffId], references: [id])
+
+  @@unique([studentId, day])
 }

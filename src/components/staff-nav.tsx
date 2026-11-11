@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, ClipboardCheck, FileSpreadsheet, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
+import { Bell, CalendarDays, Sun, ClipboardCheck, FileSpreadsheet, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
 import { cx } from "./ui";
 
 const ITEMS = [
   { href: "/escuela", label: "Panel", icon: LayoutGrid, exact: true },
   { href: "/escuela/asistencia", label: "Asistencia", icon: ClipboardCheck },
+  { href: "/escuela/diario", label: "Vida diaria", icon: Sun, also: ["/escuela/fotos", "/escuela/salida"] },
   { href: "/escuela/mensajes", label: "Mensajes", icon: MessageCircle },
   { href: "/escuela/avisos", label: "Avisos", icon: Bell },
   { href: "/escuela/alumnos", label: "Alumnos", icon: Users },
@@ -25,7 +26,7 @@ export function StaffNav({ manager, variant, counts = {}, messaging = true }: { 
     <nav aria-label="Principal">
       <ul className={variant === "rail" ? "space-y-0.5" : "relative flex max-w-full gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]"}>
         {items.map((i) => {
-          const active = i.exact ? path === i.href : path.startsWith(i.href);
+          const active = i.exact ? path === i.href : [i.href, ...(("also" in i && i.also) || [])].some((h) => path.startsWith(h));
           const Icon = i.icon;
           return (
             <li key={i.href} className="shrink-0">
