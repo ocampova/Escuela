@@ -43,8 +43,9 @@ export function ButtonLink({
 
 /* ---------- Superficies ---------- */
 
-export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cx("rounded-xl bg-surface shadow-card", className)} {...props} />;
+/** `raised` para lo que pide acción; `flat` para listas de consulta (sin sombra, solo contorno). */
+export function Card({ className, tone = "raised", ...props }: ComponentProps<"div"> & { tone?: "raised" | "flat" }) {
+  return <div className={cx("rounded-xl bg-surface", tone === "raised" ? "shadow-card" : "ring-1 ring-line", className)} {...props} />;
 }
 
 export function SectionHeading({ title, action, className }: { title: string; action?: ReactNode; className?: string }) {

@@ -45,13 +45,13 @@ export default async function FamilyHome() {
   const weekday = dateTimeLabel(new Date(), { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="space-y-8">
-      <div className="-mx-4 -mt-5 bg-brand px-4 pt-5 pb-6 text-white">
-        <h1 className="text-2xl font-semibold">Hola, {firstName}</h1>
-        <p className="mt-1 text-sm text-white/75 first-letter:uppercase">{weekday}</p>
+    <div className="space-y-8 md:space-y-10">
+      <div className="full-bleed -mt-5 bg-brand pt-5 pb-6 text-white md:-mt-8 md:pt-8 md:pb-10">
+        <h1 className="text-[1.75rem] leading-tight font-semibold md:text-4xl">Hola, {firstName}</h1>
+        <p className="mt-1 text-sm text-white/75 first-letter:uppercase md:text-base">{weekday}</p>
 
         {/* Hijos */}
-        <section aria-label="Mis hijos" className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+        <section aria-label="Mis hijos" className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:mt-6 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
           {students.map((s) => {
             const att = attendance.find((a) => a.studentId === s.id);
             const st = att ? ATT[att.status] : null;
@@ -59,7 +59,7 @@ export default async function FamilyHome() {
               <Link
                 key={s.id}
                 href={`/familia/hijos/${s.id}`}
-                className="flex min-w-[80%] snap-start flex-col rounded-xl bg-surface text-ink shadow-pop transition-transform active:scale-[0.99] sm:min-w-[calc(50%-6px)]"
+                className="flex min-w-[80%] snap-start flex-col rounded-xl bg-surface text-ink shadow-pop transition-[transform,box-shadow] duration-200 ease-out active:scale-[0.99] sm:min-w-[calc(50%-6px)] md:min-w-0 md:hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-3 p-4">
                   <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={48} />
@@ -79,8 +79,10 @@ export default async function FamilyHome() {
         </section>
       </div>
 
-      <PushPrompt vapidKey={await vapidPublicKey()} />
+      <PushPrompt vapidKey={await vapidPublicKey()} className="lg:max-w-3xl" />
 
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-10">
+        <div className="min-w-0 space-y-8">
       {/* Pendiente */}
       {(pending.length > 0 || due > 0) && (
         <section>
@@ -139,6 +141,33 @@ export default async function FamilyHome() {
         </Card>
       )}
 
+      {/* Avisos recientes */}
+      {recent.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Avisos recientes"
+            action={
+              <Link href="/familia/avisos" className="text-sm font-medium text-brand hover:underline">
+                Ver todos
+              </Link>
+            }
+          />
+          <Card tone="flat" className="divide-y divide-line">
+            {recent.map((a) => (
+              <Link key={a.id} href={`/familia/avisos/${a.id}`} className="flex items-center gap-3 p-4 transition-colors hover:bg-canvas">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{a.title}</p>
+                  <p className="text-sm text-ink-2">{relativeDay(a.createdAt)}</p>
+                </div>
+                <ChevronRight className="size-5 shrink-0 text-ink-3" aria-hidden />
+              </Link>
+            ))}
+          </Card>
+        </section>
+      )}
+
+        </div>
+        <div className="min-w-0 space-y-8 lg:sticky lg:top-24">
       {/* Próximos eventos */}
       <section>
         <SectionHeading
@@ -149,7 +178,7 @@ export default async function FamilyHome() {
             </Link>
           }
         />
-        <Card className="divide-y divide-line">
+        <Card tone="flat" className="divide-y divide-line">
           {events.length === 0 && (
             <p className="flex items-center gap-2 p-4 text-sm text-ink-2">
               <CalendarDays className="size-4" aria-hidden /> No hay eventos en los próximos días.
@@ -171,30 +200,8 @@ export default async function FamilyHome() {
         </Card>
       </section>
 
-      {/* Avisos recientes */}
-      {recent.length > 0 && (
-        <section>
-          <SectionHeading
-            title="Avisos recientes"
-            action={
-              <Link href="/familia/avisos" className="text-sm font-medium text-brand hover:underline">
-                Ver todos
-              </Link>
-            }
-          />
-          <Card className="divide-y divide-line">
-            {recent.map((a) => (
-              <Link key={a.id} href={`/familia/avisos/${a.id}`} className="flex items-center gap-3 p-4 transition-colors hover:bg-canvas">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{a.title}</p>
-                  <p className="text-sm text-ink-2">{relativeDay(a.createdAt)}</p>
-                </div>
-                <ChevronRight className="size-5 shrink-0 text-ink-3" aria-hidden />
-              </Link>
-            ))}
-          </Card>
-        </section>
-      )}
+        </div>
+      </div>
 
       <DemoNotice className="text-center" />
     </div>

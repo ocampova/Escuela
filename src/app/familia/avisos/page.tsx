@@ -15,7 +15,7 @@ export default async function FamilyAnnouncements() {
   const pending = anns.filter((a) => a.requiresAck && !a.reads[0]?.acknowledgedAt).length;
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-semibold">Avisos</h1>
       <p className="mt-1 text-sm text-ink-2">
         {pending > 0 ? `${pending} ${pending === 1 ? "aviso espera" : "avisos esperan"} su confirmación.` : "Ha confirmado todos los avisos."}

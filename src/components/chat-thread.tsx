@@ -78,7 +78,7 @@ export function ChatThread({
         <form
           ref={formRef}
           action={action}
-          className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur-sm lg:bottom-0"
+          className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur-sm md:bottom-0 md:mx-0 md:rounded-t-xl md:border-x md:px-3"
         >
           {Object.entries(hidden).map(([k, v]) => (
             <input key={k} type="hidden" name={k} value={v} />

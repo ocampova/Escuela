@@ -22,7 +22,7 @@ export const KIND_LABEL: Record<string, string> = {
 export function EventDateTile({ date, kind, className }: { date: Date; kind: string; className?: string }) {
   return (
     <span className={cx("flex size-12 shrink-0 flex-col items-center justify-center rounded-lg leading-none", KIND_TONE[kind] ?? KIND_TONE.evento, className)}>
-      <span className="text-[10px] font-semibold uppercase tracking-wide">{dateTimeLabel(date, { month: "short" })}</span>
+      <span className="block text-[11px] font-medium first-letter:uppercase">{dateTimeLabel(date, { month: "short" })}</span>
       <span className="tabular mt-0.5 text-lg font-semibold">{dateTimeLabel(date, { day: "numeric" })}</span>
     </span>
   );

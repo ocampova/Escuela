@@ -23,7 +23,7 @@ export default async function FamilyAnnouncement({ params }: { params: Promise<{
   const ack = a.reads[0]?.acknowledgedAt;
 
   return (
-    <article>
+    <article className="mx-auto max-w-3xl">
       <MarkRead id={a.id} />
       <Link href="/familia/avisos" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-ink-2 hover:bg-surface hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden /> Avisos

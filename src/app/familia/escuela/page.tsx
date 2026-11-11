@@ -30,6 +30,7 @@ export default async function SchoolInfo() {
         <p className="mt-1 text-sm text-ink-2">Horarios, contacto, precios y materiales de {school.name}.</p>
       </div>
 
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
       {levels.map((l) => {
         const phones = (l.phone ?? "").split("/").map((p) => p.trim()).filter(Boolean);
         const prices = [...general, ...l.feeConcepts];
@@ -104,8 +105,9 @@ export default async function SchoolInfo() {
           </section>
         );
       })}
+      </div>
 
-      <section>
+      <section className="lg:max-w-xl">
         <SectionHeading title="Pagos" />
         <Card className="p-4">
           <BankInfo bank={school} />

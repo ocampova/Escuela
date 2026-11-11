@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useActionState } from "react";
 import { login, type LoginState } from "./actions";
 import { Button, Field, inputClass } from "@/components/ui";
@@ -61,7 +62,7 @@ export function LoginForm({ next, demo = false }: { next?: string; demo?: boolea
                 <span className="block text-sm font-medium text-ink">{d.label}</span>
                 <span className="block text-xs text-ink-2">{d.who}</span>
               </span>
-              <span aria-hidden className="text-ink-3">→</span>
+              <ChevronRight className="size-4 shrink-0 text-ink-3" aria-hidden />
             </button>
           ))}
         </div>

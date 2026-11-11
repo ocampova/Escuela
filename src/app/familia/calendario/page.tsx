@@ -27,7 +27,7 @@ export default async function FamilyCalendar() {
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-semibold">Calendario</h1>
       <p className="mt-1 text-sm text-ink-2">Actividades, reuniones y fechas de pago de sus hijos.</p>
       {events.length === 0 && (

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-lexend), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* Neutrales con un leve tinte del verde SCS */
   --color-ink: #16231e;
@@ -48,13 +48,14 @@
 
 @layer base {
   html {
+    overflow-x: clip;
+    scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
     text-size-adjust: 100%;
   }
   body {
     background: var(--color-canvas);
     color: var(--color-ink);
-    font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
   }
   ::selection {
@@ -82,7 +83,10 @@
   h2,
   h3 {
     text-wrap: balance;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+  }
+  p {
+    text-wrap: pretty;
   }
   * {
     scrollbar-color: var(--color-line-strong) transparent;
@@ -96,6 +100,27 @@
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+}
+
+/* Banda a todo el ancho de la ventana, alineando el contenido con el contenedor */
+.full-bleed {
+  margin-inline: calc(50% - 50vw);
+  padding-inline: calc(50vw - 50%);
+}
+
+/* Entrada de cada página al navegar: breve, sin bloquear la lectura */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-in {
+  animation: page-in 220ms var(--ease-out-expo) both;
 }
 
 @keyframes ack-in {

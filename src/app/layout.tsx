@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Lexend } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+// Lexend: diseñada para facilitar la lectura; familias de todas las edades leen avisos y estados de cuenta
+const lexend = Lexend({ subsets: ["latin"], variable: "--font-lexend", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "San Cayetano School", template: "%s · San Cayetano School" },
@@ -22,7 +23,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-CR" className={inter.variable}>
+    <html lang="es-CR" className={lexend.variable}>
       <body className="min-h-dvh font-sans">
         {children}
         <ServiceWorkerRegister />

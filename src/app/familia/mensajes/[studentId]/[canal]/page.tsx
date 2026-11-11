@@ -30,7 +30,7 @@ export default async function FamilyThread({ params }: { params: Promise<{ stude
   const subtitle = channel === "TEACHER" ? `Docente guía de ${gradeSectionName(student.section)}` : "Dirección y Secretaría";
 
   return (
-    <div className="flex min-h-[calc(100dvh-10rem)] flex-col">
+    <div className="mx-auto flex min-h-[calc(100dvh-10rem)] max-w-3xl flex-col md:min-h-[calc(100dvh-8rem)]">
       <div className="mb-4 flex items-center gap-3">
         <Link href="/familia/mensajes" aria-label="Volver a mensajes" className="-ml-2 flex size-9 items-center justify-center rounded-lg text-ink-2 hover:bg-surface hover:text-ink">
           <ArrowLeft className="size-5" aria-hidden />

@@ -28,7 +28,7 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-8">
-      <div className={`-mx-4 -mt-5 px-4 pt-3 pb-6 text-white ${sectionBand[s.section.color] ?? "bg-brand"}`}>
+      <div className={`full-bleed -mt-5 pt-3 pb-6 text-white md:-mt-8 md:pt-6 md:pb-10 ${sectionBand[s.section.color] ?? "bg-brand"}`}>
         <Link href="/familia" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-white/85 hover:bg-white/10 hover:text-white">
           <ArrowLeft className="size-4" aria-hidden /> Inicio
         </Link>
@@ -46,6 +46,8 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-10">
+        <div className="min-w-0 space-y-8">
       <section>
         <SectionHeading title="Asistencia de las últimas 4 semanas" />
         <Card className="p-4">
@@ -90,6 +92,8 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
         </Card>
       </section>
 
+        </div>
+        <div className="min-w-0 space-y-8">
       <section>
         <SectionHeading title="Personas autorizadas para recoger" />
         <Card className="divide-y divide-line">
@@ -132,6 +136,8 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
           ))}
         </Card>
       </section>
+        </div>
+      </div>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default async function ReportPage() {
       .map((c) => ({ description: c.description, pending: c.amount - (c.paidAmount ?? 0), currency: c.currency })),
   }));
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <Link href="/familia/cuenta" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-ink-2 hover:bg-surface hover:text-ink">
           <ArrowLeft className="size-4" aria-hidden /> Estado de cuenta

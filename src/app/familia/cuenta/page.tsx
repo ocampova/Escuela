@@ -53,6 +53,8 @@ export default async function FamilyAccount({ searchParams }: { searchParams: Pr
         </p>
       )}
 
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start lg:gap-10">
+        <div className="min-w-0 space-y-8 lg:sticky lg:top-24">
       <Card className="overflow-hidden">
         <div className="bg-brand px-5 py-5 text-white">
           <p className="text-sm text-white/80">{total > 0 ? "Saldo pendiente de la familia" : "Saldo de la familia"}</p>
@@ -105,6 +107,8 @@ export default async function FamilyAccount({ searchParams }: { searchParams: Pr
         </section>
       )}
 
+        </div>
+        <div className="min-w-0 space-y-8">
       {students.map((s) => {
         const st = statements.get(s.id)!;
         const open = st.charges.filter((c) => c.status !== "paid");
@@ -161,6 +165,8 @@ export default async function FamilyAccount({ searchParams }: { searchParams: Pr
           </section>
         );
       })}
+        </div>
+      </div>
     </div>
   );
 }

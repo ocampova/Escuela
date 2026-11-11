@@ -26,7 +26,7 @@ export default async function FamilyMessages() {
   ]);
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Mensajes</h1>
         <p className="mt-1 text-sm text-ink-2">Escriba a la docente de su hijo o a la oficina de la escuela.</p>

@@ -32,44 +32,50 @@ colors:
   ok: "#1d7044"
   ok-soft: "#e6f4ec"
 typography:
+  display:
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 600
+    lineHeight: 1.15
+    letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 600
     lineHeight: 1.25
     letterSpacing: "-0.015em"
   title-lg:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "17px"
     fontWeight: 600
     lineHeight: 1.35
   title:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 600
     lineHeight: 1.4
   body:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: 1.4
   caption:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 500
     lineHeight: 1.33
   micro:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "11px"
     fontWeight: 500
     lineHeight: 1.2
   micro-xs:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Lexend, ui-sans-serif, system-ui, sans-serif"
     fontSize: "10px"
     fontWeight: 600
     lineHeight: 1
@@ -161,10 +167,11 @@ The category standard played straight, at the craft level of Brightwheel and Cla
 
 ## Typography
 
-**Font:** Inter (via next/font), with a system-ui fallback.
+**Font:** Lexend (via next/font), with a system-ui fallback. It was chosen because it was designed to make reading easier, and parents of every age read notices and statements here. It replaced Inter when the frontend-design skill was applied.
 
 ### Hierarchy
-- **Headline** (600, 1.5rem): page titles and greetings.
+- **Display** (600, 1.75rem on phone, 2.25rem from tablet up): only the greeting in the green band, the one memorable element.
+- **Headline** (600, 1.5rem): page titles.
 - **Title** (600, 15px): section headings above cards.
 - **Body** (400, 15px, 1.6): notices and descriptions, capped at 65ch.
 - **Label** (500, 14px): buttons, table cells, list primaries.
@@ -178,11 +185,14 @@ The category standard played straight, at the craft level of Brightwheel and Cla
 ## Layout
 
 - **Family:** a single column, max-width 36rem. A green header with the SCS stripe and a fixed 4-tab bottom bar that respects the safe area. The home screen opens on a green band (greeting plus a children carousel of white cards); the child profile opens on a band in that child's section colour. The things that need action come right after.
+- **Family from tablet up (md+):** the menu moves to the green header as horizontal tabs and the bottom bar disappears. The content opens up to 72rem. The home screen splits into two columns (needs attention + recent on the left, upcoming on the right, sticky), the account into summary + per-child statements, and Información and the child profile into two columns. Reading pages (notices, calendar, messages) stay at 48rem. Green bands span the full window width (`.full-bleed`).
 - **Staff:** a fixed 256px green rail at lg and up. Below lg it becomes a green header with horizontally scrolling nav. Content max-width is 72rem; dashboards use a 3:2 grid at xl.
 - Grid children carry `min-w-0`. Wide tables scroll inside their card and never scroll the page.
 - Spacing: 32px between sections, 12px between cards, 16px of card padding.
 
 ## Elevation & Depth
+
+Two levels of card, and the hierarchy matters: **raised** (`shadow-card`) for what asks for action (balance, notices to confirm), **flat** (1px `line` outline, no shadow) for lists you only consult (upcoming events, recent notices). Not everything is a floating card.
 
 Cards float on the canvas with a soft two-layer shadow tinted with brand green (`shadow-card`), raised to `shadow-pop` on hover. There are no borders on cards; dividers inside cards are 1px `line`.
 
@@ -206,6 +216,9 @@ White with an inset ring that becomes a 2px green ring on focus. Labels sit abov
 
 ### Navigation
 Family: a bottom tab bar whose active item is green with a heavier icon stroke; the Avisos tab carries a red count badge. Staff: on the green rail the active item is a white/12 fill.
+
+### Transitions
+Each page enters with `page-in` (opacity plus 6px, 220ms ease-out-expo) through `template.tsx`. It is the only automatic movement; the rest answers an action (Enterado, pressing, opening details). With `prefers-reduced-motion` it is turned off.
 
 ### Enterado (signature)
 The acknowledgment button turns optimistically into a green "✓ Enterado" label with a 220ms ease-out-expo scale-in. Staff see confirmation as a thin meter ("2 de 6 familias"), with a "Sin confirmar" list split into "Lo abrió" and "No lo ha abierto".
