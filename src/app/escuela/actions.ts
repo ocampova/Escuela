@@ -7,6 +7,9 @@ import type { AttendanceStatus, PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { isManager, requireStaff } from "@/lib/auth";
 import { keyToDate } from "@/lib/format";
+import { notifyLater } from "@/lib/push";
+import { announcementRecipients } from "@/lib/queries";
+import { money } from "@/lib/format";
 
 export type FormState = { error?: string; ok?: string };
 
@@ -30,6 +33,7 @@ export async function saveAttendance(_prev: FormState, form: FormData): Promise<
   const { user } = await assertSection(sectionId);
   const students = await prisma.student.findMany({ where: { sectionId }, select: { id: true } });
   const d = keyToDate(date);
+  const previous = new Map((await prisma.attendance.findMany({ where: { date: d, student: { sectionId } }, select: { studentId: true, status: true } })).map((x) => [x.studentId, x.status as string]));
   let missing = 0;
   await prisma.$transaction(
     students.flatMap((s) => {
@@ -48,6 +52,23 @@ export async function saveAttendance(_prev: FormState, form: FormData): Promise<
       ];
     }),
   );
+  // Avisar a las familias de ausencias y tardías de hoy (solo cambios nuevos)
+  if (date === new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10)) {
+    const flagged = students.filter((st) => {
+      const v = String(form.get(`status-${st.id}`) ?? "");
+      return (v === "ABSENT" || v === "LATE") && previous.get(st.id) !== v;
+    });
+    if (flagged.length) {
+      const info = await prisma.student.findMany({ where: { id: { in: flagged.map((x) => x.id) } }, include: { guardians: true } });
+      for (const st of info) {
+        const v = String(form.get(`status-${st.id}`));
+        notifyLater(
+          st.guardians.map((g) => g.userId),
+          { title: v === "ABSENT" ? `${st.firstName} fue marcado ausente hoy` : `${st.firstName} llegó tarde hoy`, body: "Si tiene una justificación, escríbale a la docente.", url: `/familia/hijos/${st.id}`, tag: `att-${st.id}` },
+        );
+      }
+    }
+  }
   revalidatePath("/escuela", "layout");
   revalidatePath("/familia", "layout");
   if (missing > 0) return { ok: `Lista guardada. ${missing} ${missing === 1 ? "alumno quedó" : "alumnos quedaron"} sin marcar.` };
@@ -94,6 +115,11 @@ export async function createAnnouncement(_prev: FormState, form: FormData): Prom
   const a = await prisma.announcement.create({
     data: { schoolId: user.schoolId, authorId: user.id, title, body, audience, levelId, sectionId, requiresAck },
   });
+  const recipients = await announcementRecipients(a);
+  notifyLater(
+    recipients.map((r) => r.id),
+    { title: `Nuevo aviso: ${title}`, body: body.length > 110 ? body.slice(0, 107) + "…" : body, url: `/familia/avisos/${a.id}`, tag: a.id },
+  );
   revalidatePath("/escuela", "layout");
   revalidatePath("/familia", "layout");
   redirect(`/escuela/avisos/${a.id}?enviado=1`);
@@ -264,6 +290,7 @@ export async function approveReport(_prev: FormState, form: FormData): Promise<F
     });
     await tx.paymentReport.update({ where: { id: report.id }, data: { status: "APPROVED", reviewedById: user.id, reviewedAt: new Date(), paymentId: payment.id } });
   });
+  notifyLater([report.reportedById], { title: "Pago aplicado", body: `${report.concept}: ${money(amount, report.currency)} ya está en su estado de cuenta.`, url: "/familia/cuenta", tag: report.id });
   revalidatePath("/escuela", "layout");
   revalidatePath("/familia", "layout");
   redirect("/escuela/cobros?revisado=aprobado");
@@ -279,6 +306,8 @@ export async function rejectReport(_prev: FormState, form: FormData): Promise<Fo
     data: { status: "REJECTED", reviewNote: note, reviewedById: user.id, reviewedAt: new Date() },
   });
   if (r.count === 0) return { error: "Este reporte ya fue revisado." };
+  const rep = await prisma.paymentReport.findUnique({ where: { id: String(form.get("id")) }, select: { reportedById: true, concept: true } });
+  if (rep) notifyLater([rep.reportedById], { title: "Pago rechazado", body: `${rep.concept}: ${note}`, url: "/familia/cuenta" });
   revalidatePath("/escuela", "layout");
   revalidatePath("/familia", "layout");
   redirect("/escuela/cobros?revisado=rechazado");

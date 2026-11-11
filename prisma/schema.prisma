@@ -49,6 +49,11 @@ enum PaymentMethod {
   CASH
 }
 
+enum Channel {
+  TEACHER
+  OFFICE
+}
+
 enum Currency {
   CRC
   USD
@@ -74,8 +79,11 @@ model School {
   bankIban          String?
   sinpePhone        String?
   paymentNote       String?
+  /// Horario en que el personal responde mensajes (informativo para las familias)
+  messageHours      String?
   createdAt DateTime @default(now())
 
+  conversations Conversation[]
   users         User[]
   applicants    Applicant[]
   schoolYears   SchoolYear[]
@@ -105,6 +113,10 @@ model User {
   attendanceTaken Attendance[]
   paymentsLogged  Payment[]
   reportsSent     PaymentReport[]    @relation("ReportedPayments")
+  conversations   Conversation[]     @relation("GuardianConversations")
+  messages        Message[]
+  convReads       ConversationRead[]
+  pushSubs        PushSubscription[]
   reportsReviewed PaymentReport[]    @relation("ReviewedPayments")
 }
 
@@ -179,6 +191,7 @@ model Student {
   charges    Charge[]
   payments   Payment[]
   reports    PaymentReport[]
+  conversations Conversation[]
 }
 
 model StudentGuardian {
@@ -389,4 +402,56 @@ model ApplicantDocument {
   size        Int
   data        Bytes
   createdAt   DateTime  @default(now())
+}
+
+/// Hilo entre un encargado y la escuela sobre un alumno: con la docente guía o con la oficina.
+model Conversation {
+  id            String             @id @default(cuid())
+  schoolId      String
+  school        School             @relation(fields: [schoolId], references: [id])
+  studentId     String
+  student       Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardianId    String
+  guardian      User               @relation("GuardianConversations", fields: [guardianId], references: [id], onDelete: Cascade)
+  channel       Channel
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
+  messages      Message[]
+  reads         ConversationRead[]
+
+  @@unique([studentId, guardianId, channel])
+  @@index([schoolId, lastMessageAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model ConversationRead {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime     @default(now())
+
+  @@id([conversationId, userId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
 }

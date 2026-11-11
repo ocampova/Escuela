@@ -7,6 +7,8 @@ import { crc, dateLabel, dateTimeLabel, gradeSectionName, keyToDate, relativeDay
 import { AckButton } from "@/components/ack-button";
 import { Avatar, Badge, Card, DemoNotice, SectionChip, SectionHeading } from "@/components/ui";
 import { EventDateTile } from "@/components/event-tile";
+import { PushPrompt } from "@/components/push-prompt";
+import { vapidPublicKey } from "@/lib/push";
 
 const ATT: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "neutral" }> = {
   PRESENT: { label: "Presente hoy", tone: "ok" },
@@ -76,6 +78,8 @@ export default async function FamilyHome() {
           })}
         </section>
       </div>
+
+      <PushPrompt vapidKey={vapidPublicKey()} />
 
       {/* Pendiente */}
       {(pending.length > 0 || due > 0) && (

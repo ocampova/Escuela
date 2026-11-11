@@ -192,3 +192,11 @@ export async function saveLevelInfo(_p: ActionState, f: FormData): Promise<Actio
   revalidatePath("/familia", "layout");
   return done("Información del nivel guardada.");
 }
+
+export async function saveMessageHours(_p: ActionState, f: FormData): Promise<ActionState> {
+  const u = await manager();
+  const messageHours = String(f.get("messageHours") ?? "").trim().slice(0, 200) || null;
+  await prisma.school.update({ where: { id: u.schoolId }, data: { messageHours } });
+  revalidatePath("/familia", "layout");
+  return done("Horario de atención guardado.");
+}

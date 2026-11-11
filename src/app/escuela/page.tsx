@@ -7,6 +7,8 @@ import { crc, dateTimeLabel, gradeSectionName, keyToDate, relativeDay, timeLabel
 import { Badge, ButtonLink, Card, DemoNotice, SectionChip, SectionHeading } from "@/components/ui";
 import { ReadMeter } from "@/components/read-meter";
 import { EventDateTile } from "@/components/event-tile";
+import { PushPrompt } from "@/components/push-prompt";
+import { vapidPublicKey } from "@/lib/push";
 
 function greeting() {
   const h = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Costa_Rica", hour: "numeric", hour12: false }).format(new Date()));
@@ -84,6 +86,8 @@ export default async function StaffHome() {
           <ButtonLink href="/escuela/avisos/nuevo">Nuevo aviso</ButtonLink>
         </div>
       </div>
+
+      <PushPrompt vapidKey={vapidPublicKey()} className="mb-8 max-w-xl" />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="min-w-0 space-y-8">

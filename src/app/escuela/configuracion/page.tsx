@@ -7,7 +7,7 @@ import { dateLabel } from "@/lib/format";
 import { ActionForm } from "@/components/action-form";
 import { InviteButton } from "@/components/invite-button";
 import { Avatar, Badge, Card, Field, PageHeader, SectionHeading, cx, inputClass, sectionSolid } from "@/components/ui";
-import { addGrade, addLevel, addSection, addStaff, saveBank, saveConcept, saveLevelInfo, saveSchoolYear, updateSection } from "./actions";
+import { addGrade, addLevel, addSection, addStaff, saveBank, saveConcept, saveLevelInfo, saveMessageHours, saveSchoolYear, updateSection } from "./actions";
 import { money } from "@/lib/format";
 import { ActiveToggle } from "./active-toggle";
 
@@ -219,7 +219,17 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </div>
             ))}
           </Card>
-          <aside>
+          <aside className="space-y-6">
+            <Card className="p-5">
+              <h2 className="mb-1 font-semibold">Horario de atención de mensajes</h2>
+              <p className="mb-4 text-sm text-ink-2">Las familias lo ven al escribir, para saber cuándo esperar respuesta.</p>
+              <ActionForm action={saveMessageHours} submitLabel="Guardar" resetOnOk={false}>
+                <label className="block">
+                  <span className="sr-only">Horario</span>
+                  <textarea name="messageHours" rows={2} defaultValue={school.messageHours ?? ""} placeholder="Ej.: Respondemos de lunes a viernes, de 7:00 a. m. a 3:00 p. m." className={inputClass} />
+                </label>
+              </ActionForm>
+            </Card>
             <Card className="p-5">
               <h2 className="mb-1 font-semibold">Agregar personal</h2>
               <p className="mb-4 text-sm text-ink-2">Después de crear la cuenta, use «Invitar» para enviarle el enlace de activación.</p>

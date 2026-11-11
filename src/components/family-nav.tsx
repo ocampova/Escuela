@@ -2,24 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, House, Wallet } from "lucide-react";
+import { Bell, CalendarDays, House, MessageCircle, Wallet } from "lucide-react";
 import { cx } from "./ui";
 
 const TABS = [
   { href: "/familia", label: "Inicio", icon: House, exact: true },
   { href: "/familia/avisos", label: "Avisos", icon: Bell },
+  { href: "/familia/mensajes", label: "Mensajes", icon: MessageCircle },
   { href: "/familia/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/familia/cuenta", label: "Cuenta", icon: Wallet },
 ];
 
-export function FamilyTabBar({ pendingCount }: { pendingCount: number }) {
+export function FamilyTabBar({ pendingCount, unreadMessages = 0 }: { pendingCount: number; unreadMessages?: number }) {
   const path = usePathname();
   return (
     <nav
       aria-label="Secciones"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-4">
+      <ul className="mx-auto grid max-w-xl grid-cols-5">
         {TABS.map((t) => {
           const active = t.exact ? path === t.href : path.startsWith(t.href);
           const Icon = t.icon;
@@ -35,12 +36,16 @@ export function FamilyTabBar({ pendingCount }: { pendingCount: number }) {
               >
                 <span className="relative">
                   <Icon className="size-[22px]" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
-                  {t.href === "/familia/avisos" && pendingCount > 0 && (
-                    <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white ring-2 ring-surface">
-                      {pendingCount}
-                      <span className="sr-only"> avisos pendientes</span>
-                    </span>
-                  )}
+                  {(() => {
+                    const n = t.href === "/familia/avisos" ? pendingCount : t.href === "/familia/mensajes" ? unreadMessages : 0;
+                    if (n <= 0) return null;
+                    return (
+                      <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white ring-2 ring-surface">
+                        {n}
+                        <span className="sr-only">{t.href === "/familia/avisos" ? " avisos pendientes" : " mensajes nuevos"}</span>
+                      </span>
+                    );
+                  })()}
                 </span>
                 {t.label}
               </Link>

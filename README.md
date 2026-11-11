@@ -18,6 +18,12 @@ A web platform that works on both phone and computer, for managing the school's 
 - **Invitations and passwords:** single-use activation link (14 days). It can be copied, sent by WhatsApp, or emailed if Resend is configured. "Olvidé mi contraseña" (forgot password) link valid for 2 hours.
 - **Online enrollment:** a public form at `/matricula` with documents (PDF/photos), and an inbox with statuses (new, contacted, visit scheduled, accepted). "Matricular" creates the student and the guardian account.
 
+## Phase 3 (communication)
+
+- **Messages:** each family writes to its child's **homeroom teacher** or to the **office** (Dirección and Secretaría), one thread per child. Unread badges, automatic updates every few seconds, and an office-hours message configurable in Configuración › Personal. Teachers see only their sections; Secretaría sees the office threads; Dirección sees everything. The school can start a conversation from a student's profile ("Escribir").
+- **Push notifications (PWA):** "Activar notificaciones" button on the home screen. Notifications are sent for new notices, messages, absences and late arrivals, payments reviewed, new payment reports and new enrollment requests. On iPhone the app must first be added to the home screen (iOS 16.4+).
+- Setup: generate the keys once with `npm run vapid` and put them in `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`. Without keys, the app works the same way, just without push.
+
 ## Real school data (2027 brochures)
 
 - Levels: **Preescolar** (Kinder, Preparatoria) and **Primaria** I and II Ciclo (1st to 6th grade, bilingual), each with its own schedule, phones and campus address.

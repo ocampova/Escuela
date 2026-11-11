@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireGuardian } from "@/lib/auth";
+import { notifyLater } from "@/lib/push";
 
 export type ReportState = { error?: string; fields?: Record<string, string> };
 
@@ -53,6 +54,11 @@ export async function reportPayment(_p: ReportState, f: FormData): Promise<Repor
       fileData: new Uint8Array(await file.arrayBuffer()),
     },
   });
+  const office = await prisma.user.findMany({ where: { schoolId: user.schoolId, role: { in: ["ADMIN", "STAFF"] }, active: true }, select: { id: true } });
+  notifyLater(
+    office.map((o) => o.id),
+    { title: "Pago reportado por revisar", body: `${student.firstName} ${student.lastName}: ${d.concept}`, url: "/escuela/cobros" },
+  );
   revalidatePath("/familia", "layout");
   revalidatePath("/escuela", "layout");
   redirect("/familia/cuenta?reportado=1");

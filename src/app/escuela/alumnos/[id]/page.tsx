@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Pencil, UserCheck, UserPlus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, MessageCircle, Pencil, UserCheck, UserPlus } from "lucide-react";
 import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { METHOD_LABEL, staffSections, statementFor } from "@/lib/queries";
@@ -103,6 +103,9 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                       {g.user.phone ? ` · ${g.user.phone}` : ""}
                     </p>
                   </div>
+                  <ButtonLink href={`/escuela/mensajes/nuevo?alumno=${s.id}&encargado=${g.userId}`} variant="ghost" size="sm" aria-label={`Escribir a ${g.user.name}`}>
+                    <MessageCircle className="size-4" aria-hidden /> Escribir
+                  </ButtonLink>
                   {manager && <RemoveButton kind="guardian" studentId={s.id} id={g.userId} label={g.user.name} />}
                   {manager && (
                     <div className="w-full pl-12">

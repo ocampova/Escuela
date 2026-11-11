@@ -69,6 +69,10 @@ const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "
 
 async function main() {
   await prisma.$transaction([
+    prisma.pushSubscription.deleteMany(),
+    prisma.message.deleteMany(),
+    prisma.conversationRead.deleteMany(),
+    prisma.conversation.deleteMany(),
     prisma.paymentReport.deleteMany(),
     prisma.applicantDocument.deleteMany(),
     prisma.applicant.deleteMany(),
@@ -107,6 +111,7 @@ async function main() {
       bankHolderId: "0-0000-0000",
       bankIban: "CR00 0000 0000 0000 0000 00",
       paymentNote: "Reporte cada depósito en la plataforma indicando la fecha y el nombre completo del estudiante.",
+      messageHours: "Respondemos de lunes a viernes, de 7:30 a. m. a 3:00 p. m.",
     },
   });
 
@@ -472,6 +477,55 @@ async function main() {
       createdAt: day(0, 8),
     },
   });
+
+  // Conversaciones de ejemplo
+  const mateo = allStudents.find((x) => x.demo && preSections.has(studentSection.get(x.id)!))!;
+  const chat = async (studentId: string, guardianEmail: string, channel: "TEACHER" | "OFFICE", lines: [string, string, number, number][], readByStaff: boolean) => {
+    const g = await prisma.user.findUniqueOrThrow({ where: { email: guardianEmail } });
+    const conv = await prisma.conversation.create({ data: { schoolId: school.id, studentId, guardianId: g.id, channel } });
+    let last = new Date();
+    for (const [email, body, dayOff, hour] of lines) {
+      const sender = await prisma.user.findUniqueOrThrow({ where: { email } });
+      last = day(dayOff, hour, 10 + Math.floor(rand() * 40));
+      await prisma.message.create({ data: { conversationId: conv.id, senderId: sender.id, body, createdAt: last } });
+    }
+    await prisma.conversation.update({ where: { id: conv.id }, data: { lastMessageAt: last } });
+    await prisma.conversationRead.create({ data: { conversationId: conv.id, userId: g.id, lastReadAt: last } });
+    if (readByStaff) {
+      const staffEmail = channel === "TEACHER" ? "schaves@demo.scs.cr" : "secretaria@demo.scs.cr";
+      const staffUser = await prisma.user.findUniqueOrThrow({ where: { email: staffEmail } });
+      await prisma.conversationRead.create({ data: { conversationId: conv.id, userId: staffUser.id, lastReadAt: last } });
+    }
+  };
+  await chat(
+    mateo.id,
+    "familia@demo.scs.cr",
+    "TEACHER",
+    [
+      ["familia@demo.scs.cr", "Buenos días, niña Sofía. Mateo amaneció con un poco de tos, ¿me avisa si lo nota decaído?", -1, 7],
+      ["schaves@demo.scs.cr", "¡Buenos días! Claro que sí, estaré pendiente. Hoy participó muy bien en la actividad de reciclaje 😊", -1, 10],
+      ["familia@demo.scs.cr", "Muchas gracias. Mañana le mando los tubos de papel para el proyecto.", -1, 18],
+    ],
+    true,
+  );
+  await chat(
+    allStudents.find((x) => x.owing && preSections.has(studentSection.get(x.id)!))!.id,
+    "mpicado@demo.scs.cr",
+    "TEACHER",
+    [["mpicado@demo.scs.cr", "Hola, niña. Isabella no podrá ir el viernes porque tiene cita en el EBAIS. ¿Me puede enviar lo que vean ese día?", 0, 7]],
+    false,
+  );
+  await chat(
+    allStudents.find((x) => x.owing && !preSections.has(studentSection.get(x.id)!))!.id,
+    "dsibaja@demo.scs.cr",
+    "OFFICE",
+    [
+      ["dsibaja@demo.scs.cr", "Buenas tardes. ¿Puedo pagar los dos meses atrasados en dos tractos?", -2, 15],
+      ["secretaria@demo.scs.cr", "Buenas tardes, doña Daniela. Sí, con gusto. Puede hacer el primer depósito esta semana y el segundo antes del 30. Repórtelos en la plataforma.", -2, 16],
+      ["dsibaja@demo.scs.cr", "Perfecto, muchas gracias.", 0, 8],
+    ],
+    false,
+  );
 
   console.log(`Seed listo. Contraseña de todas las cuentas: ${PASSWORD}`);
 }

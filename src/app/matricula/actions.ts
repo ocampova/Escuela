@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
+import { notifyLater } from "@/lib/push";
 import { ENROLL_DOCS, TRANSFER_DOCS } from "@/lib/enrollment";
 
 export type ApplyState = { error?: string; fields?: Record<string, string> };
@@ -53,7 +54,7 @@ export async function apply(_p: ApplyState, f: FormData): Promise<ApplyState> {
   // De julio en adelante, la matrícula es para el curso lectivo siguiente.
   const now = new Date();
   const forYear = String(now.getMonth() >= 6 ? now.getFullYear() + 1 : now.getFullYear());
-  await prisma.applicant.create({
+  const created = await prisma.applicant.create({
     data: {
       schoolId: grade.level.schoolId,
       gradeId: grade.id,
@@ -75,6 +76,11 @@ export async function apply(_p: ApplyState, f: FormData): Promise<ApplyState> {
       documents: { create: docs },
     },
   });
+  const office = await prisma.user.findMany({ where: { schoolId: grade.level.schoolId, role: { in: ["ADMIN", "STAFF"] }, active: true }, select: { id: true } });
+  notifyLater(
+    office.map((o) => o.id),
+    { title: "Nueva solicitud de matrícula", body: `${d.childFirstName} ${d.childLastName} · ${grade.name}`, url: `/escuela/matricula/${created.id}` },
+  );
   await sendMail({
     to: d.guardianEmail,
     subject: `${grade.level.school.name}: recibimos su solicitud de matrícula`,

@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { StaffNav } from "@/components/staff-nav";
+import { unreadConversations } from "@/lib/messages";
 import { Avatar, BrandStripe } from "@/components/ui";
 import { logout } from "@/app/login/actions";
 
@@ -17,7 +18,8 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     manager ? prisma.paymentReport.count({ where: { status: "PENDING", student: { section: { schoolYear: { schoolId: user.schoolId } } } } }) : 0,
     manager ? prisma.applicant.count({ where: { schoolId: user.schoolId, status: "NEW" } }) : 0,
   ]);
-  const counts = { "/escuela/cobros": pendingReports, "/escuela/matricula": newApplicants };
+  const unread = await unreadConversations(user);
+  const counts = { "/escuela/cobros": pendingReports, "/escuela/matricula": newApplicants, "/escuela/mensajes": unread };
 
   const account = (
     <div className="flex items-center gap-3">
