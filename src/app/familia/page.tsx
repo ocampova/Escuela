@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, CheckCircle2, ChevronRight, Wallet } from "lucide-react";
+import { ArrowRight, CalendarDays, CalendarX, CheckCircle2, ChevronRight, Wallet } from "lucide-react";
 import { requireGuardian } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { eventFilter, guardianAnnouncements, guardianStudents, statementFor } from "@/lib/queries";
+import { eventFilter, guardianAnnouncements, guardianStudents, statementFor, isPending } from "@/lib/queries";
 import { crc, dateLabel, dateTimeLabel, gradeSectionName, keyToDate, relativeDay, timeLabel, todayKey } from "@/lib/format";
 import { AckButton } from "@/components/ack-button";
-import { Avatar, Badge, Card, DemoNotice, SectionChip, SectionHeading } from "@/components/ui";
+import { Avatar, Badge, Card, DemoNotice, SectionChip, SectionHeading, buttonClass } from "@/components/ui";
 import { EventDateTile } from "@/components/event-tile";
 import { PushPrompt } from "@/components/push-prompt";
 import { AnnouncementThumb } from "@/components/announcement-images";
@@ -36,7 +36,7 @@ export default async function FamilyHome() {
     statementFor(ids),
   ]);
 
-  const pending = anns.filter((a) => a.requiresAck && !a.reads[0]?.acknowledgedAt);
+  const pending = anns.filter((a) => isPending(a, students));
   const recent = anns.filter((a) => !pending.includes(a)).slice(0, 3);
   const balances = [...statements.values()];
   const due = balances.reduce((s, b) => s + (b.charged - b.paid), 0);
@@ -78,6 +78,17 @@ export default async function FamilyHome() {
             );
           })}
         </section>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {students.map((s) => (
+            <Link
+              key={s.id}
+              href={`/familia/hijos/${s.id}/ausencia`}
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-white/20"
+            >
+              <CalendarX className="size-4" aria-hidden /> {students.length > 1 ? `Avisar ausencia de ${s.firstName}` : "Avisar una ausencia"}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <PushPrompt vapidKey={await vapidPublicKey()} className="lg:max-w-3xl" />
@@ -129,7 +140,13 @@ export default async function FamilyHome() {
                   <Link href={`/familia/avisos/${a.id}`} className="text-sm font-medium text-brand hover:underline">
                     Leer aviso
                   </Link>
-                  <AckButton id={a.id} acknowledged={false} />
+                  {a.permissionQuestion ? (
+                    <Link href={`/familia/avisos/${a.id}`} className={buttonClass("primary", "sm", "h-9")}>
+                      Responder autorización
+                    </Link>
+                  ) : (
+                    <AckButton id={a.id} acknowledged={false} />
+                  )}
                 </div>
               </Card>
             ))}

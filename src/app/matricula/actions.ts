@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { sendMail } from "@/lib/mail";
+import { mailApplicationReceived } from "@/lib/emails";
 import { notifyLater } from "@/lib/push";
 import { ENROLL_DOCS, TRANSFER_DOCS } from "@/lib/enrollment";
 
@@ -81,10 +81,6 @@ export async function apply(_p: ApplyState, f: FormData): Promise<ApplyState> {
     office.map((o) => o.id),
     { title: "Nueva solicitud de matrícula", body: `${d.childFirstName} ${d.childLastName} · ${grade.name}`, url: `/escuela/matricula/${created.id}` },
   );
-  await sendMail({
-    to: d.guardianEmail,
-    subject: `${grade.level.school.name}: recibimos su solicitud de matrícula`,
-    text: `Hola, ${d.guardianName.split(" ")[0]}:\n\nRecibimos la solicitud de matrícula de ${d.childFirstName} para ${grade.name} (curso lectivo ${forYear}). Secretaría le contactará pronto al ${d.guardianPhone}.\n\n${grade.level.school.name}`,
-  });
+  await mailApplicationReceived(d.guardianEmail, d.guardianName, d.childFirstName, grade.name, forYear, d.guardianPhone);
   redirect("/matricula/gracias");
 }

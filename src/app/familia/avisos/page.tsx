@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Bell, ChevronRight } from "lucide-react";
 import { requireGuardian } from "@/lib/auth";
-import { audienceLabel, guardianAnnouncements, guardianStudents } from "@/lib/queries";
+import { audienceLabel, guardianAnnouncements, guardianStudents, isPending } from "@/lib/queries";
 import { relativeDay } from "@/lib/format";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { AnnouncementThumb } from "@/components/announcement-images";
@@ -13,7 +13,7 @@ export default async function FamilyAnnouncements() {
   const user = await requireGuardian();
   const students = await guardianStudents(user.id);
   const anns = await guardianAnnouncements(user, students);
-  const pending = anns.filter((a) => a.requiresAck && !a.reads[0]?.acknowledgedAt).length;
+  const pending = anns.filter((a) => isPending(a, students)).length;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -29,7 +29,7 @@ export default async function FamilyAnnouncements() {
         )}
         {anns.map((a) => {
           const read = a.reads[0];
-          const needsAck = a.requiresAck && !read?.acknowledgedAt;
+          const needsAck = isPending(a, students);
           return (
             <Link key={a.id} href={`/familia/avisos/${a.id}`} className="flex gap-3 p-4 transition-colors hover:bg-canvas">
               <span aria-hidden className={`mt-2 size-2 shrink-0 rounded-full ${!read ? "bg-scs-blue" : "bg-transparent"}`} />
@@ -41,7 +41,7 @@ export default async function FamilyAnnouncements() {
                 {a.body ? <p className="mt-1 line-clamp-2 text-sm text-ink-2">{a.body}</p> : a.images[0] ? <p className="mt-1 text-sm text-ink-2">Aviso con imagen</p> : null}
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Badge>{audienceLabel(a)}</Badge>
-                  {needsAck ? <Badge tone="warn">Falta confirmar</Badge> : a.requiresAck ? <Badge tone="ok">Enterado</Badge> : null}
+                  {needsAck ? <Badge tone="warn">{a.permissionQuestion ? "Falta autorizar" : "Falta confirmar"}</Badge> : a.requiresAck ? <Badge tone="ok">{a.permissionQuestion ? "Respondido" : "Enterado"}</Badge> : null}
                 </div>
               </div>
               {a.images[0] && <AnnouncementThumb id={a.images[0].id} className="self-center" />}

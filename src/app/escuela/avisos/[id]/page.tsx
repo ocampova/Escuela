@@ -17,10 +17,26 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
   const sections = await staffSections(user);
   const a = await prisma.announcement.findFirst({
     where: { id, schoolId: user.schoolId, ...(isManager(user) ? {} : { OR: [{ sectionId: { in: sections.map((s) => s.id) } }, { authorId: user.id }] }) },
-    include: { author: true, level: true, section: { include: { grade: true } }, reads: true, images: { select: { id: true }, orderBy: { order: "asc" } } },
+    include: { author: true, level: true, section: { include: { grade: true } }, reads: true, images: { select: { id: true }, orderBy: { order: "asc" } }, permissionAnswers: { include: { guardian: { select: { name: true } } } } },
   });
   if (!a) notFound();
   const recipients = await announcementRecipients(a);
+  const audienceStudents = a.permissionQuestion
+    ? await prisma.student.findMany({
+        where:
+          a.audience === "SECTION"
+            ? { sectionId: a.sectionId ?? undefined }
+            : a.audience === "LEVEL"
+              ? { section: { grade: { levelId: a.levelId ?? undefined }, schoolYear: { active: true } } }
+              : { section: { schoolYear: { schoolId: user.schoolId, active: true } } },
+        include: { section: { include: { grade: true } } },
+        orderBy: [{ firstName: "asc" }],
+      })
+    : [];
+  const answers = new Map(a.permissionAnswers.map((r) => [r.studentId, r]));
+  const yes = audienceStudents.filter((st) => answers.get(st.id)?.answer === "YES");
+  const no = audienceStudents.filter((st) => answers.get(st.id)?.answer === "NO");
+  const missing = audienceStudents.filter((st) => !answers.has(st.id));
   const readMap = new Map(a.reads.map((r) => [r.userId, r]));
   const rows = recipients.map((r) => ({ ...r, read: readMap.get(r.id) }));
   const acked = rows.filter((r) => r.read?.acknowledgedAt);
@@ -58,7 +74,58 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
               <ShareWhatsApp title={a.title} body={a.body} path={`/familia/avisos/${a.id}`} size="sm" />
             </Card>
           )}
-          {a.requiresAck ? (
+          {a.permissionQuestion && (
+            <section>
+              <SectionHeading
+                title="Autorizaciones"
+                action={
+                  missing.length > 0 ? (
+                    <ShareWhatsApp
+                      title={`Recordatorio: ${a.title}`}
+                      body={`Faltan ${missing.length} ${missing.length === 1 ? "autorización" : "autorizaciones"}. ${a.permissionQuestion} Respondan en la plataforma, por favor.`}
+                      path={`/familia/avisos/${a.id}`}
+                      size="sm"
+                      label="Recordar en el grupo"
+                    />
+                  ) : undefined
+                }
+              />
+              <p className="mb-3 text-sm text-ink-2">{a.permissionQuestion}</p>
+              <div className="mb-3 grid grid-cols-3 gap-2 text-center">
+                {(
+                  [
+                    ["Autorizados", yes.length, "text-ok"],
+                    ["No autorizados", no.length, "text-danger"],
+                    ["Sin respuesta", missing.length, "text-warn"],
+                  ] as const
+                ).map(([label, n, c]) => (
+                  <div key={label} className="rounded-lg bg-surface py-2 ring-1 ring-line">
+                    <p className={`tabular text-xl font-semibold ${c}`}>{n}</p>
+                    <p className="text-xs text-ink-2">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <Card tone="flat" className="divide-y divide-line">
+                {[...missing, ...no, ...yes].map((st) => {
+                  const r = answers.get(st.id);
+                  return (
+                    <div key={st.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">
+                          {st.firstName} {st.lastName}
+                        </p>
+                        <p className="truncate text-xs text-ink-2">
+                          {r ? `${r.guardian.name.split(" ").slice(0, 2).join(" ")}, ${dateTimeLabel(r.respondedAt, { day: "numeric", month: "short" })} ${timeLabel(r.respondedAt)}` : st.section.grade.name + " " + st.section.name}
+                        </p>
+                      </div>
+                      <Badge tone={!r ? "warn" : r.answer === "YES" ? "ok" : "danger"}>{!r ? "Sin respuesta" : r.answer === "YES" ? "Autorizado" : "No autorizado"}</Badge>
+                    </div>
+                  );
+                })}
+              </Card>
+            </section>
+          )}
+          {a.requiresAck && !a.permissionQuestion ? (
             <>
               <Card className="p-4">
                 <p className="mb-2 text-sm font-medium">Confirmación</p>
@@ -110,7 +177,7 @@ export default async function StaffAnnouncement({ params, searchParams }: { para
                 </Card>
               </section>
             </>
-          ) : (
+          ) : a.permissionQuestion ? null : (
             <Card className="p-4 text-sm text-ink-2">Este aviso es solo informativo y no pide confirmación. Llegó a {rows.length} familias.</Card>
           )}
         </div>

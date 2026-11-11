@@ -10,6 +10,7 @@ type Picked = { file: File; url: string };
 export function AnnouncementForm({ targets }: { targets: { value: string; label: string; group: string }[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createAnnouncement, {});
   const [images, setImages] = useState<Picked[]>([]);
+  const [askPermission, setAskPermission] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const groups = [...new Set(targets.map((t) => t.group))];
 
@@ -103,6 +104,25 @@ export function AnnouncementForm({ targets }: { targets: { value: string; label:
       <Field label={images.length ? "Mensaje (opcional)" : "Mensaje"} htmlFor="body" hint="Escriba como en una circular. Los saltos de línea se respetan.">
         <textarea id="body" name="body" required={images.length === 0} rows={images.length ? 4 : 8} className={`${inputClass} resize-y leading-relaxed`} />
       </Field>
+      <div className="rounded-lg bg-canvas p-3">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" name="askPermission" checked={askPermission} onChange={(e) => setAskPermission(e.target.checked)} className="mt-0.5 size-4 rounded" />
+          <span className="text-sm">
+            <span className="block font-medium">Pedir autorización (Sí / No) por cada estudiante</span>
+            <span className="text-ink-2">Para giras, actividades o permisos. Verá quién autorizó, quién no y quién falta.</span>
+          </span>
+        </label>
+        {askPermission && (
+          <div className="ack-in mt-3 grid gap-3 sm:grid-cols-[1fr_180px]">
+            <Field label="Pregunta" htmlFor="permissionQuestion">
+              <input id="permissionQuestion" name="permissionQuestion" required defaultValue="¿Autoriza a su hijo o hija a participar?" className={inputClass} />
+            </Field>
+            <Field label="Responder antes del (opcional)" htmlFor="permissionDeadline">
+              <input id="permissionDeadline" name="permissionDeadline" type="date" className={inputClass} />
+            </Field>
+          </div>
+        )}
+      </div>
       <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-canvas p-3">
         <input type="checkbox" name="requiresAck" defaultChecked className="mt-0.5 size-4 rounded" />
         <span className="text-sm">

@@ -48,6 +48,7 @@ export async function guardianAnnouncements(user: CurrentUser, students: Guardia
       level: true,
       reads: { where: { userId: user.id } },
       images: { select: { id: true }, orderBy: { order: "asc" }, take: 1 },
+      permissionAnswers: { where: { studentId: { in: students.map((s) => s.id) } }, select: { studentId: true } },
     },
     orderBy: { createdAt: "desc" },
     take,
@@ -153,6 +154,18 @@ export async function announcementRecipients(a: { schoolId: string; audience: st
     },
     orderBy: { name: "asc" },
   });
+}
+
+/** ¿El aviso le pide algo pendiente a esta familia? (Enterado, o autorización de algún hijo sin responder) */
+export function isPending(
+  a: { requiresAck: boolean; permissionQuestion: string | null; audience: string; levelId: string | null; sectionId: string | null; reads: { acknowledgedAt: Date | null }[]; permissionAnswers: { studentId: string }[] },
+  students: GuardianStudent[],
+) {
+  if (a.permissionQuestion) {
+    const kids = students.filter((s) => a.audience === "SCHOOL" || (a.audience === "LEVEL" && s.section.grade.levelId === a.levelId) || (a.audience === "SECTION" && s.sectionId === a.sectionId));
+    return kids.some((k) => !a.permissionAnswers.some((r) => r.studentId === k.id));
+  }
+  return a.requiresAck && !a.reads[0]?.acknowledgedAt;
 }
 
 export function audienceLabel(a: { audience: string; level?: { name: string } | null; section?: { name: string; grade: { name: string } } | null }) {

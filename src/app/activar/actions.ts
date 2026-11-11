@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { findValidToken, issueToken, linkFor } from "@/lib/tokens";
-import { sendMail } from "@/lib/mail";
+import { mailAccessLink } from "@/lib/emails";
 import { encodeSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
 
 export type PasswordState = { error?: string };
@@ -38,11 +38,7 @@ export async function requestReset(_prev: ForgotState, form: FormData): Promise<
   // Misma respuesta exista o no la cuenta, para no revelar quién está registrado.
   if (user && user.active) {
     const token = await issueToken(user.id, user.passwordHash ? "RESET" : "INVITE");
-    await sendMail({
-      to: user.email,
-      subject: "San Cayetano School: cambiar su contraseña",
-      text: `Hola, ${user.name.split(" ")[0]}:\n\nPara crear una contraseña nueva, abra este enlace (vence en 2 horas):\n${linkFor(user.passwordHash ? "RESET" : "INVITE", token)}\n\nSi usted no lo pidió, ignore este correo.`,
-    });
+    await mailAccessLink(user.email, user.name, user.passwordHash ? "RESET" : "INVITE", linkFor(user.passwordHash ? "RESET" : "INVITE", token));
   }
   return { sent: true };
 }

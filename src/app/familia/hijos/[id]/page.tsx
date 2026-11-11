@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Phone, UserCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarX, CheckCircle2, Phone, UserCheck } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireGuardian } from "@/lib/auth";
-import { dateLabel, gradeSectionName } from "@/lib/format";
+import { dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
 import { Avatar, Badge, Card, SectionHeading } from "@/components/ui";
 
 const sectionBand: Record<string, string> = {
@@ -13,8 +13,9 @@ const sectionBand: Record<string, string> = {
 };
 import { AttendanceStrip } from "@/components/attendance-strip";
 
-export default async function ChildPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ChildPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ausencia?: string }> }) {
   const { id } = await params;
+  const { ausencia } = await searchParams;
   const user = await requireGuardian();
   const s = await prisma.student.findFirst({
     where: { id, guardians: { some: { userId: user.id } } },
@@ -23,6 +24,7 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
       pickups: true,
       guardians: { include: { user: true } },
       attendance: { orderBy: { date: "desc" }, take: 20 },
+      absenceNotices: { where: { dateTo: { gte: keyToDate(todayKey()) } }, orderBy: { dateFrom: "asc" } },
     },
   });
   if (!s) notFound();
@@ -46,10 +48,32 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
               {gradeSectionName(s.section)}
               {s.section.teacher && ` · Docente: ${s.section.teacher.name}`}
             </p>
+            <Link href={`/familia/hijos/${s.id}/ausencia`} className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-white/15 px-3 text-sm font-medium text-white ring-1 ring-white/25 transition-colors hover:bg-white/25">
+              <CalendarX className="size-4" aria-hidden /> Avisar una ausencia
+            </Link>
           </div>
         </div>
       </div>
 
+      {ausencia && (
+        <p role="status" className="ack-in flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
+          <CheckCircle2 className="size-4 shrink-0" aria-hidden /> Listo, la docente recibió su aviso.
+        </p>
+      )}
+      {s.absenceNotices.length > 0 && (
+        <Card className="p-4">
+          <p className="mb-2 text-sm font-medium">Ausencias avisadas</p>
+          <ul className="space-y-1 text-sm text-ink-2">
+            {s.absenceNotices.map((n) => (
+              <li key={n.id}>
+                {dateLabel(n.dateFrom, { weekday: "short", day: "numeric", month: "short" })}
+                {n.dateTo.getTime() !== n.dateFrom.getTime() ? ` al ${dateLabel(n.dateTo, { weekday: "short", day: "numeric", month: "short" })}` : ""}: {n.reason}
+                {n.note ? `, ${n.note}` : ""}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8">
       <section>

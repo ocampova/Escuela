@@ -35,6 +35,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
     ["Nacimiento", dateLabel(s.birthDate, { day: "numeric", month: "long", year: "numeric" })],
     ["Tipo de sangre", s.bloodType ?? "Sin dato"],
     ["Docente guía", s.section.teacher?.name ?? "Sin asignar"],
+    ["Fotos", s.photoConsent === true ? "Autorizadas por la familia" : s.photoConsent === false ? "No autorizadas" : "Sin respuesta de la familia"],
     ...(s.medicalNotes ? ([["Notas médicas", s.medicalNotes]] as [string, string][]) : []),
   ];
 
@@ -207,7 +208,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                   .reverse()
                   .slice(0, 4)
                   .map((p) => (
-                    <div key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                    <Link key={p.id} href={`/recibos/${p.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-canvas">
                       <div>
                         <p className="font-medium">{p.description}</p>
                         <p className="text-ink-2">
@@ -215,7 +216,7 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                         </p>
                       </div>
                       <span className="tabular font-medium text-ok">{money(p.amount, p.currency)}</span>
-                    </div>
+                    </Link>
                   ))}
               </Card>
             </section>

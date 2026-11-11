@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { isManager, requireStaff } from "@/lib/auth";
 import { issueToken, linkFor } from "@/lib/tokens";
-import { mailEnabled, sendMail } from "@/lib/mail";
+import { mailEnabled } from "@/lib/mail";
+import { mailAccessLink } from "@/lib/emails";
 
 export type InviteResult = { link?: string; emailed?: boolean; error?: string; whatsapp?: string };
 
@@ -30,7 +31,7 @@ export async function createInvite(userId: string): Promise<InviteResult> {
       ? `Hola, ${first}. San Cayetano School le invita a su plataforma: avisos, calendario, asistencia y estado de cuenta. Cree su contraseña aquí (vence en 14 días): ${link}`
       : `Hola, ${first}. Este es su enlace para crear una contraseña nueva en la plataforma de San Cayetano School (vence en 2 horas): ${link}`;
   const emailed = mailEnabled()
-    ? await sendMail({ to: user.email, subject: purpose === "INVITE" ? "Invitación a la plataforma de San Cayetano School" : "Cambiar su contraseña", text })
+    ? await mailAccessLink(user.email, user.name, purpose, link)
     : false;
   revalidatePath("/escuela", "layout");
   return { link, emailed, whatsapp: waLink(user.phone, text) };

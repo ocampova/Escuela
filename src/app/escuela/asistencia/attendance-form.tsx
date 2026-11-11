@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { saveAttendance, type FormState } from "../actions";
 import { Avatar, Button, cx } from "@/components/ui";
 
-type Row = { id: string; name: string; color: string; allergies: string | null; status: string | null; note: string | null };
+type Row = { id: string; name: string; color: string; allergies: string | null; status: string | null; note: string | null; notice?: string | null };
 
 const OPTIONS = [
   { value: "PRESENT", label: "Presente", plural: "presentes", short: "P", on: "bg-ok text-white ring-ok" },
@@ -48,6 +48,7 @@ export function AttendanceForm({ sectionId, date, rows, alreadyTaken }: { sectio
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{r.name}</p>
                 {r.allergies && <p className="truncate text-xs text-danger">Alergia: {r.allergies}</p>}
+                {r.notice && <p className="text-xs font-medium text-scs-blue-ink">La familia avisó: {r.notice}</p>}
               </div>
               <fieldset className="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto">
                 <legend className="sr-only">Asistencia de {r.name}</legend>
@@ -75,7 +76,7 @@ export function AttendanceForm({ sectionId, date, rows, alreadyTaken }: { sectio
               {(v === "ABSENT" || v === "EXCUSED" || v === "LATE") && (
                 <input
                   name={`note-${r.id}`}
-                  defaultValue={r.note ?? ""}
+                  defaultValue={r.note ?? (r.notice ? `${r.notice} (avisado por la familia)` : "")}
                   placeholder="Nota (opcional): motivo, hora de llegada…"
                   className="ack-in order-last w-full rounded-lg bg-canvas px-3 py-2 text-sm ring-1 ring-inset ring-line placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-brand"
                 />

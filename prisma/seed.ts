@@ -69,6 +69,8 @@ const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "
 
 async function main() {
   await prisma.$transaction([
+    prisma.permissionResponse.deleteMany(),
+    prisma.absenceNotice.deleteMany(),
     prisma.pushSubscription.deleteMany(),
     prisma.message.deleteMany(),
     prisma.conversationRead.deleteMany(),
@@ -368,7 +370,7 @@ async function main() {
   );
   await ann(
     "Gira educativa al Museo de los Niños",
-    "La sección de Primer grado visitará el Museo de los Niños el próximo viernes. Saldremos a las 7:30 a.m. y regresaremos a la 1:00 p.m.\n\nCosto: ₡6 000 (incluye transporte y entrada). Enviar merienda y botella de agua.\n\nPor favor confirmen con «Enterado» para autorizar la participación.",
+    "La sección de Primer grado visitará el Museo de los Niños el próximo viernes. Saldremos a las 7:30 a.m. y regresaremos a la 1:00 p.m.\n\nCosto: ₡6 000 (incluye transporte y entrada). Enviar merienda y botella de agua.\n\nPor favor respondan la autorización en la plataforma.",
     3,
     "SECTION",
     { sectionId: sPrimero.id },
@@ -526,6 +528,26 @@ async function main() {
     ],
     false,
   );
+
+  // La gira pide autorización: algunas familias ya respondieron
+  const gira = await prisma.announcement.findFirst({ where: { title: "Gira educativa al Museo de los Niños" } });
+  if (gira) {
+    await prisma.announcement.update({ where: { id: gira.id }, data: { permissionQuestion: "¿Autoriza a su hijo o hija a participar en la gira al Museo de los Niños?", permissionDeadline: day(weekday(3), 12) } });
+    const kids = await prisma.student.findMany({ where: { sectionId: sPrimero.id }, include: { guardians: true }, orderBy: { firstName: "asc" } });
+    for (const [i, k] of kids.entries()) {
+      if (i === 0 || !k.guardians[0] || k.firstName === "Valeria") continue;
+      await prisma.permissionResponse.create({ data: { announcementId: gira.id, studentId: k.id, guardianId: k.guardians[0].userId, answer: i === 2 ? "NO" : "YES", respondedAt: day(-1, 19) } });
+    }
+  }
+  // Una ausencia avisada hoy
+  const isa = await prisma.student.findFirst({ where: { firstName: "Isabella" }, include: { guardians: true } });
+  if (isa) await prisma.absenceNotice.create({ data: { studentId: isa.id, guardianId: isa.guardians[0].userId, dateFrom: new Date(day(0, 12).toISOString().slice(0, 10)), dateTo: new Date(day(0, 12).toISOString().slice(0, 10)), reason: "Cita médica", note: "Cita en el EBAIS a las 8:00" } });
+
+  // Familias de la demo ya aceptaron el aviso de privacidad (excepto la cuenta sin activar)
+  await prisma.user.updateMany({ where: { role: "GUARDIAN", passwordHash: { not: null } }, data: { privacyAcceptedAt: day(-30, 9) } });
+  for (const st of await prisma.student.findMany({ select: { id: true } })) {
+    await prisma.student.update({ where: { id: st.id }, data: { photoConsent: rand() < 0.85 } });
+  }
 
   console.log(`Seed listo. Contraseña de todas las cuentas: ${PASSWORD}`);
 }

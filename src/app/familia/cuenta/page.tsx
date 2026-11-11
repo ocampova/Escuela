@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { CheckCircle2, ChevronDown, Receipt } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ChevronDown, Printer, Receipt } from "lucide-react";
 import { requireGuardian } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { guardianStudents, METHOD_LABEL, statementFor } from "@/lib/queries";
@@ -72,6 +73,9 @@ export default async function FamilyAccount({ searchParams }: { searchParams: Pr
           <ButtonLink href="/familia/cuenta/reportar" size="lg" className="w-full">
             <Receipt className="size-5" aria-hidden /> Reportar un pago
           </ButtonLink>
+          <Link href="/familia/cuenta/imprimir" className="flex items-center gap-2 text-sm font-medium text-brand hover:underline">
+            <Printer className="size-4" aria-hidden /> Imprimir o descargar el estado de cuenta
+          </Link>
           <details className="group">
             <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-brand">
               Cuenta para depósitos y transferencias
@@ -145,7 +149,8 @@ export default async function FamilyAccount({ searchParams }: { searchParams: Pr
                 </summary>
                 <ul className="divide-y divide-line border-t border-line">
                   {[...st.payments].reverse().map((p) => (
-                    <li key={p.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                    <li key={p.id}>
+                      <Link href={`/recibos/${p.id}`} className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-canvas">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium">{p.description}</p>
                         <p className="text-ink-2">
@@ -154,6 +159,8 @@ export default async function FamilyAccount({ searchParams }: { searchParams: Pr
                         </p>
                       </div>
                       <p className="tabular font-medium text-ok">{money(p.amount, p.currency)}</p>
+                      <Receipt className="size-4 shrink-0 text-ink-3" aria-label="Ver recibo" />
+                      </Link>
                     </li>
                   ))}
                 </ul>

@@ -4,8 +4,9 @@ import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireGuardian } from "@/lib/auth";
 import { audienceFilter, audienceLabel, guardianStudents } from "@/lib/queries";
-import { dateTimeLabel, timeLabel } from "@/lib/format";
+import { dateLabel, dateTimeLabel, keyToDate, timeLabel, todayKey } from "@/lib/format";
 import { AckButton } from "@/components/ack-button";
+import { PermissionButtons } from "@/components/permission-buttons";
 import { MarkRead } from "@/components/mark-read";
 import { AnnouncementImages } from "@/components/announcement-images";
 import { Avatar, Badge, Card } from "@/components/ui";
@@ -18,10 +19,12 @@ export default async function FamilyAnnouncement({ params }: { params: Promise<{
   const students = await guardianStudents(user.id);
   const a = await prisma.announcement.findFirst({
     where: { id, schoolId: user.schoolId, ...audienceFilter(students) },
-    include: { author: true, level: true, section: { include: { grade: true } }, reads: { where: { userId: user.id } }, images: { select: { id: true }, orderBy: { order: "asc" } } },
+    include: { author: true, level: true, section: { include: { grade: true } }, reads: { where: { userId: user.id } }, images: { select: { id: true }, orderBy: { order: "asc" } }, permissionAnswers: { include: { guardian: { select: { name: true } } } } },
   });
   if (!a) notFound();
   const ack = a.reads[0]?.acknowledgedAt;
+  const kids = students.filter((s) => a.audience === "SCHOOL" || (a.audience === "LEVEL" && s.section.grade.levelId === a.levelId) || (a.audience === "SECTION" && s.sectionId === a.sectionId));
+  const closed = !!a.permissionDeadline && a.permissionDeadline < keyToDate(todayKey());
 
   return (
     <article className="mx-auto max-w-3xl">
@@ -45,7 +48,34 @@ export default async function FamilyAnnouncement({ params }: { params: Promise<{
         {a.body && <div className="mt-5 max-w-[65ch] whitespace-pre-line text-[15px] leading-relaxed text-ink">{a.body}</div>}
       </Card>
 
-      {a.requiresAck && (
+      {a.permissionQuestion && (
+        <Card className="mt-4 p-5">
+          <h2 className="font-semibold">{a.permissionQuestion}</h2>
+          {a.permissionDeadline && (
+            <p className={`mt-1 text-sm ${closed ? "text-danger" : "text-ink-2"}`}>
+              {closed ? "El plazo para responder venció el " : "Responder antes del "}
+              {dateLabel(a.permissionDeadline, { weekday: "long", day: "numeric", month: "long" })}.
+            </p>
+          )}
+          <div className="mt-4 space-y-4">
+            {kids.map((k) => {
+              const r = a.permissionAnswers.find((x) => x.studentId === k.id);
+              return (
+                <div key={k.id}>
+                  <p className="mb-2 text-sm font-medium">{k.firstName}</p>
+                  <PermissionButtons announcementId={a.id} studentId={k.id} current={r?.answer ?? null} closed={closed} />
+                  {r && (
+                    <p className="mt-1.5 text-xs text-ink-3">
+                      Respondió {r.guardian.name.split(" ")[0]} el {dateTimeLabel(r.respondedAt, { day: "numeric", month: "long" })} a las {timeLabel(r.respondedAt)}. Puede cambiar su respuesta{a.permissionDeadline ? " antes del plazo" : ""}.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+      {a.requiresAck && !a.permissionQuestion && (
         <div className="mt-4">
           {ack ? (
             <p className="rounded-xl bg-ok-soft px-4 py-3 text-sm text-ok">

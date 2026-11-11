@@ -19,7 +19,7 @@ export function FamilyTabBar({ pendingCount, unreadMessages = 0, messaging = tru
   return (
     <nav
       aria-label="Secciones"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden print:hidden"
     >
       <ul className={cx("mx-auto grid max-w-xl", tabs.length === 5 ? "grid-cols-5" : "grid-cols-4")}>
         {tabs.map((t) => {

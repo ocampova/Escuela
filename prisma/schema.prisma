@@ -49,6 +49,11 @@ enum PaymentMethod {
   CASH
 }
 
+enum PermissionAnswer {
+  YES
+  NO
+}
+
 enum Channel {
   TEACHER
   OFFICE
@@ -105,6 +110,11 @@ model User {
   phone        String?
   passwordHash String?
   active       Boolean  @default(true)
+  /// Aceptación del aviso de privacidad (Ley 8968)
+  privacyAcceptedAt DateTime?
+  /// Preferencias de correo
+  emailNotices  Boolean @default(true)
+  emailReceipts Boolean @default(true)
   createdAt    DateTime @default(now())
 
   tokens          AuthToken[]
@@ -119,6 +129,8 @@ model User {
   messages        Message[]
   convReads       ConversationRead[]
   pushSubs        PushSubscription[]
+  absenceNotices  AbsenceNotice[]
+  permissionAnswers PermissionResponse[]
   reportsReviewed PaymentReport[]    @relation("ReviewedPayments")
 }
 
@@ -185,6 +197,8 @@ model Student {
   bloodType    String?
   allergies    String?
   medicalNotes String?
+  /// Autorización de la familia para aparecer en fotos (null = sin responder)
+  photoConsent Boolean?
   createdAt    DateTime @default(now())
 
   guardians  StudentGuardian[]
@@ -194,6 +208,8 @@ model Student {
   payments   Payment[]
   reports    PaymentReport[]
   conversations Conversation[]
+  absenceNotices AbsenceNotice[]
+  permissionAnswers PermissionResponse[]
 }
 
 model StudentGuardian {
@@ -231,9 +247,13 @@ model Announcement {
   sectionId   String?
   section     Section?           @relation(fields: [sectionId], references: [id])
   requiresAck Boolean            @default(true)
+  /// Pide autorización por alumno (p. ej. una gira): Sí / No
+  permissionQuestion String?
+  permissionDeadline DateTime?  @db.Date
   createdAt   DateTime           @default(now())
   reads       AnnouncementRead[]
   images      AnnouncementImage[]
+  permissionAnswers PermissionResponse[]
 }
 
 model AnnouncementRead {
@@ -314,6 +334,7 @@ model Charge {
 
 model Payment {
   id          String        @id @default(cuid())
+  receiptNumber Int         @unique @default(autoincrement())
   studentId   String
   student     Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   amount      Int
@@ -475,4 +496,35 @@ model AnnouncementImage {
   size           Int
   data           Bytes
   order          Int          @default(0)
+}
+
+/// La familia avisa que su hijo no asistirá (o llegará tarde) y por qué.
+model AbsenceNotice {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardianId String
+  guardian   User     @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  dateFrom   DateTime @db.Date
+  dateTo     DateTime @db.Date
+  reason     String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([studentId, dateFrom, dateTo])
+}
+
+/// Respuesta de una familia a un aviso que pide autorización, por alumno.
+model PermissionResponse {
+  announcementId String
+  announcement   Announcement     @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardianId     String
+  guardian       User             @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  answer         PermissionAnswer
+  note           String?
+  respondedAt    DateTime         @default(now())
+
+  @@id([announcementId, studentId])
 }

@@ -26,6 +26,15 @@ A web platform that works on both phone and computer, for managing the school's 
 - **Push notifications (PWA):** "Activar notificaciones" button on the home screen. Notifications are sent for new notices, messages, absences and late arrivals, payments reviewed, new payment reports and new enrollment requests. On iPhone the app must first be added to the home screen (iOS 16.4+).
 - Setup: generate the keys once with `npm run vapid` and put them in `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`. Without keys, the app works the same way, just without push.
 
+## Basics block (consent, absences, permissions, receipts, profile, emails)
+
+- **Privacy notice (Ley 8968)** at `/privacidad`. On first login the family accepts it and decides, per child, whether to **authorize photos**. The school sees that decision on each student's profile.
+- **Absence notices:** the family reports "No va hoy, cita médica" (or "Llegará tarde"). The teacher receives a notification and sees the notice when taking attendance, with the status already preselected. Past absences already recorded become excused.
+- **Permissions:** a notice can ask "¿Autoriza…? Sí / No" for each student, with an optional deadline. The school sees who authorized, who did not and who is missing, and can send a reminder in the WhatsApp group.
+- **Receipts and statement:** each payment has a receipt number. Families and the office can open, print or save as PDF both the receipt and the full statement.
+- **Parent profile:** email, phone, password, email preferences and photo authorization.
+- **Emails (Resend):** invitations, password reset, notices and permissions, receipts and enrollment confirmations, with a template carrying the SCS identity. Setup guide in [docs/CORREO.md](docs/CORREO.md).
+
 ## Real school data (2027 brochures)
 
 - Levels: **Preescolar** (Kinder, Preparatoria) and **Primaria** I and II Ciclo (1st to 6th grade, bilingual), each with its own schedule, phones and campus address.

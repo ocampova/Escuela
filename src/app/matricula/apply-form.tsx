@@ -118,7 +118,11 @@ export function ApplyForm({ grades }: { grades: { id: string; label: string }[] 
       <label className="flex items-start gap-3 rounded-lg bg-canvas p-3 text-sm">
         <input type="checkbox" name="consent" required defaultChecked={v.consent === "on"} className="mt-0.5 size-4" />
         <span className="text-ink-2">
-          Autorizo a San Cayetano School a usar estos datos solo para el proceso de matrícula, según la Ley 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales.
+          Autorizo a San Cayetano School a usar estos datos solo para el proceso de matrícula, según la Ley 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales (
+          <a href="/privacidad" target="_blank" className="underline">
+            aviso de privacidad
+          </a>
+          ).
         </span>
       </label>
 

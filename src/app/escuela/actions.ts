@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { isManager, requireStaff } from "@/lib/auth";
 import { keyToDate } from "@/lib/format";
 import { notifyLater } from "@/lib/push";
+import { mailAnnouncement, mailReceipt } from "@/lib/emails";
 import { announcementRecipients } from "@/lib/queries";
 import { money } from "@/lib/format";
 
@@ -93,7 +94,13 @@ export async function createAnnouncement(_prev: FormState, form: FormData): Prom
     requiresAck: form.get("requiresAck") === "on",
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { body, target, requiresAck } = parsed.data;
+  const { body, target } = parsed.data;
+  const permissionQuestion = form.get("askPermission") === "on" ? String(form.get("permissionQuestion") ?? "").trim().slice(0, 200) : "";
+  if (form.get("askPermission") === "on" && permissionQuestion.length < 5) return { error: "Escriba la pregunta de la autorización (ej.: ¿Autoriza la gira al Museo de los Niños?)." };
+  const deadlineRaw = String(form.get("permissionDeadline") ?? "");
+  const permissionDeadline = permissionQuestion && /^\d{4}-\d{2}-\d{2}$/.test(deadlineRaw) ? new Date(deadlineRaw) : null;
+  // Una autorización implica confirmación de lectura
+  const requiresAck = parsed.data.requiresAck || Boolean(permissionQuestion);
 
   // Imágenes (un aviso puede ser solo una imagen, p. ej. una circular hecha en Canva)
   const files = form.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
@@ -134,15 +141,18 @@ export async function createAnnouncement(_prev: FormState, form: FormData): Prom
       levelId,
       sectionId,
       requiresAck,
+      permissionQuestion: permissionQuestion || null,
+      permissionDeadline,
       images: {
         create: await Promise.all(files.map(async (f, i) => ({ mimeType: f.type, size: f.size, order: i, data: new Uint8Array(await f.arrayBuffer()) }))),
       },
     },
   });
   const recipients = await announcementRecipients(a);
+  mailAnnouncement(a.id, recipients.map((r) => r.id));
   notifyLater(
     recipients.map((r) => r.id),
-    { title: `Nuevo aviso: ${title}`, body: body ? (body.length > 110 ? body.slice(0, 107) + "…" : body) : "Toque para ver la imagen del aviso.", url: `/familia/avisos/${a.id}`, tag: a.id },
+    { title: permissionQuestion ? `Autorización: ${title}` : `Nuevo aviso: ${title}`, body: permissionQuestion ? permissionQuestion : body ? (body.length > 110 ? body.slice(0, 107) + "…" : body) : "Toque para ver la imagen del aviso.", url: `/familia/avisos/${a.id}`, tag: a.id },
   );
   revalidatePath("/escuela", "layout");
   revalidatePath("/familia", "layout");
@@ -209,7 +219,7 @@ export async function registerPayment(_prev: FormState, form: FormData): Promise
   const p = parsed.data;
   const student = await prisma.student.findFirst({ where: { id: p.studentId, section: { schoolYear: { schoolId: user.schoolId } } } });
   if (!student) return { error: "Alumno no encontrado." };
-  await prisma.payment.create({
+  const created = await prisma.payment.create({
     data: {
       studentId: p.studentId,
       amount: p.amount,
@@ -220,9 +230,10 @@ export async function registerPayment(_prev: FormState, form: FormData): Promise
       loggedById: user.id,
     },
   });
+  mailReceipt(created.id);
   revalidatePath("/escuela/cobros");
   revalidatePath("/familia", "layout");
-  return { ok: `Pago registrado para ${student.firstName} ${student.lastName}.` };
+  return { ok: `Pago registrado para ${student.firstName} ${student.lastName}. Recibo n.º ${created.receiptNumber}.` };
 }
 
 const MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
@@ -313,7 +324,8 @@ export async function approveReport(_prev: FormState, form: FormData): Promise<F
       },
     });
     await tx.paymentReport.update({ where: { id: report.id }, data: { status: "APPROVED", reviewedById: user.id, reviewedAt: new Date(), paymentId: payment.id } });
-  });
+    return payment.id;
+  }).then((paymentId) => mailReceipt(paymentId));
   notifyLater([report.reportedById], { title: "Pago aplicado", body: `${report.concept}: ${money(amount, report.currency)} ya está en su estado de cuenta.`, url: "/familia/cuenta", tag: report.id });
   revalidatePath("/escuela", "layout");
   revalidatePath("/familia", "layout");

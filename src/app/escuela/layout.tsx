@@ -40,7 +40,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-dvh lg:pl-64">
       {/* Barra lateral (computadora) */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand px-3 pb-4 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand px-3 pb-4 lg:flex print:hidden">
         <BrandStripe className="-mx-3 mb-4" />
         <Link href="/escuela" className="mb-6 flex items-center gap-2.5 px-2">
           <Image src="/logo-scs.png" alt="" width={36} height={36} className="rounded-full bg-white" />
@@ -54,7 +54,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Encabezado (celular y tableta) */}
-      <header className="sticky top-0 z-30 bg-brand pt-[env(safe-area-inset-top)] lg:hidden">
+      <header className="sticky top-0 z-30 bg-brand pt-[env(safe-area-inset-top)] lg:hidden print:hidden">
         <div className="flex h-14 items-center gap-3 px-4">
           <Image src="/logo-scs.png" alt="" width={30} height={30} className="rounded-full bg-white" />
           <span className="text-[15px] font-semibold text-white">San Cayetano</span>

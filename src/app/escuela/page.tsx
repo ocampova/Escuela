@@ -24,8 +24,9 @@ export default async function StaffHome() {
   const weekday = new Date().getDay();
   const schoolDay = weekday !== 0 && weekday !== 6;
 
-  const [attendance, anns, events, students] = await Promise.all([
+  const [attendance, notices, anns, events, students] = await Promise.all([
     prisma.attendance.findMany({ where: { date: today, student: { sectionId: { in: sectionIds } } }, select: { status: true, student: { select: { sectionId: true } } } }),
+    prisma.absenceNotice.findMany({ where: { dateFrom: { lte: today }, dateTo: { gte: today }, student: { sectionId: { in: sectionIds } } }, include: { student: { select: { firstName: true, lastName: true, sectionId: true } } } }),
     prisma.announcement.findMany({
       where: { schoolId: user.schoolId, ...(manager ? {} : { OR: [{ sectionId: { in: sectionIds } }, { authorId: user.id }] }) },
       include: { level: true, section: { include: { grade: true } }, reads: { where: { acknowledgedAt: { not: null } }, select: { userId: true } } },
@@ -144,6 +145,25 @@ export default async function StaffHome() {
               </table>
             </Card>
           </section>
+
+          {notices.length > 0 && (
+            <section>
+              <SectionHeading title={`Ausencias avisadas por las familias hoy (${notices.length})`} />
+              <Card tone="flat" className="divide-y divide-line">
+                {notices.map((n) => (
+                  <div key={n.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm">
+                    <span className="font-medium">
+                      {n.student.firstName} {n.student.lastName}
+                    </span>
+                    <span className="text-ink-2">
+                      {n.reason}
+                      {n.note ? `: ${n.note}` : ""}
+                    </span>
+                  </div>
+                ))}
+              </Card>
+            </section>
+          )}
 
           {/* Avisos */}
           <section>
