@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, CalendarDays, House, MessageCircle, Wallet } from "lucide-react";
 import { cx } from "./ui";
-import { translator, type Locale } from "@/lib/i18n";
 
 const TABS = [
   { href: "/familia", label: "Inicio", icon: House, exact: true },
@@ -14,13 +13,12 @@ const TABS = [
   { href: "/familia/cuenta", label: "Cuenta", icon: Wallet },
 ];
 
-export function FamilyTabBar({ pendingCount, unreadMessages = 0, messaging = true, locale = "es" }: { pendingCount: number; unreadMessages?: number; messaging?: boolean; locale?: Locale }) {
+export function FamilyTabBar({ pendingCount, unreadMessages = 0, messaging = true }: { pendingCount: number; unreadMessages?: number; messaging?: boolean }) {
   const path = usePathname();
-  const tr = translator(locale);
   const tabs = TABS.filter((t) => messaging || t.href !== "/familia/mensajes");
   return (
     <nav
-      aria-label={tr("Secciones")}
+      aria-label="Secciones"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden print:hidden"
     >
       <ul className={cx("mx-auto grid max-w-xl", tabs.length === 5 ? "grid-cols-5" : "grid-cols-4")}>
@@ -45,12 +43,12 @@ export function FamilyTabBar({ pendingCount, unreadMessages = 0, messaging = tru
                     return (
                       <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white ring-2 ring-surface">
                         {n}
-                        <span className="sr-only">{tr(t.href === "/familia/avisos" ? " avisos pendientes" : " mensajes nuevos")}</span>
+                        <span className="sr-only">{t.href === "/familia/avisos" ? " avisos pendientes" : " mensajes nuevos"}</span>
                       </span>
                     );
                   })()}
                 </span>
-                {tr(t.label)}
+                {t.label}
               </Link>
             </li>
           );
@@ -61,12 +59,11 @@ export function FamilyTabBar({ pendingCount, unreadMessages = 0, messaging = tru
 }
 
 /** Navegación en el encabezado para tableta y computadora (la barra inferior se oculta). */
-export function FamilyTopNav({ pendingCount, unreadMessages = 0, messaging = true, locale = "es" }: { pendingCount: number; unreadMessages?: number; messaging?: boolean; locale?: Locale }) {
+export function FamilyTopNav({ pendingCount, unreadMessages = 0, messaging = true }: { pendingCount: number; unreadMessages?: number; messaging?: boolean }) {
   const path = usePathname();
-  const tr = translator(locale);
   const tabs = TABS.filter((t) => messaging || t.href !== "/familia/mensajes");
   return (
-    <nav aria-label={tr("Secciones")} className="hidden md:block">
+    <nav aria-label="Secciones" className="hidden md:block">
       <ul className="flex items-center gap-1">
         {tabs.map((t) => {
           const active = t.exact ? path === t.href : path.startsWith(t.href);
@@ -83,11 +80,11 @@ export function FamilyTopNav({ pendingCount, unreadMessages = 0, messaging = tru
                 )}
               >
                 <Icon className="size-[18px]" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
-                {tr(t.label)}
+                {t.label}
                 {n > 0 && (
                   <span className="tabular rounded-full bg-scs-orange-strong px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">
                     {n}
-                    <span className="sr-only">{tr(t.href === "/familia/avisos" ? " avisos pendientes" : " mensajes nuevos")}</span>
+                    <span className="sr-only">{t.href === "/familia/avisos" ? " avisos pendientes" : " mensajes nuevos"}</span>
                   </span>
                 )}
               </Link>

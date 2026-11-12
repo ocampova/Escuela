@@ -4,10 +4,8 @@ import { useOptimistic, useTransition } from "react";
 import { Check } from "lucide-react";
 import { acknowledge } from "@/app/familia/actions";
 import { cx } from "./ui";
-import { translator, type Locale } from "@/lib/i18n";
 
-export function AckButton({ id, acknowledged, size = "md", className, locale = "es" }: { id: string; acknowledged: boolean; size?: "md" | "lg"; className?: string; locale?: Locale }) {
-  const t = translator(locale);
+export function AckButton({ id, acknowledged, size = "md", className }: { id: string; acknowledged: boolean; size?: "md" | "lg"; className?: string }) {
   const [done, setDone] = useOptimistic(acknowledged);
   const [pending, start] = useTransition();
 
@@ -15,7 +13,7 @@ export function AckButton({ id, acknowledged, size = "md", className, locale = "
     return (
       <span className={cx("ack-in inline-flex items-center gap-1.5 font-medium text-ok", size === "lg" ? "h-12 text-base" : "h-9 text-sm", className)}>
         <Check className="size-4" strokeWidth={2.5} aria-hidden />
-        {t("Enterado")}
+        Enterado
       </span>
     );
   }
@@ -36,7 +34,7 @@ export function AckButton({ id, acknowledged, size = "md", className, locale = "
       )}
     >
       <Check className="size-4" strokeWidth={2.5} aria-hidden />
-      {t("Enterado")}
+      Enterado
     </button>
   );
 }

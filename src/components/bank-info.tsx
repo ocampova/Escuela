@@ -1,6 +1,5 @@
 "use client";
 
-import { translator, type Locale } from "@/lib/i18n";
 import { useState } from "react";
 import { Check, Copy, Landmark } from "lucide-react";
 import { cx } from "./ui";
@@ -15,11 +14,10 @@ export type BankDetails = {
 };
 
 /** Cuenta de la escuela para depósitos y transferencias, con botón para copiar el IBAN. */
-export function BankInfo({ bank, className, locale = "es" }: { bank: BankDetails; className?: string; locale?: Locale }) {
-  const t = translator(locale);
+export function BankInfo({ bank, className }: { bank: BankDetails; className?: string }) {
   const [copied, setCopied] = useState(false);
   if (!bank.bankIban) {
-    return <p className={cx("text-sm text-ink-2", className)}>{t("La escuela todavía no ha configurado su cuenta para pagos. Consulte con Secretaría.")}</p>;
+    return <p className={cx("text-sm text-ink-2", className)}>La escuela todavía no ha configurado su cuenta para pagos. Consulte con Secretaría.</p>;
   }
   return (
     <div className={cx("space-y-3", className)}>
@@ -28,12 +26,12 @@ export function BankInfo({ bank, className, locale = "es" }: { bank: BankDetails
           <Landmark className="size-[18px]" aria-hidden />
         </span>
         <dl className="min-w-0 flex-1 text-sm">
-          <dt className="sr-only">{t("Banco")}</dt>
-          <dd className="font-medium">{bank.bankName ?? t("Cuenta bancaria")} · {t("cuenta en colones")}</dd>
-          <dt className="sr-only">{t("A nombre de")}</dt>
+          <dt className="sr-only">Banco</dt>
+          <dd className="font-medium">{bank.bankName ?? "Cuenta bancaria"} · cuenta en colones</dd>
+          <dt className="sr-only">A nombre de</dt>
           <dd className="text-ink-2">
-            {t("A nombre de")} {bank.bankAccountHolder}
-            {bank.bankHolderId ? `, ${t("cédula")} ${bank.bankHolderId}` : ""}
+            A nombre de {bank.bankAccountHolder}
+            {bank.bankHolderId ? `, cédula ${bank.bankHolderId}` : ""}
           </dd>
           {bank.sinpePhone && <dd className="text-ink-2">SINPE Móvil: {bank.sinpePhone}</dd>}
         </dl>
@@ -53,7 +51,7 @@ export function BankInfo({ bank, className, locale = "es" }: { bank: BankDetails
         </span>
         <span className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand">
           {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
-          {t(copied ? "Copiado" : "Copiar")}
+          {copied ? "Copiado" : "Copiar"}
         </span>
       </button>
       {bank.paymentNote && <p className="text-sm text-ink-2">{bank.paymentNote}</p>}

@@ -11,8 +11,6 @@ import { PushPrompt } from "@/components/push-prompt";
 import { AnnouncementThumb } from "@/components/announcement-images";
 import { vapidPublicKey } from "@/lib/push";
 import { DailyReportView } from "@/components/daily-report";
-import { i18n } from "@/lib/i18n-server";
-import { conceptLabel } from "@/lib/i18n";
 import { HomeworkRow } from "@/components/homework-row";
 
 const ATT: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "neutral" }> = {
@@ -24,7 +22,6 @@ const ATT: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "neu
 
 export default async function FamilyHome() {
   const user = await requireGuardian();
-  const { t, locale } = await i18n();
   const students = await guardianStudents(user.id);
   const ids = students.map((s) => s.id);
   const today = keyToDate(todayKey());
@@ -67,11 +64,11 @@ export default async function FamilyHome() {
   return (
     <div className="space-y-8 md:space-y-10">
       <div className="full-bleed -mt-5 bg-brand [--bleed-color:var(--color-brand)] pt-5 pb-6 text-white md:-mt-8 md:pt-8 md:pb-10">
-        <h1 className="text-[1.75rem] leading-tight font-semibold md:text-4xl">{t("Hola, {name}", { name: firstName })}</h1>
+        <h1 className="text-[1.75rem] leading-tight font-semibold md:text-4xl">Hola, {firstName}</h1>
         <p className="mt-1 text-sm text-white/75 first-letter:uppercase md:text-base">{weekday}</p>
 
         {/* Hijos */}
-        <section aria-label={t("Mis hijos")} className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:mt-6 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
+        <section aria-label="Mis hijos" className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:mt-6 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
           {students.map((s) => {
             const att = attendance.find((a) => a.studentId === s.id);
             const st = att ? ATT[att.status] : null;
@@ -90,8 +87,8 @@ export default async function FamilyHome() {
                   <ChevronRight className="size-5 shrink-0 text-ink-3" aria-hidden />
                 </div>
                 <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-sm">
-                  <span className="truncate text-ink-2">{s.section.teacher ? `${t("Docente")}: ${s.section.teacher.name.split(" ").slice(0, 2).join(" ")}` : t("Sin docente asignada")}</span>
-                  {st ? <Badge tone={st.tone}>{t(st.label)}</Badge> : <Badge>{t("Sin registro hoy")}</Badge>}
+                  <span className="truncate text-ink-2">{s.section.teacher ? `Docente: ${s.section.teacher.name.split(" ").slice(0, 2).join(" ")}` : "Sin docente asignada"}</span>
+                  {st ? <Badge tone={st.tone}>{st.label}</Badge> : <Badge>Sin registro hoy</Badge>}
                 </div>
               </Link>
             );
@@ -104,20 +101,20 @@ export default async function FamilyHome() {
               href={`/familia/hijos/${s.id}/ausencia`}
               className="inline-flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-white/20"
             >
-              <CalendarX className="size-4" aria-hidden /> {students.length > 1 ? t("Avisar ausencia de {name}", { name: s.firstName }) : t("Avisar una ausencia")}
+              <CalendarX className="size-4" aria-hidden /> {students.length > 1 ? `Avisar ausencia de ${s.firstName}` : "Avisar una ausencia"}
             </Link>
           ))}
         </div>
       </div>
 
-      <PushPrompt vapidKey={await vapidPublicKey()} className="lg:max-w-3xl" locale={locale} />
+      <PushPrompt vapidKey={await vapidPublicKey()} className="lg:max-w-3xl" />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8">
       {/* Pendiente */}
       {(pending.length > 0 || due > 0) && (
         <section>
-          <SectionHeading title={t("Necesita su atención")} />
+          <SectionHeading title="Necesita su atención" />
           <div className="space-y-3">
             {due > 0 && (
               <Link href="/familia/cuenta" className="block">
@@ -126,11 +123,11 @@ export default async function FamilyHome() {
                     <Wallet className="size-5" aria-hidden />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-ink-2">{t(overdue > 0 ? "Saldo vencido" : "Saldo por pagar")}</p>
+                    <p className="text-sm text-ink-2">{overdue > 0 ? "Saldo vencido" : "Saldo por pagar"}</p>
                     <p className="tabular text-xl font-semibold">{crc(due)}</p>
                     {nextDue && (
                       <p className="mt-0.5 text-sm text-ink-2">
-                        {conceptLabel(locale, nextDue.description)} · {t("vence")} {dateLabel(nextDue.date, { day: "numeric", month: "long" })}
+                        {nextDue.description} · vence {dateLabel(nextDue.date, { day: "numeric", month: "long" })}
                       </p>
                     )}
                   </div>
@@ -148,7 +145,7 @@ export default async function FamilyHome() {
                     </p>
                   </Link>
                   {a.images[0] ? (
-                    <Link href={`/familia/avisos/${a.id}`} className="shrink-0" aria-label={t("Ver imagen de {title}", { title: a.title })}>
+                    <Link href={`/familia/avisos/${a.id}`} className="shrink-0" aria-label={`Ver imagen de ${a.title}`}>
                       <AnnouncementThumb id={a.images[0].id} className="size-16" />
                     </Link>
                   ) : (
@@ -157,14 +154,14 @@ export default async function FamilyHome() {
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <Link href={`/familia/avisos/${a.id}`} className="text-sm font-medium text-brand hover:underline">
-                    {t("Leer aviso")}
+                    Leer aviso
                   </Link>
                   {a.permissionQuestion ? (
                     <Link href={`/familia/avisos/${a.id}`} className={buttonClass("primary", "sm", "h-9")}>
-                      {t("Responder autorización")}
+                      Responder autorización
                     </Link>
                   ) : (
-                    <AckButton id={a.id} acknowledged={false} locale={locale} />
+                    <AckButton id={a.id} acknowledged={false} />
                   )}
                 </div>
               </Card>
@@ -179,7 +176,7 @@ export default async function FamilyHome() {
             <CheckCircle2 className="size-5" aria-hidden />
           </span>
           <p className="text-sm text-ink-2">
-            <span className="font-medium text-ink">{t("Todo al día.")}</span> {t("No tiene avisos por confirmar ni pagos pendientes.")}
+            <span className="font-medium text-ink">Todo al día.</span> No tiene avisos por confirmar ni pagos pendientes.
           </p>
         </Card>
       )}
@@ -187,7 +184,7 @@ export default async function FamilyHome() {
       {/* Hoy en clase */}
       {(reports.length > 0 || pickups.length > 0) && (
         <section>
-          <SectionHeading title={t("Hoy en clase")} />
+          <SectionHeading title="Hoy en clase" />
           <div className="space-y-3">
             {students.map((s) => {
               const r = reports.find((x) => x.studentId === s.id);
@@ -201,9 +198,9 @@ export default async function FamilyHome() {
                       <p className="font-medium">{s.firstName}</p>
                     </div>
                     {r ? (
-                      <DailyReportView report={r} pickup={p} t={t} />
+                      <DailyReportView report={r} pickup={p} />
                     ) : (
-                      p && <DailyReportView report={{ day: today, mood: null, meal: null, participation: null, bathroom: null, note: null, activity: null }} pickup={p} t={t} />
+                      p && <DailyReportView report={{ day: today, mood: null, meal: null, participation: null, bathroom: null, note: null, activity: null }} pickup={p} />
                     )}
                   </Card>
                 </Link>
@@ -217,10 +214,10 @@ export default async function FamilyHome() {
       {recent.length > 0 && (
         <section>
           <SectionHeading
-            title={t("Avisos recientes")}
+            title="Avisos recientes"
             action={
               <Link href="/familia/avisos" className="text-sm font-medium text-brand hover:underline">
-                {t("Ver todos")}
+                Ver todos
               </Link>
             }
           />
@@ -243,25 +240,25 @@ export default async function FamilyHome() {
       {homework.length > 0 && (
         <section>
           <SectionHeading
-            title={t("Tareas para estos días")}
+            title="Tareas para estos días"
             action={
               <Link href="/familia/tareas" className="text-sm font-medium text-brand hover:underline">
-                {t("Ver todas")}
+                Ver todas
               </Link>
             }
           />
           <Card tone="flat" className="divide-y divide-line">
-            {homework.map((h) => <HomeworkRow key={h.id} h={h} t={t} />)}
+            {homework.map((h) => <HomeworkRow key={h.id} h={h} />)}
           </Card>
         </section>
       )}
       {albums.length > 0 && (
         <section>
           <SectionHeading
-            title={t("Fotos nuevas")}
+            title="Fotos nuevas"
             action={
               <Link href="/familia/fotos" className="text-sm font-medium text-brand hover:underline">
-                {t("Ver todas")}
+                Ver todas
               </Link>
             }
           />
@@ -277,7 +274,7 @@ export default async function FamilyHome() {
                   </div>
                   <p className="mt-2 truncate text-sm font-medium">{a.title}</p>
                   <p className="text-xs text-ink-2">
-                    {relativeDay(a.day)} · {a._count.photos} {t("fotos")}
+                    {relativeDay(a.day)} · {a._count.photos} fotos
                   </p>
                 </Card>
               </Link>
@@ -289,17 +286,17 @@ export default async function FamilyHome() {
       {/* Próximos eventos */}
       <section>
         <SectionHeading
-          title={t("Próximamente")}
+          title="Próximamente"
           action={
             <Link href="/familia/calendario" className="text-sm font-medium text-brand hover:underline">
-              {t("Ver calendario")}
+              Ver calendario
             </Link>
           }
         />
         <Card tone="flat" className="divide-y divide-line">
           {events.length === 0 && (
             <p className="flex items-center gap-2 p-4 text-sm text-ink-2">
-              <CalendarDays className="size-4" aria-hidden /> {t("No hay eventos en los próximos días.")}
+              <CalendarDays className="size-4" aria-hidden /> No hay eventos en los próximos días.
             </p>
           )}
           {events.map((e) => (
@@ -321,7 +318,7 @@ export default async function FamilyHome() {
         </div>
       </div>
 
-      <DemoNotice className="text-center" locale={locale} />
+      <DemoNotice className="text-center" />
     </div>
   );
 }

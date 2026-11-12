@@ -1,4 +1,3 @@
-import { getLocale } from "@/lib/i18n-server";
 import type { Metadata, Viewport } from "next";
 import { Lexend } from "next/font/google";
 import "./globals.css";
@@ -22,10 +21,9 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={locale === "en" ? "en" : "es-CR"} className={lexend.variable}>
+    <html lang="es-CR" className={lexend.variable}>
       <body className="min-h-dvh font-sans">
         {children}
         <ServiceWorkerRegister />
