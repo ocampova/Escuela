@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, Sun, ClipboardCheck, FileSpreadsheet, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
+import { Bell, CalendarDays, GraduationCap, Sun, ClipboardCheck, FileSpreadsheet, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
 import { cx } from "./ui";
 
 const ITEMS = [
   { href: "/escuela", label: "Panel", icon: LayoutGrid, exact: true },
   { href: "/escuela/asistencia", label: "Asistencia", icon: ClipboardCheck },
   { href: "/escuela/diario", label: "Vida diaria", icon: Sun, also: ["/escuela/fotos", "/escuela/salida"] },
+  { href: "/escuela/academico", label: "Académico", icon: GraduationCap, also: ["/escuela/tareas"] },
   { href: "/escuela/mensajes", label: "Mensajes", icon: MessageCircle },
   { href: "/escuela/avisos", label: "Avisos", icon: Bell },
   { href: "/escuela/alumnos", label: "Alumnos", icon: Users },

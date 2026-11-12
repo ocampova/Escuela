@@ -111,6 +111,7 @@ const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "
 
 async function main() {
   await prisma.$transaction([
+    prisma.homework.deleteMany(),
     prisma.dailyReport.deleteMany(),
     prisma.pickupLog.deleteMany(),
     prisma.album.deleteMany(),
@@ -639,6 +640,69 @@ async function main() {
       },
     });
   }
+
+  // Académico: periodos, materias, componentes, notas e informes al hogar
+  await prisma.level.update({ where: { id: pre.id }, data: { evaluation: "DESCRIPTIVE" } });
+  const termDates: [string, number, number, number, number][] = [
+    ["I Trimestre", 1, 2, 4, 8],
+    ["II Trimestre", 4, 18, 7, 28],
+    ["III Trimestre", 8, 7, 11, 11],
+  ];
+  const terms = [];
+  for (const [i, [name, m1, d1, m2, d2]] of termDates.entries()) {
+    terms.push(await prisma.term.create({ data: { schoolYearId: sy.id, name, order: i + 1, startsOn: new Date(Date.UTC(year, m1, d1)), endsOn: new Date(Date.UTC(year, m2, d2)) } }));
+  }
+  const areas = [];
+  for (const [i, name] of ["Socioafectiva", "Psicomotriz", "Cognitiva", "Comunicación y lenguaje"].entries()) {
+    areas.push(await prisma.subject.create({ data: { levelId: pre.id, name, order: i } }));
+  }
+  const subjects = [];
+  for (const [i, name] of ["Español", "Matemáticas", "Ciencias", "Estudios Sociales", "Inglés", "Educación Física", "Música", "Artes Plásticas"].entries()) {
+    subjects.push(await prisma.subject.create({ data: { levelId: pri.id, name, order: i } }));
+  }
+  // Valores de ejemplo: la escuela los ajusta al Reglamento de Evaluación vigente
+  const comps = [];
+  for (const [i, [name, weight]] of ([["Trabajo cotidiano", 50], ["Tareas", 10], ["Pruebas", 30], ["Asistencia", 10]] as [string, number][]).entries()) {
+    comps.push(await prisma.gradeComponent.create({ data: { levelId: pri.id, name, weight, order: i } }));
+  }
+  const primeroKids = await prisma.student.findMany({ where: { sectionId: sPrimero.id }, orderBy: { firstName: "asc" } });
+  for (const [ti, term] of terms.entries()) {
+    for (const k of primeroKids) {
+      const base = 70 + Math.round(rand() * 25);
+      for (const sub of subjects) {
+        for (const c of comps) {
+          if (ti === 2 && c.name !== "Trabajo cotidiano" && c.name !== "Tareas") continue;
+          const value = Math.max(55, Math.min(100, c.name === "Asistencia" ? 100 - Math.round(rand() * 10) : base + Math.round((rand() - 0.4) * 16)));
+          await prisma.score.create({ data: { studentId: k.id, subjectId: sub.id, termId: term.id, componentId: c.id, value } });
+        }
+      }
+      if (ti < 2) await prisma.termReport.create({ data: { studentId: k.id, termId: term.id, comment: `${k.firstName} muestra buena disposición en clase. Recomendamos reforzar la lectura diaria en casa durante 15 minutos.` } });
+    }
+    if (ti < 2) await prisma.termPublication.create({ data: { termId: term.id, sectionId: sPrimero.id, publishedAt: day(ti === 0 ? -180 : -75, 15) } });
+  }
+  const areaComments = [
+    "Se relaciona con respeto con sus compañeros y comparte los materiales. Expresa lo que siente con palabras.",
+    "Recorta siguiendo líneas rectas y mejora el agarre del lápiz. Disfruta los juegos al aire libre.",
+    "Clasifica objetos por color y tamaño, y cuenta hasta 20 con seguridad.",
+    "Narra experiencias en orden y reconoce las letras de su nombre.",
+  ];
+  for (const term of terms.slice(0, 2)) {
+    for (const [ki, k] of prepKids.entries()) {
+      for (const [ai, a] of areas.entries()) {
+        await prisma.areaAssessment.create({ data: { studentId: k.id, subjectId: a.id, termId: term.id, achievement: (ki + ai) % 5 === 4 ? "apoyo" : (ki + ai) % 3 === 0 ? "en-proceso" : "logrado", comment: areaComments[ai] } });
+      }
+      await prisma.termReport.create({ data: { studentId: k.id, termId: term.id, comment: `Ha sido un periodo de mucho crecimiento para ${k.firstName}. En casa, pueden apoyarle conversando sobre lo que hizo en el día y leyendo cuentos juntos.` } });
+    }
+    await prisma.termPublication.create({ data: { termId: term.id, sectionId: sTransA.id, publishedAt: day(term.order === 1 ? -180 : -75, 15) } });
+  }
+  const dateKey = (off: number) => new Date(day(weekday(off), 12).toISOString().slice(0, 10));
+  await prisma.homework.createMany({
+    data: [
+      { sectionId: sPrimero.id, subjectId: subjects[1].id, title: "Página 34 del libro: sumas con decenas", description: "Resolver los ejercicios 1 al 6 con lápiz.", dueDate: dateKey(1), authorId: tDaniel.id },
+      { sectionId: sPrimero.id, subjectId: subjects[2].id, title: "Traer una hoja de árbol para la clase de Ciencias", description: null, dueDate: dateKey(2), authorId: tDaniel.id },
+      { sectionId: sTransA.id, subjectId: null, title: "Traer un juguete reciclado hecho en familia", description: "Con botellas, cajas o tubos de cartón. Lo presentaremos en clase.", dueDate: dateKey(3), authorId: tSofia.id },
+    ],
+  });
 
   console.log(`Seed listo. Contraseña de todas las cuentas: ${PASSWORD}`);
 }

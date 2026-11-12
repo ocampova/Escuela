@@ -71,12 +71,12 @@ enum ReportStatus {
 }
 
 model School {
-  id        String   @id @default(cuid())
-  name      String
-  shortName String
-  city      String
-  currency  String   @default("CRC")
-  email     String?
+  id                String   @id @default(cuid())
+  name              String
+  shortName         String
+  city              String
+  currency          String   @default("CRC")
+  email             String?
   // Cuenta para depósitos y transferencias (se configura en la plataforma)
   bankName          String?
   bankAccountHolder String?
@@ -87,10 +87,10 @@ model School {
   /// Horario en que el personal responde mensajes (informativo para las familias)
   messageHours      String?
   /// Chat familia ↔ escuela dentro de la plataforma (la escuela puede apagarlo si prefiere WhatsApp)
-  messagingEnabled  Boolean @default(true)
+  messagingEnabled  Boolean  @default(true)
   /// Recordatorios automáticos de cobro (3 días antes y días 1, 8, 15 y 30 de atraso)
-  remindersEnabled  Boolean @default(true)
-  createdAt DateTime @default(now())
+  remindersEnabled  Boolean  @default(true)
+  createdAt         DateTime @default(now())
 
   conversations Conversation[]
   users         User[]
@@ -103,42 +103,43 @@ model School {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  schoolId     String
-  school       School   @relation(fields: [schoolId], references: [id])
-  role         Role
-  name         String
-  email        String   @unique
-  phone        String?
-  passwordHash String?
-  active       Boolean  @default(true)
+  id                String    @id @default(cuid())
+  schoolId          String
+  school            School    @relation(fields: [schoolId], references: [id])
+  role              Role
+  name              String
+  email             String    @unique
+  phone             String?
+  passwordHash      String?
+  active            Boolean   @default(true)
   /// Aceptación del aviso de privacidad (Ley 8968)
   privacyAcceptedAt DateTime?
   /// Preferencias de correo
-  emailNotices  Boolean @default(true)
-  emailReceipts Boolean @default(true)
+  emailNotices      Boolean   @default(true)
+  emailReceipts     Boolean   @default(true)
   /// Enlace privado del calendario (suscripción ICS en Google / iPhone)
-  calendarToken String?  @unique
-  createdAt    DateTime @default(now())
+  calendarToken     String?   @unique
+  createdAt         DateTime  @default(now())
 
-  tokens          AuthToken[]
-  guardianOf      StudentGuardian[]
-  teacherOf       Section[]          @relation("SectionTeacher")
-  announcements   Announcement[]
-  reads           AnnouncementRead[]
-  attendanceTaken Attendance[]
-  paymentsLogged  Payment[]
-  reportsSent     PaymentReport[]    @relation("ReportedPayments")
-  conversations   Conversation[]     @relation("GuardianConversations")
-  messages        Message[]
-  convReads       ConversationRead[]
-  pushSubs        PushSubscription[]
-  absenceNotices  AbsenceNotice[]
+  tokens            AuthToken[]
+  guardianOf        StudentGuardian[]
+  teacherOf         Section[]            @relation("SectionTeacher")
+  announcements     Announcement[]
+  reads             AnnouncementRead[]
+  attendanceTaken   Attendance[]
+  paymentsLogged    Payment[]
+  reportsSent       PaymentReport[]      @relation("ReportedPayments")
+  conversations     Conversation[]       @relation("GuardianConversations")
+  messages          Message[]
+  convReads         ConversationRead[]
+  pushSubs          PushSubscription[]
+  absenceNotices    AbsenceNotice[]
   permissionAnswers PermissionResponse[]
-  dailyReports    DailyReport[]
-  albums          Album[]
-  pickupLogs      PickupLog[]
-  reportsReviewed PaymentReport[]    @relation("ReviewedPayments")
+  dailyReports      DailyReport[]
+  albums            Album[]
+  pickupLogs        PickupLog[]
+  homework          Homework[]
+  reportsReviewed   PaymentReport[]      @relation("ReviewedPayments")
 }
 
 model SchoolYear {
@@ -150,48 +151,55 @@ model SchoolYear {
   endsOn   DateTime  @db.Date
   active   Boolean   @default(false)
   sections Section[]
+  terms    Term[]
 }
 
 model Level {
-  id            String         @id @default(cuid())
+  id            String           @id @default(cuid())
   schoolId      String
-  school        School         @relation(fields: [schoolId], references: [id])
+  school        School           @relation(fields: [schoolId], references: [id])
   name          String
   order         Int
   schedule      String?
   phone         String?
   address       String?
   materials     String?
+  /// NUMERIC = notas 1-100 por componentes (primaria) · DESCRIPTIVE = informe al hogar (preescolar)
+  evaluation    String           @default("NUMERIC")
   grades        Grade[]
+  subjects      Subject[]
+  components    GradeComponent[]
   announcements Announcement[]
   events        Event[]
   feeConcepts   FeeConcept[]
 }
 
 model Grade {
-  id       String    @id @default(cuid())
-  levelId  String
-  level    Level     @relation(fields: [levelId], references: [id])
-  name     String
-  order    Int
+  id         String      @id @default(cuid())
+  levelId    String
+  level      Level       @relation(fields: [levelId], references: [id])
+  name       String
+  order      Int
   sections   Section[]
   applicants Applicant[]
 }
 
 model Section {
-  id            String         @id @default(cuid())
+  id            String            @id @default(cuid())
   gradeId       String
-  grade         Grade          @relation(fields: [gradeId], references: [id])
+  grade         Grade             @relation(fields: [gradeId], references: [id])
   schoolYearId  String
-  schoolYear    SchoolYear     @relation(fields: [schoolYearId], references: [id])
+  schoolYear    SchoolYear        @relation(fields: [schoolYearId], references: [id])
   name          String
-  color         String         @default("green")
+  color         String            @default("green")
   teacherId     String?
-  teacher       User?          @relation("SectionTeacher", fields: [teacherId], references: [id])
+  teacher       User?             @relation("SectionTeacher", fields: [teacherId], references: [id])
   students      Student[]
   announcements Announcement[]
   events        Event[]
   albums        Album[]
+  homework      Homework[]
+  publications  TermPublication[]
 }
 
 model Student {
@@ -209,16 +217,19 @@ model Student {
   photoConsent Boolean?
   createdAt    DateTime @default(now())
 
-  guardians  StudentGuardian[]
-  pickups    AuthorizedPickup[]
-  attendance Attendance[]
-  charges    Charge[]
-  payments   Payment[]
-  reports    PaymentReport[]
-  conversations Conversation[]
-  absenceNotices AbsenceNotice[]
-  dailyReports DailyReport[]
-  pickupLogs   PickupLog[]
+  guardians         StudentGuardian[]
+  pickups           AuthorizedPickup[]
+  attendance        Attendance[]
+  charges           Charge[]
+  payments          Payment[]
+  reports           PaymentReport[]
+  conversations     Conversation[]
+  absenceNotices    AbsenceNotice[]
+  dailyReports      DailyReport[]
+  pickupLogs        PickupLog[]
+  scores            Score[]
+  areaNotes         AreaAssessment[]
+  termReports       TermReport[]
   permissionAnswers PermissionResponse[]
 }
 
@@ -244,26 +255,26 @@ model AuthorizedPickup {
 }
 
 model Announcement {
-  id          String             @id @default(cuid())
-  schoolId    String
-  school      School             @relation(fields: [schoolId], references: [id])
-  authorId    String
-  author      User               @relation(fields: [authorId], references: [id])
-  title       String
-  body        String
-  audience    Audience
-  levelId     String?
-  level       Level?             @relation(fields: [levelId], references: [id])
-  sectionId   String?
-  section     Section?           @relation(fields: [sectionId], references: [id])
-  requiresAck Boolean            @default(true)
+  id                 String               @id @default(cuid())
+  schoolId           String
+  school             School               @relation(fields: [schoolId], references: [id])
+  authorId           String
+  author             User                 @relation(fields: [authorId], references: [id])
+  title              String
+  body               String
+  audience           Audience
+  levelId            String?
+  level              Level?               @relation(fields: [levelId], references: [id])
+  sectionId          String?
+  section            Section?             @relation(fields: [sectionId], references: [id])
+  requiresAck        Boolean              @default(true)
   /// Pide autorización por alumno (p. ej. una gira): Sí / No
   permissionQuestion String?
-  permissionDeadline DateTime?  @db.Date
-  createdAt   DateTime           @default(now())
-  reads       AnnouncementRead[]
-  images      AnnouncementImage[]
-  permissionAnswers PermissionResponse[]
+  permissionDeadline DateTime?            @db.Date
+  createdAt          DateTime             @default(now())
+  reads              AnnouncementRead[]
+  images             AnnouncementImage[]
+  permissionAnswers  PermissionResponse[]
 }
 
 model AnnouncementRead {
@@ -278,20 +289,20 @@ model AnnouncementRead {
 }
 
 model Event {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   schoolId    String
-  school      School   @relation(fields: [schoolId], references: [id])
+  school      School    @relation(fields: [schoolId], references: [id])
   title       String
   description String?
   startsAt    DateTime
   endsAt      DateTime?
-  allDay      Boolean  @default(false)
-  kind        String   @default("evento")
-  audience    Audience @default(SCHOOL)
+  allDay      Boolean   @default(false)
+  kind        String    @default("evento")
+  audience    Audience  @default(SCHOOL)
   levelId     String?
-  level       Level?   @relation(fields: [levelId], references: [id])
+  level       Level?    @relation(fields: [levelId], references: [id])
   sectionId   String?
-  section     Section? @relation(fields: [sectionId], references: [id])
+  section     Section?  @relation(fields: [sectionId], references: [id])
 }
 
 model Attendance {
@@ -343,20 +354,20 @@ model Charge {
 }
 
 model Payment {
-  id          String        @id @default(cuid())
-  receiptNumber Int         @unique @default(autoincrement())
-  studentId   String
-  student     Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  amount      Int
-  currency    Currency      @default(CRC)
-  method      PaymentMethod
-  reference   String?
-  paidAt      DateTime      @db.Date
-  note        String?
-  loggedById  String?
-  loggedBy    User?         @relation(fields: [loggedById], references: [id])
-  createdAt   DateTime      @default(now())
-  report      PaymentReport?
+  id            String         @id @default(cuid())
+  receiptNumber Int            @unique @default(autoincrement())
+  studentId     String
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount        Int
+  currency      Currency       @default(CRC)
+  method        PaymentMethod
+  reference     String?
+  paidAt        DateTime       @db.Date
+  note          String?
+  loggedById    String?
+  loggedBy      User?          @relation(fields: [loggedById], references: [id])
+  createdAt     DateTime       @default(now())
+  report        PaymentReport?
 }
 
 /// Pago reportado por una familia con su comprobante; Secretaría lo aprueba o rechaza.
@@ -553,22 +564,22 @@ model ReminderLog {
 
 /// Reporte diario (preescolar): cómo le fue al niño hoy.
 model DailyReport {
-  id        String   @id @default(cuid())
-  studentId String
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  day       DateTime @db.Date
-  mood      String?
-  meal      String?
+  id            String    @id @default(cuid())
+  studentId     String
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  day           DateTime  @db.Date
+  mood          String?
+  meal          String?
   participation String?
   /// "Hoy trabajamos": la actividad del día, igual para toda la sección
-  activity  String?
-  bathroom  String?
-  note      String?
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
+  activity      String?
+  bathroom      String?
+  note          String?
+  authorId      String
+  author        User      @relation(fields: [authorId], references: [id])
   /// Cuándo se notificó a la familia (null = guardado sin enviar)
-  sentAt    DateTime?
-  updatedAt DateTime @updatedAt
+  sentAt        DateTime?
+  updatedAt     DateTime  @updatedAt
 
   @@unique([studentId, day])
 }
@@ -612,4 +623,113 @@ model PickupLog {
   staff      User     @relation(fields: [staffId], references: [id])
 
   @@unique([studentId, day])
+}
+
+/// Periodo de evaluación (trimestre o semestre) del curso lectivo.
+model Term {
+  id           String            @id @default(cuid())
+  schoolYearId String
+  schoolYear   SchoolYear        @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
+  name         String
+  order        Int
+  startsOn     DateTime          @db.Date
+  endsOn       DateTime          @db.Date
+  scores       Score[]
+  areaNotes    AreaAssessment[]
+  reports      TermReport[]
+  publications TermPublication[]
+}
+
+/// Materia (primaria) o ámbito del informe (preescolar), por nivel.
+model Subject {
+  id        String           @id @default(cuid())
+  levelId   String
+  level     Level            @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  name      String
+  order     Int              @default(0)
+  active    Boolean          @default(true)
+  scores    Score[]
+  areaNotes AreaAssessment[]
+  homework  Homework[]
+}
+
+/// Componente de la nota (trabajo cotidiano, tareas, pruebas…) con su porcentaje, por nivel.
+model GradeComponent {
+  id      String  @id @default(cuid())
+  levelId String
+  level   Level   @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  name    String
+  weight  Float
+  order   Int     @default(0)
+  scores  Score[]
+}
+
+/// Nota de un componente (0 a 100) de una materia en un periodo.
+model Score {
+  id          String         @id @default(cuid())
+  studentId   String
+  student     Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId   String
+  subject     Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  termId      String
+  term        Term           @relation(fields: [termId], references: [id], onDelete: Cascade)
+  componentId String
+  component   GradeComponent @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  value       Float
+
+  @@unique([studentId, subjectId, termId, componentId])
+}
+
+/// Informe al hogar (preescolar): nivel de logro y comentario por ámbito.
+model AreaAssessment {
+  id          String  @id @default(cuid())
+  studentId   String
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId   String
+  subject     Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  termId      String
+  term        Term    @relation(fields: [termId], references: [id], onDelete: Cascade)
+  achievement String?
+  comment     String?
+
+  @@unique([studentId, subjectId, termId])
+}
+
+/// Observación general del periodo para la boleta o el informe.
+model TermReport {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  termId    String
+  term      Term    @relation(fields: [termId], references: [id], onDelete: Cascade)
+  comment   String?
+
+  @@unique([studentId, termId])
+}
+
+/// Boletas o informes de una sección publicados a las familias.
+model TermPublication {
+  id          String   @id @default(cuid())
+  termId      String
+  term        Term     @relation(fields: [termId], references: [id], onDelete: Cascade)
+  sectionId   String
+  section     Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  publishedAt DateTime @default(now())
+
+  @@unique([termId, sectionId])
+}
+
+/// Tarea para la casa (por sección).
+model Homework {
+  id          String   @id @default(cuid())
+  sectionId   String
+  section     Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  subjectId   String?
+  subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  title       String
+  description String?
+  dueDate     DateTime @db.Date
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  createdAt   DateTime @default(now())
 }

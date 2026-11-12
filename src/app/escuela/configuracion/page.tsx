@@ -10,6 +10,7 @@ import { Avatar, Badge, Card, Field, PageHeader, SectionHeading, cx, inputClass,
 import { addGrade, addLevel, addSection, addStaff, saveBank, saveConcept, saveLevelInfo, saveMessageHours, saveSchoolYear, updateSection } from "./actions";
 import { money } from "@/lib/format";
 import { ActiveToggle } from "./active-toggle";
+import { AcademicSettings } from "./academic-settings";
 import { MessagingToggle } from "./messaging-toggle";
 
 export const metadata: Metadata = { title: "Configuración" };
@@ -19,6 +20,7 @@ const TABS = [
   { key: "personal", label: "Personal" },
   { key: "pagos", label: "Pagos y precios" },
   { key: "curso", label: "Curso lectivo" },
+  { key: "academico", label: "Académico" },
 ];
 const ROLE: Record<string, string> = { ADMIN: "Dirección", STAFF: "Secretaría", TEACHER: "Docente" };
 const COLOR_LABEL: Record<string, string> = { orange: "Naranja", green: "Verde", blue: "Azul" };
@@ -326,6 +328,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           </aside>
         </div>
       )}
+
+      {tab === "academico" && <AcademicSettings schoolId={user.schoolId} yearId={year?.id ?? null} />}
 
       {tab === "curso" && (
         <Card className="max-w-lg p-5">

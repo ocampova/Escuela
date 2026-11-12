@@ -14,6 +14,8 @@ const sectionBand: Record<string, string> = {
 import { AttendanceStrip } from "@/components/attendance-strip";
 import { DailyReportView, PickupLine } from "@/components/daily-report";
 import { capitalize } from "@/lib/format";
+import { HomeworkRow } from "@/components/homework-row";
+import { FileText } from "lucide-react";
 
 export default async function ChildPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ausencia?: string }> }) {
   const { id } = await params;
@@ -22,7 +24,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
   const s = await prisma.student.findFirst({
     where: { id, guardians: { some: { userId: user.id } } },
     include: {
-      section: { include: { grade: true, teacher: true } },
+      section: { include: { grade: { include: { level: true } }, teacher: true } },
       pickups: true,
       guardians: { include: { user: true } },
       attendance: { orderBy: { date: "desc" }, take: 20 },
@@ -39,6 +41,11 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
     take: 3,
   });
   const today = keyToDate(todayKey());
+  const [homework, publications] = await Promise.all([
+    prisma.homework.findMany({ where: { sectionId: s.sectionId, dueDate: { gte: today } }, include: { subject: true }, orderBy: { dueDate: "asc" }, take: 5 }),
+    prisma.termPublication.findMany({ where: { sectionId: s.sectionId }, include: { term: true }, orderBy: { term: { order: "desc" } } }),
+  ]);
+  const descriptive = s.section.grade.level.evaluation === "DESCRIPTIVE";
   const pickupFor = (day: Date) => s.pickupLogs.find((p) => p.day.getTime() === day.getTime());
   const todayPickup = pickupFor(today);
   const lastReport = s.dailyReports[0];
@@ -109,6 +116,39 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
               </div>
             </details>
           )}
+        </section>
+      )}
+
+      {homework.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Tareas"
+            action={
+              <Link href="/familia/tareas" className="text-sm font-medium text-brand hover:underline">
+                Ver todas
+              </Link>
+            }
+          />
+          <Card className="divide-y divide-line">
+            {homework.map((h) => <HomeworkRow key={h.id} h={h} />)}
+          </Card>
+        </section>
+      )}
+
+      {publications.length > 0 && (
+        <section>
+          <SectionHeading title={descriptive ? "Informes al hogar" : "Boletas"} />
+          <Card className="divide-y divide-line">
+            {publications.map((p) => (
+              <Link key={p.id} href={`/boletas/${s.id}/${p.termId}`} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-canvas">
+                <span className="flex size-9 items-center justify-center rounded-full bg-brand-soft text-brand">
+                  <FileText className="size-[18px]" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1 font-medium">{p.term.name}</span>
+                <span className="text-sm font-medium text-brand">Ver</span>
+              </Link>
+            ))}
+          </Card>
         </section>
       )}
 

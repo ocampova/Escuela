@@ -11,6 +11,7 @@ import { PushPrompt } from "@/components/push-prompt";
 import { AnnouncementThumb } from "@/components/announcement-images";
 import { vapidPublicKey } from "@/lib/push";
 import { DailyReportView } from "@/components/daily-report";
+import { HomeworkRow } from "@/components/homework-row";
 
 const ATT: Record<string, { label: string; tone: "ok" | "warn" | "danger" | "neutral" }> = {
   PRESENT: { label: "Presente hoy", tone: "ok" },
@@ -25,7 +26,7 @@ export default async function FamilyHome() {
   const ids = students.map((s) => s.id);
   const today = keyToDate(todayKey());
 
-  const [anns, attendance, events, statements, reports, pickups, albums] = await Promise.all([
+  const [anns, attendance, events, statements, reports, pickups, albums, homework] = await Promise.all([
     guardianAnnouncements(user, students),
     prisma.attendance.findMany({ where: { studentId: { in: ids }, date: today } }),
     prisma.event.findMany({
@@ -42,6 +43,12 @@ export default async function FamilyHome() {
       include: { photos: { select: { id: true }, orderBy: { order: "asc" }, take: 3 }, _count: { select: { photos: true } } },
       orderBy: [{ day: "desc" }, { createdAt: "desc" }],
       take: 2,
+    }),
+    prisma.homework.findMany({
+      where: { sectionId: { in: students.map((s) => s.sectionId) }, dueDate: { gte: today, lte: new Date(today.getTime() + 3 * 86_400_000) } },
+      include: { subject: true },
+      orderBy: { dueDate: "asc" },
+      take: 4,
     }),
   ]);
 
@@ -230,6 +237,21 @@ export default async function FamilyHome() {
 
         </div>
         <div className="min-w-0 space-y-8 lg:sticky lg:top-24">
+      {homework.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Tareas para estos días"
+            action={
+              <Link href="/familia/tareas" className="text-sm font-medium text-brand hover:underline">
+                Ver todas
+              </Link>
+            }
+          />
+          <Card tone="flat" className="divide-y divide-line">
+            {homework.map((h) => <HomeworkRow key={h.id} h={h} />)}
+          </Card>
+        </section>
+      )}
       {albums.length > 0 && (
         <section>
           <SectionHeading

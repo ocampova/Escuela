@@ -47,6 +47,14 @@ A web platform that works on both phone and computer, for managing the school's 
 - **Pickup:** for each child the teacher picks who is collecting them from the guardians and the authorized list (with ID number). If it is someone else, the platform asks how this was confirmed with the family. The family receives a notification with the time and the person.
 - **Calendar on the phone:** a private link (ICS) for Google Calendar, iPhone or Outlook with the events that apply to each family. It updates automatically and can be regenerated if it was shared by mistake.
 
+## Academics
+
+- **Configuration (Configuración › Académico):** terms (trimesters or semesters), subjects per level, and the grade components with their percentages (they must add up to 100%). Each level is either numeric (primaria) or descriptive (preescolar). The percentages in the seed are an example. The school sets them according to the current MEP Reglamento de Evaluación de los Aprendizajes.
+- **Primaria grades:** 0 to 100 per component and subject. The term grade is calculated automatically (65 is the passing mark). While components are still missing, the grade shows in grey as "acumulado" (accumulated so far). Each student also has an observations field per term.
+- **Preescolar home report (informe al hogar):** for each area, an achievement level (Logrado, En proceso, Necesita apoyo) and a comment, plus a general message to the family. There is a "Siguiente alumno" button to move through the whole section quickly.
+- **Report cards:** printable or saveable as PDF, with that term's attendance and signature lines. The teacher sees a preview first and publishes per section and term. Families receive a notification and see the report card on their child's profile.
+- **Homework:** per section and subject with a due date. Families receive a notification, and homework appears on the home screen (next few days), on the child's profile and under `/familia/tareas`.
+
 ## Real school data (2027 brochures)
 
 - Levels: **Preescolar** (Kinder, Preparatoria) and **Primaria** I and II Ciclo (1st to 6th grade, bilingual), each with its own schedule, phones and campus address.
