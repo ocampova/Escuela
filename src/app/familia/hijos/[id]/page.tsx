@@ -12,7 +12,7 @@ const sectionBand: Record<string, string> = {
   blue: "bg-scs-blue-strong [--bleed-color:var(--color-scs-blue-strong)]",
 };
 import { AttendanceStrip } from "@/components/attendance-strip";
-import { DailyReportView, PickupLine } from "@/components/daily-report";
+import { DailyReportView } from "@/components/daily-report";
 import { capitalize } from "@/lib/format";
 import { HomeworkRow } from "@/components/homework-row";
 import { FileText } from "lucide-react";
@@ -30,7 +30,6 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       attendance: { orderBy: { date: "desc" }, take: 20 },
       absenceNotices: { where: { dateTo: { gte: keyToDate(todayKey()) } }, orderBy: { dateFrom: "asc" } },
       dailyReports: { where: { sentAt: { not: null } }, orderBy: { day: "desc" }, take: 5 },
-      pickupLogs: { orderBy: { day: "desc" }, take: 5 },
     },
   });
   if (!s) notFound();
@@ -46,8 +45,6 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
     prisma.termPublication.findMany({ where: { sectionId: s.sectionId }, include: { term: true }, orderBy: { term: { order: "desc" } } }),
   ]);
   const descriptive = s.section.grade.level.evaluation === "DESCRIPTIVE";
-  const pickupFor = (day: Date) => s.pickupLogs.find((p) => p.day.getTime() === day.getTime());
-  const todayPickup = pickupFor(today);
   const lastReport = s.dailyReports[0];
 
   const counts = { PRESENT: 0, LATE: 0, ABSENT: 0, EXCUSED: 0 } as Record<string, number>;
@@ -97,11 +94,11 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       )}
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8">
-      {(lastReport || todayPickup) && (
+      {lastReport && (
         <section>
-          <SectionHeading title={lastReport && lastReport.day.getTime() !== today.getTime() ? `Reporte del ${dateLabel(lastReport.day, { weekday: "long", day: "numeric", month: "short" })}` : "Hoy en clase"} />
+          <SectionHeading title={lastReport.day.getTime() !== today.getTime() ? `Reporte del ${dateLabel(lastReport.day, { weekday: "long", day: "numeric", month: "short" })}` : "Hoy en clase"} />
           <Card className="p-4">
-            {lastReport ? <DailyReportView report={lastReport} pickup={pickupFor(lastReport.day)} /> : todayPickup && <PickupLine pickup={todayPickup} />}
+            <DailyReportView report={lastReport} />
           </Card>
           {s.dailyReports.length > 1 && (
             <details className="group mt-2">
@@ -110,7 +107,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
                 {s.dailyReports.slice(1).map((r) => (
                   <Card key={r.id} tone="flat" className="p-4">
                     <p className="mb-2 text-sm font-medium">{capitalize(dateLabel(r.day, { weekday: "long", day: "numeric", month: "short" }))}</p>
-                    <DailyReportView report={r} pickup={pickupFor(r.day)} compact />
+                    <DailyReportView report={r} compact />
                   </Card>
                 ))}
               </div>

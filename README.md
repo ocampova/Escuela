@@ -44,7 +44,6 @@ A web platform that works on both phone and computer, for managing the school's 
 
 - **Daily report:** for each child the teacher records mood, snack, participation, bathroom and a note, plus a "Hoy trabajamos" line (what the class did today) shared by the whole section. "Llenar todos con lo habitual" (fill everyone with the usual) fills the form in one tap. "Enviar a las familias" sends a notification to each family. The report appears on the home screen and on the child's profile.
 - **Private photos per section:** albums that only the families of that section can see, logged in with their own account. Photos are resized on the phone before upload (JPEG, 1600 px). If a child in the section has no photo authorization, the teacher sees their names and confirms before publishing. "Avisar en el grupo" (tell the group) shares only the link in WhatsApp, never the photos.
-- **Pickup:** for each child the teacher picks who is collecting them from the guardians and the authorized list (with ID number). If it is someone else, the platform asks how this was confirmed with the family. The family receives a notification with the time and the person.
 - **Calendar on the phone:** a private link (ICS) for Google Calendar, iPhone or Outlook with the events that apply to each family. It updates automatically and can be regenerated if it was shared by mistake.
 
 ## Academics

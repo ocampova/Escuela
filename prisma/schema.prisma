@@ -137,7 +137,6 @@ model User {
   permissionAnswers PermissionResponse[]
   dailyReports      DailyReport[]
   albums            Album[]
-  pickupLogs        PickupLog[]
   homework          Homework[]
   reportsReviewed   PaymentReport[]      @relation("ReviewedPayments")
 }
@@ -226,7 +225,6 @@ model Student {
   conversations     Conversation[]
   absenceNotices    AbsenceNotice[]
   dailyReports      DailyReport[]
-  pickupLogs        PickupLog[]
   scores            Score[]
   areaNotes         AreaAssessment[]
   termReports       TermReport[]
@@ -605,24 +603,6 @@ model AlbumPhoto {
   size     Int
   data     Bytes
   order    Int    @default(0)
-}
-
-/// Registro de salida: quién recogió al alumno y a qué hora.
-model PickupLog {
-  id         String   @id @default(cuid())
-  studentId  String
-  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  day        DateTime @db.Date
-  at         DateTime @default(now())
-  personName String
-  relation   String?
-  /// GUARDIAN = encargado con cuenta, AUTHORIZED = lista de autorizados, OTHER = no estaba en la lista
-  kind       String
-  note       String?
-  staffId    String
-  staff      User     @relation(fields: [staffId], references: [id])
-
-  @@unique([studentId, day])
 }
 
 /// Periodo de evaluación (trimestre o semestre) del curso lectivo.

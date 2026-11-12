@@ -26,7 +26,7 @@ export default async function FamilyHome() {
   const ids = students.map((s) => s.id);
   const today = keyToDate(todayKey());
 
-  const [anns, attendance, events, statements, reports, pickups, albums, homework] = await Promise.all([
+  const [anns, attendance, events, statements, reports, albums, homework] = await Promise.all([
     guardianAnnouncements(user, students),
     prisma.attendance.findMany({ where: { studentId: { in: ids }, date: today } }),
     prisma.event.findMany({
@@ -37,7 +37,6 @@ export default async function FamilyHome() {
     }),
     statementFor(ids),
     prisma.dailyReport.findMany({ where: { studentId: { in: ids }, day: today, sentAt: { not: null } } }),
-    prisma.pickupLog.findMany({ where: { studentId: { in: ids }, day: today } }),
     prisma.album.findMany({
       where: { sectionId: { in: students.map((s) => s.sectionId) }, day: { gte: new Date(today.getTime() - 14 * 86_400_000) } },
       include: { photos: { select: { id: true }, orderBy: { order: "asc" }, take: 3 }, _count: { select: { photos: true } } },
@@ -182,14 +181,13 @@ export default async function FamilyHome() {
       )}
 
       {/* Hoy en clase */}
-      {(reports.length > 0 || pickups.length > 0) && (
+      {reports.length > 0 && (
         <section>
           <SectionHeading title="Hoy en clase" />
           <div className="space-y-3">
             {students.map((s) => {
               const r = reports.find((x) => x.studentId === s.id);
-              const p = pickups.find((x) => x.studentId === s.id);
-              if (!r && !p) return null;
+              if (!r) return null;
               return (
                 <Link key={s.id} href={`/familia/hijos/${s.id}`} className="block">
                   <Card className="p-4 transition-shadow hover:shadow-pop">
@@ -197,11 +195,7 @@ export default async function FamilyHome() {
                       <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={28} />
                       <p className="font-medium">{s.firstName}</p>
                     </div>
-                    {r ? (
-                      <DailyReportView report={r} pickup={p} />
-                    ) : (
-                      p && <DailyReportView report={{ day: today, mood: null, meal: null, participation: null, bathroom: null, note: null, activity: null }} pickup={p} />
-                    )}
+                    <DailyReportView report={r} />
                   </Card>
                 </Link>
               );

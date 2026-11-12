@@ -1,15 +1,13 @@
-import { DoorOpen, NotebookPen } from "lucide-react";
+import { NotebookPen } from "lucide-react";
 import { DAILY_FIELDS, dailyLabel } from "@/lib/daily";
-import { relativeDay, timeLabel } from "@/lib/format";
 import { cx } from "./ui";
 
 type Report = { day: Date; mood: string | null; meal: string | null; participation: string | null; bathroom: string | null; note: string | null; activity: string | null };
-type Pickup = { at: Date; personName: string; relation: string | null; kind: string };
 
 const toneClass = { ok: "bg-ok-soft text-ok", warn: "bg-warn-soft text-warn" } as const;
 
 /** Reporte del día para la familia: chips con lo que marcó la docente + actividad y nota. */
-export function DailyReportView({ report, pickup, compact }: { report: Report; pickup?: Pickup | null; compact?: boolean }) {
+export function DailyReportView({ report, compact }: { report: Report; compact?: boolean }) {
   return (
     <div className="space-y-3">
       {report.activity && !compact && (
@@ -36,17 +34,6 @@ export function DailyReportView({ report, pickup, compact }: { report: Report; p
           {report.note}
         </p>
       )}
-      {pickup && <PickupLine pickup={pickup} />}
     </div>
-  );
-}
-
-export function PickupLine({ pickup }: { pickup: Pickup }) {
-  return (
-    <p className={cx("flex items-center gap-2 text-sm", pickup.kind === "OTHER" ? "text-warn" : "text-ink-2")}>
-      <DoorOpen className="size-4 shrink-0" aria-hidden />
-      Salió {relativeDay(pickup.at).toLowerCase()} a las {timeLabel(pickup.at)} con {pickup.personName}
-      {pickup.relation ? ` (${pickup.relation.toLowerCase()})` : ""}
-    </p>
   );
 }

@@ -4,7 +4,7 @@ import { cx, sectionSolid } from "./ui";
 
 type S = { id: string; name: string; color: string; grade: { name: string } };
 
-/** Fila de secciones como pestañas (asistencia, diario, fotos, salida). */
+/** Fila de secciones como pestañas (asistencia, diario, fotos, notas). */
 export function SectionPicker({ sections, current, href }: { sections: S[]; current?: string; href: (id: string) => string }) {
   return (
     <nav aria-label="Secciones" className="flex flex-wrap gap-1.5">

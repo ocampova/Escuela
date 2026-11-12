@@ -8,7 +8,7 @@ import { cx } from "./ui";
 const ITEMS = [
   { href: "/escuela", label: "Panel", icon: LayoutGrid, exact: true },
   { href: "/escuela/asistencia", label: "Asistencia", icon: ClipboardCheck },
-  { href: "/escuela/diario", label: "Vida diaria", icon: Sun, also: ["/escuela/fotos", "/escuela/salida"] },
+  { href: "/escuela/diario", label: "Vida diaria", icon: Sun, also: ["/escuela/fotos"] },
   { href: "/escuela/academico", label: "Académico", icon: GraduationCap, also: ["/escuela/tareas"] },
   { href: "/escuela/mensajes", label: "Mensajes", icon: MessageCircle },
   { href: "/escuela/avisos", label: "Avisos", icon: Bell },

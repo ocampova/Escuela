@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { isManager, requireStaff } from "@/lib/auth";
-import { keyToDate, timeLabel, todayKey } from "@/lib/format";
+import { keyToDate, todayKey } from "@/lib/format";
 import { notifyLater } from "@/lib/push";
 import { DAILY_FIELDS, isValidDaily } from "@/lib/daily";
 
@@ -118,63 +118,4 @@ export async function deletePhoto(id: string) {
   if (!photo) throw new Error("No encontrado");
   await prisma.albumPhoto.delete({ where: { id } });
   revalidatePath(`/escuela/fotos/${photo.albumId}`);
-}
-
-/* ---------- Salida ---------- */
-
-export async function registerPickup(_prev: FormState, form: FormData): Promise<FormState> {
-  const studentId = String(form.get("studentId") ?? "");
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    include: { pickups: true, guardians: { include: { user: { select: { id: true, name: true } } } } },
-  });
-  if (!student) return { error: "Alumno no encontrado." };
-  const { user } = await assertSection(student.sectionId);
-  const who = String(form.get("who") ?? "");
-  let personName: string, relation: string | null, kind: string;
-  const note = String(form.get("note") ?? "").trim().slice(0, 300) || null;
-
-  if (who.startsWith("g:")) {
-    const g = student.guardians.find((x) => x.userId === who.slice(2));
-    if (!g) return { error: "Elija quién lo recoge." };
-    [personName, relation, kind] = [g.user.name, g.relationship, "GUARDIAN"];
-  } else if (who.startsWith("a:")) {
-    const p = student.pickups.find((x) => x.id === who.slice(2));
-    if (!p) return { error: "Elija quién lo recoge." };
-    [personName, relation, kind] = [p.name, p.relationship, "AUTHORIZED"];
-  } else if (who === "other") {
-    personName = String(form.get("otherName") ?? "").trim().slice(0, 120);
-    if (!personName) return { error: "Escriba el nombre de la persona." };
-    if (!note) return { error: "Anote cómo se confirmó con la familia (por ejemplo: llamada a la mamá)." };
-    [relation, kind] = [String(form.get("otherRelation") ?? "").trim().slice(0, 60) || null, "OTHER"];
-  } else {
-    return { error: "Elija quién lo recoge." };
-  }
-
-  const day = keyToDate(todayKey());
-  const at = new Date();
-  await prisma.pickupLog.upsert({
-    where: { studentId_day: { studentId, day } },
-    create: { studentId, day, at, personName, relation, kind, note, staffId: user.id },
-    update: { at, personName, relation, kind, note, staffId: user.id },
-  });
-  const who2 = `${personName}${relation ? ` (${relation.toLowerCase()})` : ""}`;
-  notifyLater(student.guardians.map((g) => g.userId), {
-    title: kind === "OTHER" ? `${student.firstName} salió con una persona fuera de la lista` : `${student.firstName} ya salió de la escuela`,
-    body: `Lo recogió ${who2} a las ${timeLabel(at)}.${kind === "OTHER" ? " Si no lo autorizó, llame a la escuela." : ""}`,
-    url: `/familia/hijos/${studentId}`,
-    tag: `salida-${studentId}`,
-  });
-  revalidatePath("/escuela/salida");
-  revalidatePath("/familia", "layout");
-  return { ok: `Salida registrada: ${who2}.` };
-}
-
-export async function undoPickup(id: string) {
-  const user = await requireStaff();
-  const log = await prisma.pickupLog.findFirst({ where: { id, student: { section: { schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) } } } });
-  if (!log) throw new Error("No encontrado");
-  await prisma.pickupLog.delete({ where: { id } });
-  revalidatePath("/escuela/salida");
-  revalidatePath("/familia", "layout");
 }

@@ -113,7 +113,6 @@ async function main() {
   await prisma.$transaction([
     prisma.homework.deleteMany(),
     prisma.dailyReport.deleteMany(),
-    prisma.pickupLog.deleteMany(),
     prisma.album.deleteMany(),
     prisma.permissionResponse.deleteMany(),
     prisma.absenceNotice.deleteMany(),
@@ -595,7 +594,7 @@ async function main() {
     await prisma.student.update({ where: { id: st.id }, data: { photoConsent: rand() < 0.85 } });
   }
 
-  // Vida diaria: reportes de Preparatoria A (hoy y días anteriores), salidas y álbumes de fotos
+  // Vida diaria: reportes de Preparatoria A (hoy y días anteriores) y álbumes de fotos
   const prepKids = await prisma.student.findMany({ where: { sectionId: sTransA.id }, include: { pickups: true, guardians: { include: { user: true } } }, orderBy: { firstName: "asc" } });
   const moods = ["contento", "contento", "tranquilo", "contento", "cansado"];
   const meals = ["todo", "todo", "mitad", "todo", "poco"];
@@ -617,13 +616,6 @@ async function main() {
           activity: activities[n], authorId: tSofia.id, sentAt: day(off, 11, 30),
         },
       });
-      if (n < 2) {
-        const p = k.pickups[0];
-        const g = k.guardians[0];
-        await prisma.pickupLog.create({
-          data: { studentId: k.id, day: d, at: day(off, 11, 50 + (i % 9)), personName: p && i % 3 === 0 ? p.name : g?.user.name ?? "Encargado", relation: p && i % 3 === 0 ? p.relationship : g?.relationship ?? null, kind: p && i % 3 === 0 ? "AUTHORIZED" : "GUARDIAN", staffId: tSofia.id },
-        });
-      }
     }
   }
   const albums: [string, string, number, number, number][] = [
