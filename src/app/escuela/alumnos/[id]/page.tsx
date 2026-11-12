@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, MessageCircle, Pencil, UserCheck, UserPlus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, DoorOpen, MessageCircle, Pencil, UserCheck, UserPlus } from "lucide-react";
 import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { METHOD_LABEL, staffSections, statementFor } from "@/lib/queries";
@@ -8,7 +8,9 @@ import { crc, dateLabel, gradeSectionName, money, usd } from "@/lib/format";
 import { Avatar, Badge, ButtonLink, Card, Field, SectionChip, SectionHeading, inputClass } from "@/components/ui";
 import { ActionForm } from "@/components/action-form";
 import { InviteButton } from "@/components/invite-button";
-import { addGuardian, addPickup } from "../actions";
+import { addGuardian, addPickup, reactivateStudent, registerExit } from "../actions";
+import { ADAPTATION_LABEL, ADAPTATION_SHORT, EXIT_REASONS, SEX_LABEL, STATUS_LABEL } from "@/lib/student";
+import { todayKey } from "@/lib/format";
 import { RemoveButton } from "../remove-button";
 import { AttendanceStrip } from "@/components/attendance-strip";
 
@@ -33,6 +35,11 @@ export default async function StaffStudent({ params, searchParams }: { params: P
   const info: [string, string][] = [
     ["Cédula", s.idNumber ?? "Sin dato"],
     ["Nacimiento", dateLabel(s.birthDate, { day: "numeric", month: "long", year: "numeric" })],
+    ["Sexo", s.sex ? SEX_LABEL[s.sex] : "Sin dato"],
+    ["Nacionalidad", s.nationality ?? "Sin dato"],
+    ["Ingreso a la escuela", s.enrolledOn ? dateLabel(s.enrolledOn, { day: "numeric", month: "long", year: "numeric" }) : "Sin dato"],
+    ["Repite el grado", s.repeating ? "Sí" : "No"],
+    ["Adecuación curricular", ADAPTATION_LABEL[s.adaptation] + (s.adaptationNote ? `: ${s.adaptationNote}` : "")],
     ["Tipo de sangre", s.bloodType ?? "Sin dato"],
     ["Docente guía", s.section.teacher?.name ?? "Sin asignar"],
     ["Fotos", s.photoConsent === true ? "Autorizadas por la familia" : s.photoConsent === false ? "No autorizadas" : "Sin respuesta de la familia"],
@@ -62,6 +69,9 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                 <AlertTriangle className="size-3.5" aria-hidden /> Alergia: {s.allergies}
               </Badge>
             )}
+            {ADAPTATION_SHORT[s.adaptation] && <Badge tone="brand">{ADAPTATION_SHORT[s.adaptation]}</Badge>}
+            {s.repeating && <Badge>Repite el grado</Badge>}
+            {s.status !== "ACTIVE" && <Badge tone="warn">{STATUS_LABEL[s.status]}</Badge>}
           </div>
         </div>
         {manager && (
@@ -70,6 +80,22 @@ export default async function StaffStudent({ params, searchParams }: { params: P
           </ButtonLink>
         )}
       </div>
+
+      {s.status !== "ACTIVE" && (
+        <div className="mb-8 flex flex-wrap items-center gap-3 rounded-xl bg-warn-soft px-4 py-3 text-sm">
+          <DoorOpen className="size-4 shrink-0 text-warn" aria-hidden />
+          <p className="min-w-0 flex-1">
+            <span className="font-medium text-warn">{STATUS_LABEL[s.status]}</span>
+            {s.exitDate && ` el ${dateLabel(s.exitDate, { day: "numeric", month: "long", year: "numeric" })}`}
+            {s.exitReason && ` · ${s.exitReason}`}. No aparece en asistencia, notas ni cobros; su expediente se conserva.
+          </p>
+          {manager && (
+            <form action={reactivateStudent.bind(null, s.id)}>
+              <button className="h-9 rounded-lg bg-surface px-3 text-sm font-medium text-brand ring-1 ring-inset ring-line-strong hover:bg-canvas">Reactivar</button>
+            </form>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-8">
@@ -220,6 +246,42 @@ export default async function StaffStudent({ params, searchParams }: { params: P
                   ))}
               </Card>
             </section>
+          )}
+          {manager && s.status === "ACTIVE" && (
+            <details className="rounded-xl bg-surface shadow-card">
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-ink-2 hover:text-ink">
+                <DoorOpen className="size-4" aria-hidden /> Registrar retiro o traslado
+              </summary>
+              <div className="border-t border-line p-4">
+                <ActionForm action={registerExit} submitLabel="Registrar salida del alumno" resetOnOk={false}>
+                  <input type="hidden" name="studentId" value={s.id} />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Tipo" htmlFor="x-status">
+                      <select id="x-status" name="status" required defaultValue="" className={inputClass}>
+                        <option value="" disabled>Elegir…</option>
+                        <option value="TRANSFERRED">Traslado a otra escuela</option>
+                        <option value="WITHDRAWN">Retiro</option>
+                      </select>
+                    </Field>
+                    <Field label="Fecha" htmlFor="x-date">
+                      <input id="x-date" name="exitDate" type="date" required defaultValue={todayKey()} className={inputClass} />
+                    </Field>
+                    <Field label="Motivo" htmlFor="x-reason">
+                      <select id="x-reason" name="exitReason" required defaultValue="" className={inputClass}>
+                        <option value="" disabled>Elegir…</option>
+                        {EXIT_REASONS.map((r) => (
+                          <option key={r}>{r}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Detalle (opcional)" htmlFor="x-detail" hint="Ej.: escuela a la que se traslada.">
+                      <input id="x-detail" name="exitDetail" className={inputClass} />
+                    </Field>
+                  </div>
+                  <p className="text-xs text-ink-3">El alumno deja de aparecer en asistencia, notas y cobros. El expediente y sus pagos se conservan, y se puede reactivar.</p>
+                </ActionForm>
+              </div>
+            </details>
           )}
         </div>
       </div>

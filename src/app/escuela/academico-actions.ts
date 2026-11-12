@@ -37,7 +37,7 @@ export async function saveScores(_p: ActionState, f: FormData): Promise<ActionSt
   const subject = await prisma.subject.findFirst({ where: { id: String(f.get("subjectId")), levelId: section.grade.levelId } });
   if (!subject) return { error: "Materia no válida." };
   const [students, components] = await Promise.all([
-    prisma.student.findMany({ where: { sectionId: section.id }, select: { id: true } }),
+    prisma.student.findMany({ where: { sectionId: section.id, status: "ACTIVE" }, select: { id: true } }),
     prisma.gradeComponent.findMany({ where: { levelId: section.grade.levelId } }),
   ]);
   const ops = [];
@@ -63,7 +63,7 @@ export async function saveScores(_p: ActionState, f: FormData): Promise<ActionSt
 export async function saveObservations(_p: ActionState, f: FormData): Promise<ActionState> {
   const { section } = await assertSection(String(f.get("sectionId")));
   const term = await assertTerm(String(f.get("termId")), section.schoolYearId);
-  const students = await prisma.student.findMany({ where: { sectionId: section.id }, select: { id: true } });
+  const students = await prisma.student.findMany({ where: { sectionId: section.id, status: "ACTIVE" }, select: { id: true } });
   await prisma.$transaction(
     students.map((s) => {
       const comment = String(f.get(`obs-${s.id}`) ?? "").trim().slice(0, 1500) || null;
@@ -111,7 +111,7 @@ export async function setPublished(sectionId: string, termId: string, publish: b
   if (publish) {
     const created = await prisma.termPublication.upsert({ where: { termId_sectionId: { termId, sectionId } }, create: { termId, sectionId }, update: {} });
     if (Date.now() - created.publishedAt.getTime() < 10_000) {
-      const students = await prisma.student.findMany({ where: { sectionId }, include: { guardians: { select: { userId: true } } } });
+      const students = await prisma.student.findMany({ where: { sectionId, status: "ACTIVE" }, include: { guardians: { select: { userId: true } } } });
       const descriptive = section.grade.level.evaluation === "DESCRIPTIVE";
       for (const s of students) {
         notifyLater(

@@ -20,7 +20,7 @@ export default async function DailyPage({ searchParams }: { searchParams: Promis
 
   const students = section
     ? await prisma.student.findMany({
-        where: { sectionId: section.id },
+        where: { sectionId: section.id, status: "ACTIVE" },
         include: { dailyReports: { where: { day: d } }, attendance: { where: { date: d } } },
         orderBy: [{ firstName: "asc" }],
       })

@@ -27,7 +27,7 @@ export default async function HomeReportPage({ params, searchParams }: { params:
     prisma.subject.findMany({ where: { levelId: student.section.grade.levelId, active: true }, orderBy: { order: "asc" } }),
     prisma.areaAssessment.findMany({ where: { studentId: id, termId: term.id } }),
     prisma.termReport.findUnique({ where: { studentId_termId: { studentId: id, termId: term.id } } }),
-    prisma.student.findMany({ where: { sectionId: student.sectionId }, select: { id: true }, orderBy: { firstName: "asc" } }),
+    prisma.student.findMany({ where: { sectionId: student.sectionId, status: "ACTIVE" }, select: { id: true }, orderBy: { firstName: "asc" } }),
   ]);
   const idx = siblings.findIndex((s) => s.id === id);
   const next = siblings[idx + 1];

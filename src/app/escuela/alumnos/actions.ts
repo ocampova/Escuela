@@ -36,6 +36,11 @@ const studentSchema = z.object({
   bloodType: opt,
   allergies: opt,
   medicalNotes: opt,
+  sex: z.enum(["F", "M"], { message: "Indique el sexo (lo pide la estadística del MEP)." }),
+  nationality: opt,
+  enrolledOn: z.union([z.literal(""), z.string().date("Fecha de ingreso no válida.")]).optional(),
+  adaptation: z.enum(["NONE", "ACCESS", "NON_SIGNIFICANT", "SIGNIFICANT"]).default("NONE"),
+  adaptationNote: opt,
 });
 
 export async function saveStudent(_p: ActionState, f: FormData): Promise<ActionState> {
@@ -43,9 +48,16 @@ export async function saveStudent(_p: ActionState, f: FormData): Promise<ActionS
   const id = String(f.get("id") ?? "");
   const p = studentSchema.safeParse(Object.fromEntries(f));
   if (!p.success) return { error: p.error.issues[0].message };
+  if (p.data.adaptation !== "NONE" && !p.data.adaptationNote) return { error: "Describa brevemente la adecuación para que la docente sepa cómo aplicarla." };
   const section = await prisma.section.findFirst({ where: { id: p.data.sectionId, schoolYear: { schoolId: u.schoolId } } });
   if (!section) return { error: "Sección no encontrada." };
-  const data = { ...p.data, birthDate: new Date(p.data.birthDate) };
+  const data = {
+    ...p.data,
+    birthDate: new Date(p.data.birthDate),
+    enrolledOn: p.data.enrolledOn ? new Date(p.data.enrolledOn) : null,
+    adaptationNote: p.data.adaptation === "NONE" ? null : p.data.adaptationNote,
+    repeating: f.get("repeating") === "on",
+  };
   let studentId = id;
   if (id) {
     await ownStudent(id, u.schoolId);
@@ -144,6 +156,11 @@ export type ImportRow = {
   birthDate: string;
   sectionId: string;
   allergies: string | null;
+  sex: string | null;
+  nationality: string | null;
+  enrolledOn: string | null;
+  repeating: boolean;
+  adaptation: string;
   guardianName: string;
   guardianEmail: string;
   guardianPhone: string | null;
@@ -163,7 +180,10 @@ export async function importStudents(rows: ImportRow[]): Promise<{ created: numb
         for (const r of rows) {
           if (!sections.has(r.sectionId)) throw new Error(`Sección no válida para ${r.firstName} ${r.lastName}.`);
           const st = await tx.student.create({
-            data: { firstName: r.firstName, lastName: r.lastName, idNumber: r.idNumber, birthDate: new Date(r.birthDate), sectionId: r.sectionId, allergies: r.allergies },
+            data: {
+              firstName: r.firstName, lastName: r.lastName, idNumber: r.idNumber, birthDate: new Date(r.birthDate), sectionId: r.sectionId, allergies: r.allergies,
+              sex: r.sex, nationality: r.nationality, enrolledOn: r.enrolledOn ? new Date(r.enrolledOn) : null, repeating: r.repeating, adaptation: r.adaptation,
+            },
           });
           const res = await linkGuardian(
             u.schoolId,
@@ -182,4 +202,29 @@ export async function importStudents(rows: ImportRow[]): Promise<{ created: numb
   }
   revalidatePath("/escuela", "layout");
   return { created, linked };
+}
+
+/* ---------- Retiro y traslado ---------- */
+
+export async function registerExit(_p: ActionState, f: FormData): Promise<ActionState> {
+  const u = await manager();
+  const id = String(f.get("studentId") ?? "");
+  await ownStudent(id, u.schoolId);
+  const status = String(f.get("status") ?? "");
+  if (status !== "WITHDRAWN" && status !== "TRANSFERRED") return { error: "Elija si es retiro o traslado." };
+  const date = String(f.get("exitDate") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "Indique la fecha de salida." };
+  const reason = String(f.get("exitReason") ?? "").trim().slice(0, 200);
+  if (!reason) return { error: "Indique el motivo." };
+  const detail = String(f.get("exitDetail") ?? "").trim().slice(0, 200);
+  await prisma.student.update({ where: { id }, data: { status, exitDate: new Date(date), exitReason: detail ? `${reason}: ${detail}` : reason } });
+  revalidatePath("/escuela", "layout");
+  return { ok: status === "WITHDRAWN" ? "Retiro registrado. Ya no aparece en asistencia, notas ni cobros." : "Traslado registrado. Ya no aparece en asistencia, notas ni cobros." };
+}
+
+export async function reactivateStudent(id: string) {
+  const u = await manager();
+  await ownStudent(id, u.schoolId);
+  await prisma.student.update({ where: { id }, data: { status: "ACTIVE", exitDate: null, exitReason: null } });
+  revalidatePath("/escuela", "layout");
 }

@@ -7,7 +7,7 @@ import { Avatar, Button, cx } from "@/components/ui";
 import { PASSING } from "@/lib/academic";
 
 type Comp = { id: string; name: string; weight: number };
-type Row = { id: string; name: string; color: string; values: Record<string, string> };
+type Row = { id: string; name: string; color: string; support?: string | null; values: Record<string, string> };
 
 function total(comps: Comp[], v: Record<string, string>) {
   const filled = comps.filter((c) => v[c.id] !== "" && Number.isFinite(Number(v[c.id].replace(",", "."))));
@@ -47,7 +47,10 @@ export function ScoresForm({ sectionId, termId, subjectId, components, rows }: {
                   <th scope="row" className="sticky left-0 bg-surface px-4 py-2 text-left font-medium">
                     <span className="flex items-center gap-2.5">
                       <Avatar name={r.name} color={r.color} size={28} />
-                      <span className="max-w-[10rem] truncate">{r.name}</span>
+                      <span className="min-w-0">
+                        <span className="block max-w-[10rem] truncate">{r.name}</span>
+                        {r.support && <span className="block max-w-[10rem] truncate text-xs font-normal text-brand" title={r.support}>{r.support}</span>}
+                      </span>
                     </span>
                   </th>
                   {components.map((c) => (

@@ -32,7 +32,7 @@ export async function saveAttendance(_prev: FormState, form: FormData): Promise<
   const date = String(form.get("date"));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "Fecha no válida." };
   const { user } = await assertSection(sectionId);
-  const students = await prisma.student.findMany({ where: { sectionId }, select: { id: true } });
+  const students = await prisma.student.findMany({ where: { sectionId, status: "ACTIVE" }, select: { id: true } });
   const d = keyToDate(date);
   const previous = new Map((await prisma.attendance.findMany({ where: { date: d, student: { sectionId } }, select: { studentId: true, status: true } })).map((x) => [x.studentId, x.status as string]));
   let missing = 0;
@@ -247,7 +247,7 @@ export async function generateMonthlyCharges(_prev: FormState, form: FormData): 
   if (concepts.length === 0) return { error: "No hay un concepto de mensualidad configurado." };
   const [y, m] = month.split("-").map(Number);
   const students = await prisma.student.findMany({
-    where: { section: { schoolYear: { schoolId: user.schoolId, active: true } } },
+    where: { status: "ACTIVE", section: { schoolYear: { schoolId: user.schoolId, active: true } } },
     select: { id: true, section: { select: { grade: { select: { levelId: true } } } } },
   });
   const data = students.flatMap((s) => {
@@ -285,7 +285,7 @@ export async function chargeConcept(_prev: FormState, form: FormData): Promise<F
   // El periodo identifica el cobro: volver a cargar la misma descripción no lo duplica
   const period = label.slice(0, 60);
   const students = await prisma.student.findMany({
-    where: { section: { schoolYear: { schoolId: user.schoolId, active: true }, ...(concept.levelId ? { grade: { levelId: concept.levelId } } : {}) } },
+    where: { status: "ACTIVE", section: { schoolYear: { schoolId: user.schoolId, active: true }, ...(concept.levelId ? { grade: { levelId: concept.levelId } } : {}) } },
     select: { id: true },
   });
   const result = await prisma.charge.createMany({

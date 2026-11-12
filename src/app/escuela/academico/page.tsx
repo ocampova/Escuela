@@ -11,6 +11,7 @@ import { SectionPicker } from "@/components/section-picker";
 import { AcademicoTabs } from "../academico-tabs";
 import { setPublished } from "../academico-actions";
 import { ScoresForm } from "./scores-form";
+import { ADAPTATION_SHORT } from "@/lib/student";
 import { ObservationsForm } from "./observations-form";
 
 export const metadata: Metadata = { title: "Notas e informes" };
@@ -40,7 +41,7 @@ export default async function AcademicPage({ searchParams }: { searchParams: Pro
     prisma.term.findMany({ where: { schoolYearId: section.schoolYearId }, orderBy: { order: "asc" } }),
     prisma.subject.findMany({ where: { levelId: level.id, active: true }, orderBy: { order: "asc" } }),
     prisma.gradeComponent.findMany({ where: { levelId: level.id }, orderBy: { order: "asc" } }),
-    prisma.student.findMany({ where: { sectionId: section.id }, orderBy: { firstName: "asc" } }),
+    prisma.student.findMany({ where: { sectionId: section.id, status: "ACTIVE" }, orderBy: { firstName: "asc" } }),
   ]);
   const term = terms.find((t) => t.id === sp.periodo) ?? currentTerm(terms);
   const subject = subjects.find((s) => s.id === sp.materia) ?? (sp.materia === "obs" ? null : subjects[0]);
@@ -133,7 +134,7 @@ export default async function AcademicPage({ searchParams }: { searchParams: Pro
   );
 }
 
-async function ScoresKey({ sectionId, termId, subjectId, students, components, color }: { sectionId: string; termId: string; subjectId: string; students: { id: string; firstName: string; lastName: string }[]; components: { id: string; name: string; weight: number }[]; color: string }) {
+async function ScoresKey({ sectionId, termId, subjectId, students, components, color }: { sectionId: string; termId: string; subjectId: string; students: { id: string; firstName: string; lastName: string; adaptation: string }[]; components: { id: string; name: string; weight: number }[]; color: string }) {
   const scores = await prisma.score.findMany({ where: { termId, subjectId, studentId: { in: students.map((s) => s.id) } } });
   return (
     <ScoresForm
@@ -146,6 +147,7 @@ async function ScoresKey({ sectionId, termId, subjectId, students, components, c
         id: s.id,
         name: `${s.firstName} ${s.lastName}`,
         color,
+        support: ADAPTATION_SHORT[s.adaptation] ?? null,
         values: Object.fromEntries(components.map((c) => [c.id, scores.find((x) => x.studentId === s.id && x.componentId === c.id)?.value.toString() ?? ""])),
       }))}
     />

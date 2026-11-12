@@ -35,7 +35,7 @@ export async function updateApplicant(_p: ActionState, f: FormData): Promise<Act
 export async function enrollApplicant(_p: ActionState, f: FormData): Promise<ActionState> {
   const { u, a } = await own(String(f.get("id")));
   if (a.status === "ENROLLED") return { error: "Ya está matriculada." };
-  const section = await prisma.section.findFirst({ where: { id: String(f.get("sectionId")), schoolYear: { schoolId: u.schoolId, active: true } } });
+  const section = await prisma.section.findFirst({ where: { id: String(f.get("sectionId")), schoolYear: { schoolId: u.schoolId, active: true } }, include: { schoolYear: true } });
   if (!section) return { error: "Elija una sección." };
   const existing = await prisma.user.findUnique({ where: { email: a.guardianEmail } });
   if (existing && (existing.role !== "GUARDIAN" || existing.schoolId !== u.schoolId)) return { error: "El correo del encargado pertenece a una cuenta del personal." };
@@ -50,6 +50,9 @@ export async function enrollApplicant(_p: ActionState, f: FormData): Promise<Act
         idNumber: a.childIdNumber,
         birthDate: a.childBirthDate,
         allergies: a.allergies,
+        // Ingreso: hoy, o el inicio del curso si todavía no empezó. Sexo y nacionalidad se completan en la ficha.
+        enrolledOn: new Date(Math.max(Date.now(), section.schoolYear.startsOn.getTime())),
+        nationality: "Costarricense",
         guardians: { create: { userId: guardian.id, relationship: a.relationship, isPrimary: true } },
         pickups: a.guardianIdNumber ? { create: { name: a.guardianName, idNumber: a.guardianIdNumber, relationship: a.relationship, phone: a.guardianPhone } } : undefined,
       },

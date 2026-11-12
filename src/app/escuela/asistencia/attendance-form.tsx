@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { saveAttendance, type FormState } from "../actions";
 import { Avatar, Button, cx } from "@/components/ui";
 
-type Row = { id: string; name: string; color: string; allergies: string | null; status: string | null; note: string | null; notice?: string | null };
+type Row = { id: string; name: string; color: string; allergies: string | null; support?: string | null; status: string | null; note: string | null; notice?: string | null };
 
 const OPTIONS = [
   { value: "PRESENT", label: "Presente", plural: "presentes", short: "P", on: "bg-ok text-white ring-ok" },
@@ -48,6 +48,7 @@ export function AttendanceForm({ sectionId, date, rows, alreadyTaken }: { sectio
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{r.name}</p>
                 {r.allergies && <p className="truncate text-xs text-danger">Alergia: {r.allergies}</p>}
+                {r.support && <p className="truncate text-xs text-brand">{r.support}</p>}
                 {r.notice && <p className="text-xs font-medium text-scs-blue-ink">La familia avisó: {r.notice}</p>}
               </div>
               <fieldset className="grid w-full grid-cols-2 gap-1.5 sm:flex sm:w-auto">

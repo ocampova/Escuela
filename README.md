@@ -46,6 +46,12 @@ A web platform that works on both phone and computer, for managing the school's 
 - **Private photos per section:** albums that only the families of that section can see, logged in with their own account. Photos are resized on the phone before upload (JPEG, 1600 px). If a child in the section has no photo authorization, the teacher sees their names and confirms before publishing. "Avisar en el grupo" (tell the group) shares only the link in WhatsApp, never the photos.
 - **Calendar on the phone:** a private link (ICS) for Google Calendar, iPhone or Outlook with the events that apply to each family. It updates automatically and can be regenerated if it was shared by mistake.
 
+## Student record: data for MEP
+
+- Sex, nationality, date of entry to the school, whether the student is repeating the grade, and **curricular adaptation** (de acceso, no significativa or significativa) with a description. The teacher sees the adaptation when taking attendance and when entering grades.
+- **Withdrawal or transfer** with date and reason. The student no longer appears in attendance, the daily report, grades, notices or new charges. The record and payments are kept, and the student can be reactivated. Under Alumnos › "Retirados y trasladados".
+- Alumnos shows how many students have **incomplete MEP data**, with a filter to complete them. The Excel import and template include the new columns (optional), and the student report adds age, sex, nationality, entry date, repetition, adaptation and status.
+
 ## Academics
 
 - **Configuration (Configuración › Académico):** terms (trimesters or semesters), subjects per level, and the grade components with their percentages (they must add up to 100%). Each level is either numeric (primaria) or descriptive (preescolar). The percentages in the seed are an example. The school sets them according to the current MEP Reglamento de Evaluación de los Aprendizajes.

@@ -39,7 +39,7 @@ export default async function StaffHome() {
       take: 4,
     }),
     manager
-      ? prisma.student.findMany({ where: { sectionId: { in: sectionIds } }, include: { section: { include: { grade: true } }, guardians: { where: { isPrimary: true }, include: { user: true } } } })
+      ? prisma.student.findMany({ where: { sectionId: { in: sectionIds }, status: "ACTIVE" }, include: { section: { include: { grade: true } }, guardians: { where: { isPrimary: true }, include: { user: true } } } })
       : Promise.resolve([]),
   ]);
 

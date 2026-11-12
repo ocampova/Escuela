@@ -202,19 +202,31 @@ model Section {
 }
 
 model Student {
-  id           String   @id @default(cuid())
-  sectionId    String
-  section      Section  @relation(fields: [sectionId], references: [id])
-  firstName    String
-  lastName     String
-  idNumber     String?
-  birthDate    DateTime @db.Date
-  bloodType    String?
-  allergies    String?
-  medicalNotes String?
+  id             String    @id @default(cuid())
+  sectionId      String
+  section        Section   @relation(fields: [sectionId], references: [id])
+  firstName      String
+  lastName       String
+  idNumber       String?
+  birthDate      DateTime  @db.Date
+  bloodType      String?
+  allergies      String?
+  medicalNotes   String?
   /// Autorización de la familia para aparecer en fotos (null = sin responder)
-  photoConsent Boolean?
-  createdAt    DateTime @default(now())
+  photoConsent   Boolean?
+  /// Datos para el MEP
+  sex            String?
+  nationality    String?
+  enrolledOn     DateTime? @db.Date
+  repeating      Boolean   @default(false)
+  /// NONE | ACCESS (de acceso) | NON_SIGNIFICANT (no significativa) | SIGNIFICANT (significativa)
+  adaptation     String    @default("NONE")
+  adaptationNote String?
+  /// ACTIVE | WITHDRAWN (retiro) | TRANSFERRED (traslado)
+  status         String    @default("ACTIVE")
+  exitDate       DateTime? @db.Date
+  exitReason     String?
+  createdAt      DateTime  @default(now())
 
   guardians         StudentGuardian[]
   pickups           AuthorizedPickup[]

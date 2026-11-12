@@ -20,7 +20,31 @@ const COLUMNS = [
   "Parentesco",
   "Correo encargado",
   "Teléfono encargado",
+  "Sexo",
+  "Nacionalidad",
+  "Fecha de ingreso",
+  "Repite",
+  "Adecuación",
 ] as const;
+
+/** Columnas que se pueden omitir (los datos para el MEP se completan después en la ficha). */
+const OPTIONAL = new Set<string>(["Cédula", "Alergias", "Teléfono encargado", "Sexo", "Nacionalidad", "Fecha de ingreso", "Repite", "Adecuación"]);
+
+function parseSex(v: string) {
+  const n = norm(v);
+  if (["f", "femenino", "mujer", "nina"].includes(n)) return "F";
+  if (["m", "masculino", "hombre", "nino"].includes(n)) return "M";
+  return n ? undefined : null;
+}
+
+function parseAdaptation(v: string) {
+  const n = norm(v);
+  if (!n || n === "no" || n.startsWith("sin") || n === "ninguna") return "NONE";
+  if (n.includes("no significativa")) return "NON_SIGNIFICANT";
+  if (n.includes("significativa")) return "SIGNIFICANT";
+  if (n.includes("acceso")) return "ACCESS";
+  return undefined;
+}
 
 const norm = (v: unknown) =>
   String(v ?? "")
@@ -93,7 +117,7 @@ export async function previewImport(form: FormData): Promise<Preview> {
 
   const header = table[0].map(norm);
   const idx = Object.fromEntries(COLUMNS.map((c) => [c, header.indexOf(norm(c))])) as Record<(typeof COLUMNS)[number], number>;
-  const missing = COLUMNS.filter((c) => idx[c] === -1 && c !== "Cédula" && c !== "Alergias" && c !== "Teléfono encargado");
+  const missing = COLUMNS.filter((c) => idx[c] === -1 && !OPTIONAL.has(c));
   if (missing.length) return { rows: [], errors: [], error: `Faltan columnas: ${missing.join(", ")}. Descargue la plantilla.` };
 
   const sections = await prisma.section.findMany({ where: { schoolYear: { schoolId: user.schoolId, active: true } }, include: { grade: true } });
@@ -119,6 +143,13 @@ export async function previewImport(form: FormData): Promise<Preview> {
     else if (emails.get(guardianEmail) && emails.get(guardianEmail) !== "GUARDIAN") problems.push("el correo del encargado pertenece al personal");
     const guardianName = get("Encargado");
     if (guardianName.length < 5) problems.push("falta el nombre del encargado");
+    const sex = parseSex(get("Sexo"));
+    if (sex === undefined) problems.push(`sexo «${get("Sexo")}» no válido (use F o M)`);
+    const adaptation = parseAdaptation(get("Adecuación"));
+    if (adaptation === undefined) problems.push(`adecuación «${get("Adecuación")}» no válida (acceso, no significativa o significativa)`);
+    const enrolledRaw = idx["Fecha de ingreso"] >= 0 ? r[idx["Fecha de ingreso"]] : "";
+    const enrolledOn = String(enrolledRaw ?? "").trim() ? toIsoDate(enrolledRaw) : null;
+    if (String(enrolledRaw ?? "").trim() && !enrolledOn) problems.push("fecha de ingreso no válida (use dd/mm/aaaa)");
     if (problems.length) {
       errors.push({ line, message: `${firstName} ${lastName}: ${problems.join("; ")}.` });
       return;
@@ -132,6 +163,11 @@ export async function previewImport(form: FormData): Promise<Preview> {
       sectionId: section!.id,
       sectionLabel: `${section!.grade.name} ${section!.name}`,
       allergies: get("Alergias") || null,
+      sex: sex ?? null,
+      nationality: get("Nacionalidad") || null,
+      enrolledOn,
+      repeating: ["si", "sí", "s", "x", "repite"].includes(norm(get("Repite"))),
+      adaptation: adaptation ?? "NONE",
       guardianName,
       guardianEmail,
       guardianPhone: get("Teléfono encargado") || null,

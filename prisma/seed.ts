@@ -71,6 +71,8 @@ function demoPicture(variant: number, w = 800, h = 600) {
   return new Uint8Array(Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]));
 }
 
+const GIRLS = new Set(["Amanda", "Camila", "Emma", "Isabella", "Lucía", "Mía", "Sofía", "Valeria", "Victoria"]);
+
 const PRESCHOOL_MATERIALS = [
   "1 caja plástica transparente rotulada, para los materiales de Artes Plásticas",
   "1 caja de pinturas (Pintolán) y delantal",
@@ -271,6 +273,11 @@ async function main() {
           birthDate: new Date(Date.UTC(kid.birthYear, Math.floor(rand() * 12), 1 + Math.floor(rand() * 27))),
           bloodType: ["O+", "A+", "B+", "O-", "A-"][Math.floor(rand() * 5)],
           allergies: kid.allergies ?? null,
+          sex: GIRLS.has(kid.first) ? "F" : "M",
+          nationality: kid.first === "Thiago" ? "Nicaragüense" : "Costarricense",
+          enrolledOn: kid.first === "Gael" ? new Date(Date.UTC(year, 5, 15)) : new Date(Date.UTC(year, 1, 2)),
+          ...(kid.first === "Santiago" ? { adaptation: "NON_SIGNIFICANT", adaptationNote: "Más tiempo en pruebas e instrucciones por pasos" } : {}),
+          ...(kid.first === "Emma" ? { adaptation: "ACCESS", adaptationNote: "Ubicación al frente por baja visión" } : {}),
           guardians: {
             create: gUsers.map((u, i) => ({ userId: u.id, relationship: fam.guardians[i][2], isPrimary: i === 0 })),
           },

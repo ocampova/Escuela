@@ -131,7 +131,7 @@ export const METHOD_LABEL: Record<string, string> = {
 export async function staffSections(user: CurrentUser) {
   return prisma.section.findMany({
     where: { schoolYear: { schoolId: user.schoolId, active: true }, ...(isManager(user) ? {} : { teacherId: user.id }) },
-    include: { ...sectionInclude, teacher: { select: { name: true } }, _count: { select: { students: true } } },
+    include: { ...sectionInclude, teacher: { select: { name: true } }, _count: { select: { students: { where: { status: "ACTIVE" } } } } },
     orderBy: [{ grade: { level: { order: "asc" } } }, { grade: { order: "asc" } }, { name: "asc" }],
   });
 }
@@ -140,10 +140,10 @@ export async function staffSections(user: CurrentUser) {
 export async function announcementRecipients(a: { schoolId: string; audience: string; levelId: string | null; sectionId: string | null }) {
   const studentWhere: Prisma.StudentWhereInput =
     a.audience === "SECTION"
-      ? { sectionId: a.sectionId ?? undefined }
+      ? { status: "ACTIVE", sectionId: a.sectionId ?? undefined }
       : a.audience === "LEVEL"
-        ? { section: { grade: { levelId: a.levelId ?? undefined } } }
-        : { section: { schoolYear: { schoolId: a.schoolId, active: true } } };
+        ? { status: "ACTIVE", section: { grade: { levelId: a.levelId ?? undefined } } }
+        : { status: "ACTIVE", section: { schoolYear: { schoolId: a.schoolId, active: true } } };
   return prisma.user.findMany({
     where: { role: "GUARDIAN", guardianOf: { some: { student: studentWhere } } },
     select: {

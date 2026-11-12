@@ -1,3 +1,4 @@
+import { ADAPTATION_SHORT, STATUS_LABEL } from "@/lib/student";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AlertTriangle, FileSpreadsheet, Plus, Search } from "lucide-react";
@@ -9,15 +10,19 @@ import { Avatar, Badge, ButtonLink, Card, EmptyState, PageHeader, SectionChip, c
 
 export const metadata: Metadata = { title: "Alumnos" };
 
-export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ q?: string; seccion?: string }> }) {
+export default async function StudentsPage({ searchParams }: { searchParams: Promise<{ q?: string; seccion?: string; estado?: string; faltan?: string }> }) {
   const user = await requireStaff();
-  const { q = "", seccion } = await searchParams;
+  const { q = "", seccion, estado, faltan } = await searchParams;
+  const retired = estado === "retirados";
+  const missingOnly = faltan === "mep";
   const sections = await staffSections(user);
   const ids = sections.map((s) => s.id).filter((id) => !seccion || id === seccion);
   const term = q.trim();
   const students = await prisma.student.findMany({
     where: {
       sectionId: { in: ids },
+      status: retired ? { not: "ACTIVE" } : "ACTIVE",
+      ...(missingOnly ? { OR: [{ sex: null }, { enrolledOn: null }, { nationality: null }] } : {}),
       ...(term
         ? {
             OR: [
@@ -32,12 +37,16 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
     include: { section: { include: { grade: true } }, guardians: { include: { user: true }, orderBy: { isPrimary: "desc" } } },
     orderBy: [{ section: { grade: { level: { order: "asc" } } } }, { section: { grade: { order: "asc" } } }, { firstName: "asc" }],
   });
+  const [retiredCount, incomplete] = await Promise.all([
+    prisma.student.count({ where: { sectionId: { in: ids }, status: { not: "ACTIVE" } } }),
+    prisma.student.count({ where: { sectionId: { in: ids }, status: "ACTIVE", OR: [{ sex: null }, { enrolledOn: null }, { nationality: null }] } }),
+  ]);
 
   return (
     <div>
       <PageHeader
         title="Alumnos"
-        description={`${students.length} ${students.length === 1 ? "alumno" : "alumnos"}${seccion ? " en esta sección" : ""}`}
+        description={`${students.length} ${students.length === 1 ? "alumno" : "alumnos"}${retired ? (students.length === 1 ? " retirado o trasladado" : " retirados o trasladados") : missingOnly ? " con datos del MEP incompletos" : ""}${seccion ? " en esta sección" : ""}`}
         actions={
           isManager(user) && (
             <>
@@ -65,8 +74,26 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
             </option>
           ))}
         </select>
+        {retired && <input type="hidden" name="estado" value="retirados" />}
         <button className="h-[44px] rounded-lg bg-surface px-4 text-sm font-medium ring-1 ring-inset ring-line-strong hover:bg-canvas">Filtrar</button>
       </form>
+      <div className="mb-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+        {(retired || missingOnly) && (
+          <Link href="/escuela/alumnos" className="font-medium text-brand hover:underline">
+            Ver alumnos activos
+          </Link>
+        )}
+        {!retired && !missingOnly && incomplete > 0 && isManager(user) && (
+          <Link href="/escuela/alumnos?faltan=mep" className="inline-flex items-center gap-1.5 font-medium text-warn hover:underline">
+            <AlertTriangle className="size-4" aria-hidden /> {incomplete} {incomplete === 1 ? "alumno sin" : "alumnos sin"} datos completos para el MEP
+          </Link>
+        )}
+        {!retired && retiredCount > 0 && (
+          <Link href="/escuela/alumnos?estado=retirados" className="font-medium text-ink-2 hover:text-ink hover:underline">
+            Retirados y trasladados ({retiredCount})
+          </Link>
+        )}
+      </div>
       <Card className="overflow-x-auto">
         {students.length === 0 ? (
           <EmptyState icon={<Search className="size-5" />} title="Ningún alumno coincide">
@@ -79,7 +106,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                 <th className="px-4 py-2.5 font-medium">Alumno</th>
                 <th className="px-4 py-2.5 font-medium">Sección</th>
                 <th className="px-4 py-2.5 font-medium">Encargado principal</th>
-                <th className="px-4 py-2.5 font-medium">Salud</th>
+                <th className="px-4 py-2.5 font-medium">Salud y apoyos</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -102,13 +129,16 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
                     <span className="tabular text-xs text-ink-3">{s.guardians[0]?.user.phone}</span>
                   </td>
                   <td className="px-4 py-3">
-                    {s.allergies ? (
-                      <Badge tone="danger">
-                        <AlertTriangle className="size-3.5" aria-hidden /> {s.allergies}
-                      </Badge>
-                    ) : (
-                      <span className="text-ink-3">Sin alergias</span>
-                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {s.allergies && (
+                        <Badge tone="danger">
+                          <AlertTriangle className="size-3.5" aria-hidden /> {s.allergies}
+                        </Badge>
+                      )}
+                      {ADAPTATION_SHORT[s.adaptation] && <Badge tone="brand">{ADAPTATION_SHORT[s.adaptation]}</Badge>}
+                      {s.status !== "ACTIVE" && <Badge tone="warn">{STATUS_LABEL[s.status]}</Badge>}
+                      {!s.allergies && !ADAPTATION_SHORT[s.adaptation] && s.status === "ACTIVE" && <span className="text-ink-3">Sin alergias</span>}
+                    </div>
                   </td>
                 </tr>
               ))}

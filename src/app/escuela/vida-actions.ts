@@ -31,7 +31,7 @@ export async function saveDailyReports(_prev: FormState, form: FormData): Promis
   const day = keyToDate(date);
   const activity = String(form.get("activity") ?? "").trim().slice(0, 600) || null;
   const students = await prisma.student.findMany({
-    where: { sectionId },
+    where: { sectionId, status: "ACTIVE" },
     include: { guardians: { select: { userId: true } }, dailyReports: { where: { day } } },
   });
 
@@ -82,7 +82,7 @@ export async function createAlbum(_prev: FormState, form: FormData): Promise<For
   if (files.length > MAX_PHOTOS) return { error: `Máximo ${MAX_PHOTOS} fotos por álbum.` };
   if (files.some((f) => !/^image\/(jpeg|png|webp)$/.test(f.type))) return { error: "Solo se aceptan fotos (JPG, PNG o WebP)." };
   if (files.some((f) => f.size > MAX_BYTES)) return { error: "Alguna foto es muy pesada (máximo 4 MB)." };
-  const noConsent = await prisma.student.count({ where: { sectionId, photoConsent: { not: true } } });
+  const noConsent = await prisma.student.count({ where: { sectionId, status: "ACTIVE", photoConsent: { not: true } } });
   if (noConsent > 0 && form.get("consentChecked") !== "on") return { error: "Confirme que revisó que no aparezcan los niños sin autorización." };
 
   const title = String(form.get("title") ?? "").trim().slice(0, 100) || `Fotos de ${section.grade.name} ${section.name}`;

@@ -33,7 +33,8 @@ export async function GET(req: Request) {
   const sheets = [];
   for (const sec of chosen) {
     const students = await prisma.student.findMany({
-      where: { sectionId: sec.id },
+      // Activos, más los retirados durante el mes (tienen asistencia que reportar)
+      where: { sectionId: sec.id, OR: [{ status: "ACTIVE" }, { exitDate: { gte: first } }] },
       include: { attendance: { where: { date: { gte: first, lte: last } } } },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     });

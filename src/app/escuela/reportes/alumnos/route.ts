@@ -4,8 +4,10 @@ import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { gradeSectionName, todayKey } from "@/lib/format";
 import { buildWorkbook, excelDate, xlsxResponse } from "@/lib/xlsx";
+import { ADAPTATION_LABEL, SEX_LABEL, STATUS_LABEL, ageAt } from "@/lib/student";
+import { keyToDate } from "@/lib/format";
 
-/** Lista de alumnos con encargados, salud y autorizados para recoger. */
+/** Lista de alumnos con datos para el MEP, encargados, salud y autorizados para recoger (incluye retirados y trasladados). */
 export async function GET() {
   const user = await getCurrentUser();
   if (!user || !isManager(user)) return new NextResponse("No autorizado", { status: 401 });
@@ -24,6 +26,13 @@ export async function GET() {
       first: s.firstName,
       id: s.idNumber ?? "",
       birth: excelDate(s.birthDate),
+      age: ageAt(s.birthDate, keyToDate(todayKey())),
+      sex: s.sex ? SEX_LABEL[s.sex] : "",
+      nationality: s.nationality ?? "",
+      enrolled: s.enrolledOn ? excelDate(s.enrolledOn) : "",
+      repeating: s.repeating ? "Sí" : "No",
+      adaptation: s.adaptation === "NONE" ? "" : ADAPTATION_LABEL[s.adaptation] + (s.adaptationNote ? `: ${s.adaptationNote}` : ""),
+      status: STATUS_LABEL[s.status] + (s.exitDate ? ` (${s.exitDate.toISOString().slice(0, 10).split("-").reverse().join("/")}${s.exitReason ? `, ${s.exitReason}` : ""})` : ""),
       blood: s.bloodType ?? "",
       allergies: s.allergies ?? "",
       medical: s.medicalNotes ?? "",
@@ -48,6 +57,13 @@ export async function GET() {
         { header: "Nombre", key: "first", width: 14 },
         { header: "Cédula", key: "id", width: 14 },
         { header: "Nacimiento", key: "birth", width: 12, type: "date" },
+        { header: "Edad", key: "age", width: 6 },
+        { header: "Sexo", key: "sex", width: 8 },
+        { header: "Nacionalidad", key: "nationality", width: 14 },
+        { header: "Ingreso", key: "enrolled", width: 12, type: "date" },
+        { header: "Repite", key: "repeating", width: 8 },
+        { header: "Adecuación", key: "adaptation", width: 28 },
+        { header: "Estado", key: "status", width: 26 },
         { header: "Sangre", key: "blood", width: 8 },
         { header: "Alergias", key: "allergies", width: 18 },
         { header: "Notas médicas", key: "medical", width: 24 },

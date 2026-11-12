@@ -6,6 +6,7 @@ import { staffSections } from "@/lib/queries";
 import { capitalize, dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
 import { Card, PageHeader, cx, inputClass, sectionSolid } from "@/components/ui";
 import { AttendanceForm } from "./attendance-form";
+import { ADAPTATION_SHORT } from "@/lib/student";
 
 export const metadata: Metadata = { title: "Asistencia" };
 
@@ -20,7 +21,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
 
   const students = section
     ? await prisma.student.findMany({
-        where: { sectionId: section.id },
+        where: { sectionId: section.id, status: "ACTIVE" },
         include: { attendance: { where: { date: d } }, absenceNotices: { where: { dateFrom: { lte: d }, dateTo: { gte: d } }, orderBy: { createdAt: "desc" }, take: 1 } },
         orderBy: [{ firstName: "asc" }],
       })
@@ -77,6 +78,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
               name: `${s.firstName} ${s.lastName}`,
               color: section.color,
               allergies: s.allergies,
+              support: ADAPTATION_SHORT[s.adaptation] ? `${ADAPTATION_SHORT[s.adaptation]}${s.adaptationNote ? `: ${s.adaptationNote}` : ""}` : null,
               status: s.attendance[0]?.status ?? (s.absenceNotices[0] ? (s.absenceNotices[0].reason === "Llegará tarde" ? "LATE" : "EXCUSED") : null),
               notice: s.absenceNotices[0] ? `${s.absenceNotices[0].reason}${s.absenceNotices[0].note ? `: ${s.absenceNotices[0].note}` : ""}` : null,
               note: s.attendance[0]?.note ?? null,

@@ -13,7 +13,7 @@ export default async function NewAlbumPage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const sections = await staffSections(user);
   const students = await prisma.student.findMany({
-    where: { sectionId: { in: sections.map((s) => s.id) }, photoConsent: { not: true } },
+    where: { sectionId: { in: sections.map((s) => s.id) }, status: "ACTIVE", photoConsent: { not: true } },
     select: { firstName: true, lastName: true, sectionId: true, photoConsent: true },
     orderBy: { firstName: "asc" },
   });
