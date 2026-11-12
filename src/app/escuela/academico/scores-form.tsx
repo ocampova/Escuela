@@ -18,6 +18,7 @@ function total(comps: Comp[], v: Record<string, string>) {
 export function ScoresForm({ sectionId, termId, subjectId, components, rows }: { sectionId: string; termId: string; subjectId: string; components: Comp[]; rows: Row[] }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(saveScores, {});
   const [values, setValues] = useState(() => Object.fromEntries(rows.map((r) => [r.id, r.values])));
+  const [pasted, setPasted] = useState(0);
 
   return (
     <form action={action}>
@@ -39,7 +40,7 @@ export function ScoresForm({ sectionId, termId, subjectId, components, rows }: {
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {rows.map((r) => {
+            {rows.map((r, ri) => {
               const t = total(components, values[r.id]);
               const complete = components.every((c) => values[r.id][c.id] !== "");
               return (
@@ -53,7 +54,7 @@ export function ScoresForm({ sectionId, termId, subjectId, components, rows }: {
                       </span>
                     </span>
                   </th>
-                  {components.map((c) => (
+                  {components.map((c, ci) => (
                     <td key={c.id} className="px-2 py-2 text-center">
                       <input
                         name={`s-${r.id}-${c.id}`}
@@ -61,6 +62,39 @@ export function ScoresForm({ sectionId, termId, subjectId, components, rows }: {
                         value={values[r.id][c.id]}
                         onChange={(e) => setValues((v) => ({ ...v, [r.id]: { ...v[r.id], [c.id]: e.target.value.replace(/[^\d.,]/g, "").slice(0, 5) } }))}
                         aria-label={`${c.name} de ${r.name}`}
+                        data-cell={`${ri}:${ci}`}
+                        onFocus={(e) => e.currentTarget.select()}
+                        onKeyDown={(e) => {
+                          const go = (dr: number, dc: number) => {
+                            const el = document.querySelector<HTMLInputElement>(`[data-cell="${ri + dr}:${ci + dc}"]`);
+                            if (el) {
+                              e.preventDefault();
+                              el.focus();
+                            }
+                          };
+                          if (e.key === "Enter" || e.key === "ArrowDown") go(e.shiftKey ? -1 : 1, 0);
+                          else if (e.key === "ArrowUp") go(-1, 0);
+                        }}
+                        onPaste={(e) => {
+                          const text = e.clipboardData.getData("text");
+                          if (!/[\t\n]/.test(text.trim())) return;
+                          e.preventDefault();
+                          const grid = text.replace(/\r/g, "").replace(/\n$/, "").split("\n").map((line) => line.split("\t"));
+                          setValues((v) => {
+                            const next = { ...v };
+                            grid.forEach((line, dr) => {
+                              const row = rows[ri + dr];
+                              if (!row) return;
+                              next[row.id] = { ...next[row.id] };
+                              line.forEach((cell, dc) => {
+                                const comp = components[ci + dc];
+                                if (comp) next[row.id][comp.id] = cell.trim().replace(/[^\d.,]/g, "").slice(0, 5);
+                              });
+                            });
+                            return next;
+                          });
+                          setPasted(Math.min(grid.length, rows.length - ri));
+                        }}
                         className="tabular h-10 w-16 rounded-lg bg-canvas text-center ring-1 ring-inset ring-line focus:bg-surface focus:outline-none focus:ring-2 focus:ring-brand"
                       />
                     </td>
@@ -80,7 +114,10 @@ export function ScoresForm({ sectionId, termId, subjectId, components, rows }: {
         </table>
       </div>
       <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur-sm">
-        <p className="mr-auto text-xs text-ink-3">Nota mínima para aprobar: {PASSING}. En gris, lo acumulado mientras faltan componentes.</p>
+        <p className="mr-auto text-xs text-ink-3">
+          {pasted > 0 ? <span className="font-medium text-ok">Se pegaron las notas de {pasted} {pasted === 1 ? "alumno" : "alumnos"}. Revise y guarde. </span> : null}
+          Puede copiar una o varias columnas desde Excel y pegarlas aquí. Enter baja al siguiente alumno. Mínimo para aprobar: {PASSING}; en gris, lo acumulado.
+        </p>
         {state.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
         {state.ok && <p role="status" className="ack-in text-sm font-medium text-ok">{state.ok}</p>}
         <Button type="submit" disabled={pending}>{pending ? "Guardando…" : "Guardar notas"}</Button>

@@ -9,6 +9,7 @@ import { ReadMeter } from "@/components/read-meter";
 import { EventDateTile } from "@/components/event-tile";
 import { PushPrompt } from "@/components/push-prompt";
 import { vapidPublicKey } from "@/lib/push";
+import { TeacherToday } from "./mi-dia";
 
 function greeting() {
   const h = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Costa_Rica", hour: "numeric", hour12: false }).format(new Date()));
@@ -81,9 +82,11 @@ export default async function StaffHome() {
           <p className="mt-1 text-sm text-ink-2 first-letter:uppercase">{dateTimeLabel(new Date(), { weekday: "long", day: "numeric", month: "long" })}</p>
         </div>
         <div className="flex gap-2">
-          <ButtonLink href="/escuela/asistencia" variant="secondary">
-            <ClipboardCheck className="size-4" aria-hidden /> Pasar lista
-          </ButtonLink>
+          {manager && (
+            <ButtonLink href="/escuela/asistencia" variant="secondary">
+              <ClipboardCheck className="size-4" aria-hidden /> Pasar lista
+            </ButtonLink>
+          )}
           <ButtonLink href="/escuela/avisos/nuevo">Nuevo aviso</ButtonLink>
         </div>
       </div>
@@ -92,7 +95,9 @@ export default async function StaffHome() {
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="min-w-0 space-y-8">
+          {!manager && <TeacherToday user={user} sections={sections} schoolDay={schoolDay} />}
           {/* Asistencia de hoy */}
+          {manager && (
           <section>
             <SectionHeading
               title="Asistencia de hoy"
@@ -145,8 +150,9 @@ export default async function StaffHome() {
               </table>
             </Card>
           </section>
+          )}
 
-          {notices.length > 0 && (
+          {manager && notices.length > 0 && (
             <section>
               <SectionHeading title={`Ausencias avisadas por las familias hoy (${notices.length})`} />
               <Card tone="flat" className="divide-y divide-line">

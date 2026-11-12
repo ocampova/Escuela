@@ -29,6 +29,21 @@ export default async function HomeReportPage({ params, searchParams }: { params:
     prisma.termReport.findUnique({ where: { studentId_termId: { studentId: id, termId: term.id } } }),
     prisma.student.findMany({ where: { sectionId: student.sectionId, status: "ACTIVE" }, select: { id: true }, orderBy: { firstName: "asc" } }),
   ]);
+  const prevTerm = [...terms].reverse().find((t) => t.order < term.order);
+  const [prevNotes, prevReport] = prevTerm
+    ? await Promise.all([
+        prisma.areaAssessment.findMany({ where: { studentId: id, termId: prevTerm.id } }),
+        prisma.termReport.findUnique({ where: { studentId_termId: { studentId: id, termId: prevTerm.id } } }),
+      ])
+    : [[], null];
+  const previous =
+    prevTerm && (prevNotes.length || prevReport?.comment)
+      ? {
+          name: prevTerm.name,
+          general: prevReport?.comment ?? "",
+          areas: Object.fromEntries(prevNotes.map((n) => [n.subjectId, { achievement: n.achievement ?? "", comment: n.comment ?? "" }])),
+        }
+      : null;
   const idx = siblings.findIndex((s) => s.id === id);
   const next = siblings[idx + 1];
   const name = `${student.firstName} ${student.lastName}`;
@@ -53,6 +68,7 @@ export default async function HomeReportPage({ params, searchParams }: { params:
           firstName={student.firstName}
           nextHref={next ? `/escuela/academico/informe/${next.id}?periodo=${term.id}` : null}
           general={report?.comment ?? ""}
+          previous={previous}
           areas={areas.map((a) => {
             const n = notes.find((x) => x.subjectId === a.id);
             return { id: a.id, name: a.name, achievement: n?.achievement ?? "", comment: n?.comment ?? "" };

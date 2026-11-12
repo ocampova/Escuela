@@ -7,7 +7,17 @@ export function PrintSheet({ title, subtitle, actions, children, school }: { tit
   return (
     <main className="min-h-dvh bg-canvas px-4 py-6 print:bg-white print:p-0">
       <div className="mx-auto mb-4 flex max-w-2xl flex-wrap items-center justify-between gap-3 print:hidden">{actions}</div>
-      <article className="mx-auto max-w-2xl overflow-hidden rounded-xl bg-surface shadow-card print:max-w-none print:rounded-none print:shadow-none">
+      <SheetArticle title={title} subtitle={subtitle} school={school}>
+        {children}
+      </SheetArticle>
+    </main>
+  );
+}
+
+/** La hoja con membrete, sin la barra de acciones (para imprimir varias seguidas). */
+export function SheetArticle({ title, subtitle, children, school, className = "" }: { title: string; subtitle?: string; children: ReactNode; school: { name: string; email: string | null }; className?: string }) {
+  return (
+      <article className={`${className} mx-auto max-w-2xl overflow-hidden rounded-xl bg-surface shadow-card print:max-w-none print:rounded-none print:shadow-none`}>
         <BrandStripe />
         <header className="flex items-center gap-4 border-b border-line px-6 py-5">
           <Image src="/logo-scs.png" alt="" width={56} height={56} className="rounded-full" />
@@ -22,6 +32,5 @@ export function PrintSheet({ title, subtitle, actions, children, school }: { tit
           <div className="mt-6">{children}</div>
         </div>
       </article>
-    </main>
   );
 }

@@ -46,6 +46,16 @@ A web platform that works on both phone and computer, for managing the school's 
 - **Private photos per section:** albums that only the families of that section can see, logged in with their own account. Photos are resized on the phone before upload (JPEG, 1600 px). If a child in the section has no photo authorization, the teacher sees their names and confirms before publishing. "Avisar en el grupo" (tell the group) shares only the link in WhatsApp, never the photos.
 - **Calendar on the phone:** a private link (ICS) for Google Calendar, iPhone or Outlook with the events that apply to each family. It updates automatically and can be regenerated if it was shared by mistake.
 
+## Fewer clicks for teachers
+
+- **"Mi día":** when a teacher logs in, they see what is due today, and the common tasks are one tap:
+  - **Attendance:** "Todos presentes" (everyone present). Absences that families reported are already marked.
+  - **Daily report:** "Enviar lo habitual a todos" (send the usual to everyone), with the "Hoy trabajamos" line. Absent students are skipped and the teacher only adjusts the exceptions.
+  - It also shows unanswered messages, homework due today or tomorrow, and the progress of grades or reports for the term.
+- **Grades:** copy one or several columns from Excel and paste them into the table. Enter moves down to the next student.
+- **Progress reports:** "Copiar del periodo anterior" (copy from the previous term), suggested phrases per area (personalised with the child's name), and "Guardar y seguir con el siguiente" (save and go to the next student). Primaria observations also have phrases.
+- **Report cards for the whole section** in a single document, to print or save as one PDF.
+
 ## Student record: data for MEP
 
 - Sex, nationality, date of entry to the school, whether the student is repeating the grade, and **curricular adaptation** (de acceso, no significativa or significativa) with a description. The teacher sees the adaptation when taking attendance and when entering grades.

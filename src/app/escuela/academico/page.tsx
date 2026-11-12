@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { CheckCircle2, ChevronRight, Eye, FileText } from "lucide-react";
+import { CheckCircle2, ChevronRight, Eye, FileText, Printer } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
@@ -73,6 +73,9 @@ export default async function AcademicPage({ searchParams }: { searchParams: Pro
               </Link>
             ))}
             <div className="ml-auto flex flex-wrap items-center gap-2">
+              <Link href={`/boletas/seccion/${section.id}/${term.id}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-brand hover:bg-canvas">
+                <Printer className="size-4" aria-hidden /> {descriptive ? "Imprimir todos" : "Imprimir todas"}
+              </Link>
               {publication ? (
                 <>
                   <Badge tone="ok">
