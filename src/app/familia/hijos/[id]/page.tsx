@@ -16,11 +16,13 @@ import { DailyReportView, PickupLine } from "@/components/daily-report";
 import { capitalize } from "@/lib/format";
 import { HomeworkRow } from "@/components/homework-row";
 import { FileText } from "lucide-react";
+import { i18n } from "@/lib/i18n-server";
 
 export default async function ChildPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ausencia?: string }> }) {
   const { id } = await params;
   const { ausencia } = await searchParams;
   const user = await requireGuardian();
+  const { t } = await i18n();
   const s = await prisma.student.findFirst({
     where: { id, guardians: { some: { userId: user.id } } },
     include: {
@@ -57,7 +59,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
     <div className="space-y-8">
       <div className={`full-bleed -mt-5 pt-3 pb-6 text-white md:-mt-8 md:pt-6 md:pb-10 ${sectionBand[s.section.color] ?? "bg-brand [--bleed-color:var(--color-brand)]"}`}>
         <Link href="/familia" className="-ml-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-white/85 hover:bg-white/10 hover:text-white">
-          <ArrowLeft className="size-4" aria-hidden /> Inicio
+          <ArrowLeft className="size-4" aria-hidden /> {t("Inicio")}
         </Link>
         <div className="mt-3 flex items-center gap-4">
           <Avatar name={`${s.firstName} ${s.lastName}`} color="onBrand" size={64} className="ring-2 ring-white/30" />
@@ -67,10 +69,10 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
             </h1>
             <p className="mt-1 text-sm text-white/85">
               {gradeSectionName(s.section)}
-              {s.section.teacher && ` · Docente: ${s.section.teacher.name}`}
+              {s.section.teacher && ` · ${t("Docente")}: ${s.section.teacher.name}`}
             </p>
             <Link href={`/familia/hijos/${s.id}/ausencia`} className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-white/15 px-3 text-sm font-medium text-white ring-1 ring-white/25 transition-colors hover:bg-white/25">
-              <CalendarX className="size-4" aria-hidden /> Avisar una ausencia
+              <CalendarX className="size-4" aria-hidden /> {t("Avisar una ausencia")}
             </Link>
           </div>
         </div>
@@ -78,17 +80,17 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
 
       {ausencia && (
         <p role="status" className="ack-in flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
-          <CheckCircle2 className="size-4 shrink-0" aria-hidden /> Listo, la docente recibió su aviso.
+          <CheckCircle2 className="size-4 shrink-0" aria-hidden /> {t("Listo, la docente recibió su aviso.")}
         </p>
       )}
       {s.absenceNotices.length > 0 && (
         <Card className="p-4">
-          <p className="mb-2 text-sm font-medium">Ausencias avisadas</p>
+          <p className="mb-2 text-sm font-medium">{t("Ausencias avisadas")}</p>
           <ul className="space-y-1 text-sm text-ink-2">
             {s.absenceNotices.map((n) => (
               <li key={n.id}>
                 {dateLabel(n.dateFrom, { weekday: "short", day: "numeric", month: "short" })}
-                {n.dateTo.getTime() !== n.dateFrom.getTime() ? ` al ${dateLabel(n.dateTo, { weekday: "short", day: "numeric", month: "short" })}` : ""}: {n.reason}
+                {n.dateTo.getTime() !== n.dateFrom.getTime() ? ` ${t("al")} ${dateLabel(n.dateTo, { weekday: "short", day: "numeric", month: "short" })}` : ""}: {t(n.reason)}
                 {n.note ? `, ${n.note}` : ""}
               </li>
             ))}
@@ -99,18 +101,18 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
         <div className="min-w-0 space-y-8">
       {(lastReport || todayPickup) && (
         <section>
-          <SectionHeading title={lastReport && lastReport.day.getTime() !== today.getTime() ? `Reporte del ${dateLabel(lastReport.day, { weekday: "long", day: "numeric", month: "short" })}` : "Hoy en clase"} />
+          <SectionHeading title={lastReport && lastReport.day.getTime() !== today.getTime() ? t("Reporte del {date}", { date: dateLabel(lastReport.day, { weekday: "long", day: "numeric", month: "short" }) }) : t("Hoy en clase")} />
           <Card className="p-4">
-            {lastReport ? <DailyReportView report={lastReport} pickup={pickupFor(lastReport.day)} /> : todayPickup && <PickupLine pickup={todayPickup} />}
+            {lastReport ? <DailyReportView report={lastReport} pickup={pickupFor(lastReport.day)} t={t} /> : todayPickup && <PickupLine pickup={todayPickup} t={t} />}
           </Card>
           {s.dailyReports.length > 1 && (
             <details className="group mt-2">
-              <summary className="cursor-pointer list-none text-sm font-medium text-brand hover:underline">Días anteriores</summary>
+              <summary className="cursor-pointer list-none text-sm font-medium text-brand hover:underline">{t("Días anteriores")}</summary>
               <div className="mt-2 space-y-3">
                 {s.dailyReports.slice(1).map((r) => (
                   <Card key={r.id} tone="flat" className="p-4">
                     <p className="mb-2 text-sm font-medium">{capitalize(dateLabel(r.day, { weekday: "long", day: "numeric", month: "short" }))}</p>
-                    <DailyReportView report={r} pickup={pickupFor(r.day)} compact />
+                    <DailyReportView report={r} pickup={pickupFor(r.day)} compact t={t} />
                   </Card>
                 ))}
               </div>
@@ -122,30 +124,30 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       {homework.length > 0 && (
         <section>
           <SectionHeading
-            title="Tareas"
+            title={t("Tareas")}
             action={
               <Link href="/familia/tareas" className="text-sm font-medium text-brand hover:underline">
-                Ver todas
+                {t("Ver todas")}
               </Link>
             }
           />
           <Card className="divide-y divide-line">
-            {homework.map((h) => <HomeworkRow key={h.id} h={h} />)}
+            {homework.map((h) => <HomeworkRow key={h.id} h={h} t={t} />)}
           </Card>
         </section>
       )}
 
       {publications.length > 0 && (
         <section>
-          <SectionHeading title={descriptive ? "Informes al hogar" : "Boletas"} />
+          <SectionHeading title={t(descriptive ? "Informes al hogar" : "Boletas")} />
           <Card className="divide-y divide-line">
             {publications.map((p) => (
               <Link key={p.id} href={`/boletas/${s.id}/${p.termId}`} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-canvas">
                 <span className="flex size-9 items-center justify-center rounded-full bg-brand-soft text-brand">
                   <FileText className="size-[18px]" aria-hidden />
                 </span>
-                <span className="min-w-0 flex-1 font-medium">{p.term.name}</span>
-                <span className="text-sm font-medium text-brand">Ver</span>
+                <span className="min-w-0 flex-1 font-medium">{t(p.term.name)}</span>
+                <span className="text-sm font-medium text-brand">{t("Ver")}</span>
               </Link>
             ))}
           </Card>
@@ -153,9 +155,9 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       )}
 
       <section>
-        <SectionHeading title="Asistencia de las últimas 4 semanas" />
+        <SectionHeading title={t("Asistencia de las últimas 4 semanas")} />
         <Card className="p-4">
-          <AttendanceStrip records={[...s.attendance].reverse()} />
+          <AttendanceStrip records={[...s.attendance].reverse()} t={t} />
           <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
             {[
               ["Presente", counts.PRESENT, "text-ok"],
@@ -164,7 +166,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
               ["Justificadas", counts.EXCUSED, "text-ink-2"],
             ].map(([label, n, c]) => (
               <div key={label as string} className="rounded-lg bg-canvas py-2">
-                <dt className="text-xs text-ink-2">{label}</dt>
+                <dt className="text-xs text-ink-2">{t(label as string)}</dt>
                 <dd className={`tabular text-lg font-semibold ${c}`}>{n}</dd>
               </div>
             ))}
@@ -173,24 +175,24 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       </section>
 
       <section>
-        <SectionHeading title="Salud" />
+        <SectionHeading title={t("Salud")} />
         <Card className="divide-y divide-line">
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="text-sm text-ink-2">Alergias</span>
+            <span className="text-sm text-ink-2">{t("Alergias")}</span>
             {s.allergies ? (
               <Badge tone="danger">
                 <AlertTriangle className="size-3.5" aria-hidden /> {s.allergies}
               </Badge>
             ) : (
-              <span className="text-sm">Ninguna registrada</span>
+              <span className="text-sm">{t("Ninguna registrada")}</span>
             )}
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="text-sm text-ink-2">Tipo de sangre</span>
-            <span className="text-sm font-medium">{s.bloodType ?? "Sin dato"}</span>
+            <span className="text-sm text-ink-2">{t("Tipo de sangre")}</span>
+            <span className="text-sm font-medium">{s.bloodType ?? t("Sin dato")}</span>
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="text-sm text-ink-2">Fecha de nacimiento</span>
+            <span className="text-sm text-ink-2">{t("Fecha de nacimiento")}</span>
             <span className="text-sm font-medium">{dateLabel(s.birthDate, { day: "numeric", month: "long", year: "numeric" })}</span>
           </div>
         </Card>
@@ -201,10 +203,10 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       {albums.length > 0 && (
         <section>
           <SectionHeading
-            title="Fotos de la sección"
+            title={t("Fotos de la sección")}
             action={
               <Link href="/familia/fotos" className="text-sm font-medium text-brand hover:underline">
-                Ver todas
+                {t("Ver todas")}
               </Link>
             }
           />
@@ -219,7 +221,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
                     )}
                   </div>
                   <p className="mt-1 truncate text-xs font-medium">{a.title}</p>
-                  <p className="text-xs text-ink-3">{a._count.photos} fotos</p>
+                  <p className="text-xs text-ink-3">{a._count.photos} {t("fotos")}</p>
                 </Link>
               </li>
             ))}
@@ -228,7 +230,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
       )}
 
       <section>
-        <SectionHeading title="Personas autorizadas para recoger" />
+        <SectionHeading title={t("Personas autorizadas para recoger")} />
         <Card className="divide-y divide-line">
           {s.pickups.map((p) => (
             <div key={p.id} className="flex items-center gap-3 px-4 py-3">
@@ -238,17 +240,17 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{p.name}</p>
                 <p className="text-sm text-ink-2">
-                  {p.relationship} · Cédula {p.idNumber}
+                  {t(p.relationship)} · {t("Cédula")} {p.idNumber}
                 </p>
               </div>
             </div>
           ))}
         </Card>
-        <p className="mt-2 text-xs text-ink-3">Para agregar o quitar personas autorizadas, comuníquese con Secretaría.</p>
+        <p className="mt-2 text-xs text-ink-3">{t("Para agregar o quitar personas autorizadas, comuníquese con Secretaría.")}</p>
       </section>
 
       <section>
-        <SectionHeading title="Encargados" />
+        <SectionHeading title={t("Encargados")} />
         <Card className="divide-y divide-line">
           {s.guardians.map((g) => (
             <div key={g.userId} className="flex items-center gap-3 px-4 py-3">
@@ -256,8 +258,8 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{g.user.name}</p>
                 <p className="text-sm text-ink-2">
-                  {g.relationship}
-                  {g.isPrimary ? " · Encargado principal" : ""}
+                  {t(g.relationship)}
+                  {g.isPrimary ? ` · ${t("Encargado principal")}` : ""}
                 </p>
               </div>
               {g.user.phone && (

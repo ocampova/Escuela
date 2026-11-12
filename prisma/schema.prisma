@@ -119,6 +119,8 @@ model User {
   emailReceipts     Boolean   @default(true)
   /// Enlace privado del calendario (suscripción ICS en Google / iPhone)
   calendarToken     String?   @unique
+  /// Idioma de la interfaz: "es" o "en"
+  locale        String   @default("es")
   createdAt         DateTime  @default(now())
 
   tokens            AuthToken[]

@@ -9,10 +9,16 @@ import { EventDateTile, KIND_LABEL } from "@/components/event-tile";
 import { CalendarSubscribe } from "@/components/calendar-subscribe";
 import { calendarLinks, calendarToken } from "@/lib/ics";
 
-export const metadata: Metadata = { title: "Calendario" };
+import { i18n } from "@/lib/i18n-server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await i18n();
+  return { title: t("Calendario") };
+}
 
 export default async function FamilyCalendar() {
   const user = await requireGuardian();
+  const { t, locale } = await i18n();
   const students = await guardianStudents(user.id);
   const from = new Date();
   from.setHours(0, 0, 0, 0);
@@ -31,13 +37,13 @@ export default async function FamilyCalendar() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-semibold">Calendario</h1>
-      <p className="mt-1 text-sm text-ink-2">Actividades, reuniones y fechas importantes de sus hijos.</p>
-      <CalendarSubscribe links={links} className="mt-5" />
+      <h1 className="text-2xl font-semibold">{t("Calendario")}</h1>
+      <p className="mt-1 text-sm text-ink-2">{t("Actividades, reuniones y fechas importantes de sus hijos.")}</p>
+      <CalendarSubscribe links={links} className="mt-5" locale={locale} />
       {events.length === 0 && (
         <Card className="mt-5">
-          <EmptyState icon={<CalendarDays className="size-5" />} title="No hay eventos próximos">
-            Cuando la escuela agende una actividad, aparecerá aquí.
+          <EmptyState icon={<CalendarDays className="size-5" />} title={t("No hay eventos próximos")}>
+            {t("Cuando la escuela agende una actividad, aparecerá aquí.")}
           </EmptyState>
         </Card>
       )}
@@ -52,13 +58,13 @@ export default async function FamilyCalendar() {
                   <p className="font-medium">{e.title}</p>
                   <p className="text-sm text-ink-2">
                     {capitalize(dateTimeLabel(e.startsAt, { weekday: "long" }))}
-                    {e.allDay ? " · Todo el día" : ` · ${timeLabel(e.startsAt)}${e.endsAt ? ` a ${timeLabel(e.endsAt)}` : ""}`}
+                    {e.allDay ? ` · ${t("Todo el día")}` : ` · ${timeLabel(e.startsAt)}${e.endsAt ? ` ${t("a")} ${timeLabel(e.endsAt)}` : ""}`}
                   </p>
                   {e.description && <p className="mt-1.5 text-sm text-ink-2">{e.description}</p>}
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Badge>{KIND_LABEL[e.kind] ?? "Evento"}</Badge>
+                    <Badge>{t(KIND_LABEL[e.kind] ?? "Evento")}</Badge>
                     {e.section && <Badge tone="brand">{gradeSectionName(e.section)}</Badge>}
-                    {e.level && <Badge tone="brand">{e.level.name}</Badge>}
+                    {e.level && <Badge tone="brand">{t(e.level.name)}</Badge>}
                   </div>
                 </div>
               </div>

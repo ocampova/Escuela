@@ -11,7 +11,7 @@ export const getCurrentUser = cache(async () => {
   if (!session) return null;
   return prisma.user.findFirst({
     where: { id: session.userId, active: true },
-    select: { id: true, name: true, email: true, phone: true, role: true, schoolId: true, school: true, privacyAcceptedAt: true, emailNotices: true, emailReceipts: true },
+    select: { id: true, name: true, email: true, phone: true, role: true, schoolId: true, school: true, privacyAcceptedAt: true, emailNotices: true, emailReceipts: true, locale: true },
   });
 });
 

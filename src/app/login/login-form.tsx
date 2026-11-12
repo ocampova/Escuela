@@ -1,5 +1,6 @@
 "use client";
 
+import { translator, type Locale } from "@/lib/i18n";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useActionState } from "react";
@@ -12,7 +13,8 @@ const DEMO = [
   { label: "Docente", email: "schaves@demo.scs.cr", who: "Sofía Chaves, Preparatoria A" },
 ];
 
-export function LoginForm({ next, demo = false }: { next?: string; demo?: boolean }) {
+export function LoginForm({ next, demo = false, locale = "es" }: { next?: string; demo?: boolean; locale?: Locale }) {
+  const t = translator(locale);
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
 
   function fill(email: string) {
@@ -27,28 +29,28 @@ export function LoginForm({ next, demo = false }: { next?: string; demo?: boolea
     <>
       <form id="login-form" action={action} className="space-y-4">
         <input type="hidden" name="next" value={next ?? ""} />
-        <Field label="Correo electrónico" htmlFor="email">
+        <Field label={t("Correo electrónico")} htmlFor="email">
           <input id="email" name="email" type="email" autoComplete="email" inputMode="email" required defaultValue={state.email} className={inputClass} />
         </Field>
-        <Field label="Contraseña" htmlFor="password">
+        <Field label={t("Contraseña")} htmlFor="password">
           <input id="password" name="password" type="password" autoComplete="current-password" required className={inputClass} />
         </Field>
         {state.error && (
           <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
-            {state.error}
+            {t(state.error)}
           </p>
         )}
         <Button type="submit" size="lg" className="w-full" disabled={pending}>
-          {pending ? "Entrando…" : "Entrar"}
+          {t(pending ? "Entrando…" : "Entrar")}
         </Button>
         <p className="text-center">
-          <Link href="/olvide" className="text-sm font-medium text-brand hover:underline">Olvidé mi contraseña</Link>
+          <Link href="/olvide" className="text-sm font-medium text-brand hover:underline">{t("Olvidé mi contraseña")}</Link>
         </p>
       </form>
 
       {demo && (
       <div className="mt-8 border-t border-line pt-6">
-        <p className="text-sm font-medium text-ink">Entrar con una cuenta de demostración</p>
+        <p className="text-sm font-medium text-ink">{t("Entrar con una cuenta de demostración")}</p>
         <div className="mt-3 grid gap-2">
           {DEMO.map((d) => (
             <button
@@ -59,8 +61,8 @@ export function LoginForm({ next, demo = false }: { next?: string; demo?: boolea
               className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left ring-1 ring-inset ring-line transition-colors hover:bg-brand-soft hover:ring-[#cfe0d9] disabled:opacity-50"
             >
               <span>
-                <span className="block text-sm font-medium text-ink">{d.label}</span>
-                <span className="block text-xs text-ink-2">{d.who}</span>
+                <span className="block text-sm font-medium text-ink">{t(d.label)}</span>
+                <span className="block text-xs text-ink-2">{t(d.who)}</span>
               </span>
               <ChevronRight className="size-4 shrink-0 text-ink-3" aria-hidden />
             </button>

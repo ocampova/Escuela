@@ -10,7 +10,8 @@
     "db:seed": "prisma db seed",
     "postinstall": "prisma generate",
     "vapid": "web-push generate-vapid-keys",
-    "recordatorios": "tsx --require ./scripts/no-server-only.cjs scripts/recordatorios.ts"
+    "recordatorios": "tsx --require ./scripts/no-server-only.cjs scripts/recordatorios.ts",
+    "i18n:check": "tsx scripts/i18n-check.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

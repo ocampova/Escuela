@@ -7,10 +7,17 @@ import { money } from "@/lib/format";
 import { BankInfo } from "@/components/bank-info";
 import { Card, SectionHeading } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Información de la escuela" };
+import { i18n } from "@/lib/i18n-server";
+import { conceptLabel } from "@/lib/i18n";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await i18n();
+  return { title: t("Información de la escuela") };
+}
 
 export default async function SchoolInfo() {
   const user = await requireGuardian();
+  const { t, locale } = await i18n();
   const students = await guardianStudents(user.id);
   const levelIds = [...new Set(students.map((s) => s.section.grade.levelId))];
   const [school, levels] = await Promise.all([
@@ -26,8 +33,8 @@ export default async function SchoolInfo() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Información</h1>
-        <p className="mt-1 text-sm text-ink-2">Horarios, contacto, precios y materiales de {school.name}.</p>
+        <h1 className="text-2xl font-semibold">{t("Información")}</h1>
+        <p className="mt-1 text-sm text-ink-2">{t("Horarios, contacto, precios y materiales de {school}.", { school: school.name })}</p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
@@ -36,7 +43,7 @@ export default async function SchoolInfo() {
         const prices = [...general, ...l.feeConcepts];
         return (
           <section key={l.id} className="space-y-3">
-            <SectionHeading title={l.name} />
+            <SectionHeading title={t(l.name)} />
             <Card className="divide-y divide-line">
               {l.schedule && (
                 <div className="flex gap-3 px-4 py-3">
@@ -66,22 +73,22 @@ export default async function SchoolInfo() {
 
             {prices.length > 0 && (
               <Card>
-                <p className="border-b border-line px-4 py-3 text-sm font-medium">Precios {l.name.toLowerCase()}</p>
+                <p className="border-b border-line px-4 py-3 text-sm font-medium">{t("Precios")} · {t(l.name)}</p>
                 <dl className="divide-y divide-line">
                   {prices.map((c) => (
                     <div key={c.id} className="flex items-start justify-between gap-4 px-4 py-2.5 text-sm">
                       <dt>
-                        {c.name}
+                        {conceptLabel(locale, c.name)}
                         {(c.earlyAmount || c.dueNote) && (
                           <span className="block text-xs text-ink-2">
-                            {c.earlyAmount ? `${money(c.earlyAmount, c.currency)} en agosto y setiembre. ` : ""}
+                            {c.earlyAmount ? t("{amount} en agosto y setiembre. ", { amount: money(c.earlyAmount, c.currency) }) : ""}
                             {c.dueNote && !c.earlyAmount ? c.dueNote : ""}
                           </span>
                         )}
                       </dt>
                       <dd className="tabular shrink-0 font-semibold">
                         {money(c.defaultAmount, c.currency)}
-                        {c.recurring ? <span className="font-normal text-ink-2"> / mes</span> : ""}
+                        {c.recurring ? <span className="font-normal text-ink-2"> / {t("mes")}</span> : ""}
                       </dd>
                     </div>
                   ))}
@@ -91,7 +98,7 @@ export default async function SchoolInfo() {
 
             {l.materials && (
               <details className="rounded-xl bg-surface shadow-card">
-                <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-brand">Lista de materiales de {l.name.toLowerCase()}</summary>
+                <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-brand">{t("Lista de materiales")} · {t(l.name)}</summary>
                 <ul className="list-disc space-y-1 border-t border-line py-3 pr-4 pl-9 text-sm">
                   {l.materials
                     .split("\n")
@@ -108,9 +115,9 @@ export default async function SchoolInfo() {
       </div>
 
       <section className="lg:max-w-xl">
-        <SectionHeading title="Pagos" />
+        <SectionHeading title={t("Pagos")} />
         <Card className="p-4">
-          <BankInfo bank={school} />
+          <BankInfo bank={school} locale={locale} />
         </Card>
       </section>
 

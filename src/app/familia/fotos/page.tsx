@@ -7,10 +7,16 @@ import { guardianStudents } from "@/lib/queries";
 import { dateLabel, gradeSectionName } from "@/lib/format";
 import { Card, EmptyState, SectionChip } from "@/components/ui";
 
-export const metadata: Metadata = { title: "Fotos" };
+import { i18n } from "@/lib/i18n-server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await i18n();
+  return { title: t("Fotos") };
+}
 
 export default async function FamilyPhotos() {
   const user = await requireGuardian();
+  const { t } = await i18n();
   const students = await guardianStudents(user.id);
   const albums = await prisma.album.findMany({
     where: { sectionId: { in: students.map((s) => s.sectionId) } },
@@ -21,12 +27,12 @@ export default async function FamilyPhotos() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-semibold">Fotos</h1>
-      <p className="mt-1 text-sm text-ink-2">Álbumes privados de la sección de sus hijos. Solo los ven las familias del grupo.</p>
+      <h1 className="text-2xl font-semibold">{t("Fotos")}</h1>
+      <p className="mt-1 text-sm text-ink-2">{t("Álbumes privados de la sección de sus hijos. Solo los ven las familias del grupo.")}</p>
       {albums.length === 0 ? (
         <Card className="mt-5">
-          <EmptyState icon={<Camera className="size-5" />} title="Todavía no hay fotos">
-            Cuando la docente comparta fotos de una actividad, aparecerán aquí.
+          <EmptyState icon={<Camera className="size-5" />} title={t("Todavía no hay fotos")}>
+            {t("Cuando la docente comparta fotos de una actividad, aparecerán aquí.")}
           </EmptyState>
         </Card>
       ) : (
@@ -43,7 +49,7 @@ export default async function FamilyPhotos() {
                 <div className="p-3">
                   <p className="truncate text-sm font-medium">{a.title}</p>
                   <p className="mt-0.5 text-xs text-ink-2">
-                    {dateLabel(a.day, { day: "numeric", month: "short" })} · {a.photos.length} {a.photos.length === 1 ? "foto" : "fotos"}
+                    {dateLabel(a.day, { day: "numeric", month: "short" })} · {a.photos.length} {t(a.photos.length === 1 ? "foto" : "fotos")}
                   </p>
                   {students.length > 1 && <SectionChip color={a.section.color} label={gradeSectionName(a.section)} className="mt-2" />}
                 </div>

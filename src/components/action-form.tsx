@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, type ReactNode } from "react";
 import { Button, cx } from "./ui";
+import { translator, type Locale } from "@/lib/i18n";
 
 export type ActionState = { error?: string; ok?: string };
 
@@ -15,7 +16,9 @@ export function ActionForm({
   inline,
   resetOnOk = true,
   variant = "primary",
+  locale = "es",
 }: {
+  locale?: Locale;
   action: (prev: ActionState, form: FormData) => Promise<ActionState>;
   submitLabel: string;
   pendingLabel?: string;
@@ -34,10 +37,10 @@ export function ActionForm({
     <form ref={ref} action={formAction} className={cx(inline ? "flex flex-wrap items-end gap-3" : "space-y-4", className)}>
       {children}
       <div className={cx("flex flex-wrap items-center gap-3", !inline && "justify-end")}>
-        {state.error && <p role="alert" className="mr-auto text-sm text-danger">{state.error}</p>}
-        {state.ok && <p role="status" className="ack-in mr-auto text-sm font-medium text-ok">{state.ok}</p>}
+        {state.error && <p role="alert" className="mr-auto text-sm text-danger">{translator(locale)(state.error)}</p>}
+        {state.ok && <p role="status" className="ack-in mr-auto text-sm font-medium text-ok">{translator(locale)(state.ok)}</p>}
         <Button type="submit" variant={variant} disabled={pending}>
-          {pending ? pendingLabel : submitLabel}
+          {pending ? translator(locale)(pendingLabel) : submitLabel}
         </Button>
       </div>
     </form>

@@ -1,8 +1,9 @@
 import { capitalize, dateLabel, keyToDate, relativeDay, todayKey } from "@/lib/format";
 import { Badge } from "./ui";
+import { translator, type T } from "@/lib/i18n";
 
 /** Tarea para la casa, vista de la familia. */
-export function HomeworkRow({ h }: { h: { title: string; description: string | null; dueDate: Date; subject: { name: string } | null } }) {
+export function HomeworkRow({ h, t = translator("es") }: { h: { title: string; description: string | null; dueDate: Date; subject: { name: string } | null }; t?: T }) {
   const soon = h.dueDate.getTime() - keyToDate(todayKey()).getTime() <= 86_400_000;
   return (
     <div className="px-4 py-3">
@@ -12,7 +13,7 @@ export function HomeworkRow({ h }: { h: { title: string; description: string | n
       </div>
       {h.description && <p className="mt-1 text-sm whitespace-pre-line text-ink-2">{h.description}</p>}
       <p className="mt-1 text-xs text-ink-3">
-        {h.subject ? `${h.subject.name} · ` : ""}Para el {capitalize(dateLabel(h.dueDate, { weekday: "long", day: "numeric", month: "long" }))}
+        {h.subject ? `${t(h.subject.name)} · ` : ""}{t("Para el")} {capitalize(dateLabel(h.dueDate, { weekday: "long", day: "numeric", month: "long" }))}
       </p>
     </div>
   );

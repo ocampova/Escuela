@@ -4,11 +4,13 @@ import { useState, useTransition } from "react";
 import { CalendarPlus, Check, Copy, RefreshCw } from "lucide-react";
 import { rotateCalendarLink } from "@/app/calendar-actions";
 import { buttonClass, Card } from "./ui";
+import { translator, type Locale } from "@/lib/i18n";
 
 type Links = { https: string; webcal: string; google: string };
 
 /** Suscribir el calendario de la escuela en el celular (se actualiza solo). */
-export function CalendarSubscribe({ links: initial, className }: { links: Links; className?: string }) {
+export function CalendarSubscribe({ links: initial, className, locale = "es" }: { links: Links; className?: string; locale?: Locale }) {
+  const t = translator(locale);
   const [links, setLinks] = useState(initial);
   const [copied, setCopied] = useState(false);
   const [rotated, setRotated] = useState(false);
@@ -22,8 +24,8 @@ export function CalendarSubscribe({ links: initial, className }: { links: Links;
             <CalendarPlus className="size-[18px]" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h2 className="text-[15px] font-semibold">En el calendario de su celular</h2>
-            <p className="mt-0.5 text-sm text-ink-2">Las actividades aparecen solas en Google Calendar o en el calendario del iPhone, y se actualizan cuando la escuela cambia algo.</p>
+            <h2 className="text-[15px] font-semibold">{t("En el calendario de su celular")}</h2>
+            <p className="mt-0.5 text-sm text-ink-2">{t("Las actividades aparecen solas en Google Calendar o en el calendario del iPhone, y se actualizan cuando la escuela cambia algo.")}</p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -38,11 +40,11 @@ export function CalendarSubscribe({ links: initial, className }: { links: Links;
             }}
           >
             {copied ? <Check className="size-3.5 text-ok" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
-            {copied ? "Copiado" : "Copiar enlace"}
+            {t(copied ? "Copiado" : "Copiar enlace")}
           </button>
         </div>
         <p className="mt-3 text-xs text-ink-3">
-          El enlace es personal: no lo comparta en grupos.{" "}
+          {t("El enlace es personal: no lo comparta en grupos.")}{" "}
           <button
             type="button"
             disabled={pending}
@@ -56,9 +58,9 @@ export function CalendarSubscribe({ links: initial, className }: { links: Links;
             }
           >
             <RefreshCw className="size-3" aria-hidden />
-            {pending ? "Generando…" : "Generar uno nuevo"}
+            {t(pending ? "Generando…" : "Generar uno nuevo")}
           </button>
-          {rotated && <span className="ml-1 text-ok">Listo: el enlace anterior ya no funciona.</span>}
+          {rotated && <span className="ml-1 text-ok">{t("Listo: el enlace anterior ya no funciona.")}</span>}
         </p>
       </div>
     </Card>

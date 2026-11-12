@@ -1,4 +1,13 @@
+import { cache } from "react";
+
 const TZ = "America/Costa_Rica";
+
+/**
+ * Idioma de las fechas en esta petición. En el servidor, `i18n()` lo fija al inicio
+ * de cada página (React cache = por petición). En el cliente queda en español.
+ */
+export const formatLocale = cache(() => ({ current: "es" as "es" | "en" }));
+const isEn = () => formatLocale().current === "en";
 
 export function crc(amount: number) {
   return "₡" + new Intl.NumberFormat("es-CR", { maximumFractionDigits: 0 }).format(amount).replace(/ | /g, " ");
@@ -28,7 +37,7 @@ export function initials(name: string) {
 }
 
 const fmt = (opts: Intl.DateTimeFormatOptions, utc = false) =>
-  new Intl.DateTimeFormat("es-CR", { timeZone: utc ? "UTC" : TZ, ...opts });
+  new Intl.DateTimeFormat(isEn() ? "en-US" : "es-CR", { timeZone: utc ? "UTC" : TZ, ...opts });
 
 /** Fechas guardadas como @db.Date (medianoche UTC) */
 export function dateLabel(d: Date, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" }) {
@@ -40,6 +49,7 @@ export function dateTimeLabel(d: Date, opts: Intl.DateTimeFormatOptions) {
 }
 
 export function timeLabel(d: Date) {
+  if (isEn()) return fmt({ hour: "numeric", minute: "2-digit", hour12: true }).format(d);
   return fmt({ hour: "numeric", minute: "2-digit", hour12: true }).format(d).replace(/\s?([ap])\.?\s?m\.?/i, " $1. m.");
 }
 
@@ -47,9 +57,9 @@ export function relativeDay(d: Date) {
   const today = todayKey();
   const key = dayKey(d);
   const diff = Math.round((Date.parse(key) - Date.parse(today)) / 86400000);
-  if (diff === 0) return "Hoy";
-  if (diff === 1) return "Mañana";
-  if (diff === -1) return "Ayer";
+  if (diff === 0) return isEn() ? "Today" : "Hoy";
+  if (diff === 1) return isEn() ? "Tomorrow" : "Mañana";
+  if (diff === -1) return isEn() ? "Yesterday" : "Ayer";
   if (diff > 1 && diff < 7) return capitalize(dateTimeLabel(d, { weekday: "long" }));
   return dateTimeLabel(d, { day: "numeric", month: "short" });
 }

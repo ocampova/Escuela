@@ -1,5 +1,6 @@
 "use client";
 
+import { translator, type Locale } from "@/lib/i18n";
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { SendHorizontal } from "lucide-react";
@@ -12,16 +13,19 @@ export type ChatMessage = { id: string; body: string; mine: boolean; sender: str
 export function ChatThread({
   messages,
   hidden,
-  placeholder = "Escriba un mensaje…",
+  placeholder,
   emptyText,
   canSend = true,
+  locale = "es",
 }: {
+  locale?: Locale;
   messages: ChatMessage[];
   hidden: Record<string, string>;
   placeholder?: string;
   emptyText: string;
   canSend?: boolean;
 }) {
+  const t = translator(locale);
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -86,13 +90,13 @@ export function ChatThread({
           {state.error && <p role="alert" className="mb-2 text-sm text-danger">{state.error}</p>}
           <div className="flex items-end gap-2">
             <label className="min-w-0 flex-1">
-              <span className="sr-only">Mensaje</span>
+              <span className="sr-only">{t("Mensaje")}</span>
               <textarea
                 name="body"
                 required
                 rows={1}
                 maxLength={2000}
-                placeholder={placeholder}
+                placeholder={placeholder ?? t("Escriba un mensaje…")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(pointer: fine)").matches) {
                     e.preventDefault();
@@ -105,7 +109,7 @@ export function ChatThread({
             <button
               type="submit"
               disabled={pending}
-              aria-label="Enviar"
+              aria-label={t("Enviar")}
               className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-[0_1px_2px_rgb(18_70_58/0.25)] transition-[background-color,transform] hover:bg-brand-hover active:scale-95 disabled:opacity-60"
             >
               <SendHorizontal className="size-5" aria-hidden />
@@ -113,7 +117,7 @@ export function ChatThread({
           </div>
         </form>
       ) : (
-        <p className="rounded-xl bg-surface px-4 py-3 text-center text-sm text-ink-2 shadow-card">Puede leer esta conversación, pero la responde la docente guía.</p>
+        <p className="rounded-xl bg-surface px-4 py-3 text-center text-sm text-ink-2 shadow-card">{t("Puede leer esta conversación, pero la responde la docente guía.")}</p>
       )}
     </div>
   );

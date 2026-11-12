@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BellRing, Share, X } from "lucide-react";
 import { savePushSubscription } from "@/app/push-actions";
 import { Button, cx } from "./ui";
+import { translator, type Locale } from "@/lib/i18n";
 
 type Status = "unknown" | "unsupported" | "ios-install" | "default" | "granted" | "denied" | "dismissed";
 
@@ -14,7 +15,8 @@ function urlBase64ToUint8Array(base64: string) {
 }
 
 /** Tarjeta para activar las notificaciones push en este dispositivo. */
-export function PushPrompt({ vapidKey, tone = "light", className }: { vapidKey: string | null; tone?: "light" | "dark"; className?: string }) {
+export function PushPrompt({ vapidKey, tone = "light", className, locale = "es" }: { vapidKey: string | null; tone?: "light" | "dark"; className?: string; locale?: Locale }) {
+  const t = translator(locale);
   const [status, setStatus] = useState<Status>("unknown");
   const [busy, setBusy] = useState(false);
 
@@ -71,27 +73,27 @@ export function PushPrompt({ vapidKey, tone = "light", className }: { vapidKey: 
       <div className="min-w-0 flex-1 pr-6">
         {status === "ios-install" ? (
           <>
-            <p className="font-medium">Reciba avisos en su iPhone</p>
+            <p className="font-medium">{t("Reciba avisos en su iPhone")}</p>
             <p className={cx("mt-0.5 text-sm", dark ? "text-white/75" : "text-ink-2")}>
-              Toque <Share className="inline size-4 align-text-bottom" aria-label="Compartir" /> y luego «Agregar a pantalla de inicio». Abra la app desde ahí para activar las notificaciones.
+              {t("Toque")} <Share className="inline size-4 align-text-bottom" aria-label={t("Compartir")} /> {t("y luego «Agregar a pantalla de inicio». Abra la app desde ahí para activar las notificaciones.")}
             </p>
           </>
         ) : status === "denied" ? (
           <>
-            <p className="font-medium">Notificaciones bloqueadas</p>
-            <p className={cx("mt-0.5 text-sm", dark ? "text-white/75" : "text-ink-2")}>Para recibirlas, permítalas en la configuración del navegador para este sitio.</p>
+            <p className="font-medium">{t("Notificaciones bloqueadas")}</p>
+            <p className={cx("mt-0.5 text-sm", dark ? "text-white/75" : "text-ink-2")}>{t("Para recibirlas, permítalas en la configuración del navegador para este sitio.")}</p>
           </>
         ) : (
           <>
-            <p className="font-medium">Active las notificaciones</p>
-            <p className={cx("mt-0.5 text-sm", dark ? "text-white/75" : "text-ink-2")}>Le avisamos al instante de avisos, mensajes y pagos.</p>
+            <p className="font-medium">{t("Active las notificaciones")}</p>
+            <p className={cx("mt-0.5 text-sm", dark ? "text-white/75" : "text-ink-2")}>{t("Le avisamos al instante de avisos, mensajes y pagos.")}</p>
             <Button size="sm" className={cx("mt-3", dark && "bg-white text-brand hover:bg-white/90")} onClick={enable} disabled={busy}>
-              {busy ? "Activando…" : "Activar"}
+              {t(busy ? "Activando…" : "Activar")}
             </Button>
           </>
         )}
       </div>
-      <button type="button" onClick={dismiss} aria-label="Cerrar" className={cx("absolute top-2 right-2 flex size-8 items-center justify-center rounded-lg", dark ? "text-white/70 hover:bg-white/10" : "text-ink-3 hover:bg-canvas")}>
+      <button type="button" onClick={dismiss} aria-label={t("Cerrar")} className={cx("absolute top-2 right-2 flex size-8 items-center justify-center rounded-lg", dark ? "text-white/70 hover:bg-white/10" : "text-ink-3 hover:bg-canvas")}>
         <X className="size-4" aria-hidden />
       </button>
     </div>

@@ -2,6 +2,7 @@ import { DoorOpen, NotebookPen } from "lucide-react";
 import { DAILY_FIELDS, dailyLabel } from "@/lib/daily";
 import { relativeDay, timeLabel } from "@/lib/format";
 import { cx } from "./ui";
+import { translator, type T } from "@/lib/i18n";
 
 type Report = { day: Date; mood: string | null; meal: string | null; participation: string | null; bathroom: string | null; note: string | null; activity: string | null };
 type Pickup = { at: Date; personName: string; relation: string | null; kind: string };
@@ -9,12 +10,12 @@ type Pickup = { at: Date; personName: string; relation: string | null; kind: str
 const toneClass = { ok: "bg-ok-soft text-ok", warn: "bg-warn-soft text-warn" } as const;
 
 /** Reporte del día para la familia: chips con lo que marcó la docente + actividad y nota. */
-export function DailyReportView({ report, pickup, compact }: { report: Report; pickup?: Pickup | null; compact?: boolean }) {
+export function DailyReportView({ report, pickup, compact, t = translator("es") }: { report: Report; pickup?: Pickup | null; compact?: boolean; t?: T }) {
   return (
     <div className="space-y-3">
       {report.activity && !compact && (
         <p className="text-sm">
-          <span className="font-medium">Hoy trabajamos: </span>
+          <span className="font-medium">{t("Hoy trabajamos:")} </span>
           <span className="text-ink-2">{report.activity}</span>
         </p>
       )}
@@ -24,8 +25,8 @@ export function DailyReportView({ report, pickup, compact }: { report: Report; p
           if (!o) return null;
           return (
             <div key={f.key} className={cx("rounded-lg px-3 py-2", toneClass[o.tone])}>
-              <dt className="text-[11px] font-medium tracking-wide uppercase opacity-80">{f.label}</dt>
-              <dd className="text-sm font-semibold">{o.label}</dd>
+              <dt className="text-[11px] font-medium tracking-wide uppercase opacity-80">{t(f.label)}</dt>
+              <dd className="text-sm font-semibold">{t(o.label)}</dd>
             </div>
           );
         })}
@@ -36,17 +37,17 @@ export function DailyReportView({ report, pickup, compact }: { report: Report; p
           {report.note}
         </p>
       )}
-      {pickup && <PickupLine pickup={pickup} />}
+      {pickup && <PickupLine pickup={pickup} t={t} />}
     </div>
   );
 }
 
-export function PickupLine({ pickup }: { pickup: Pickup }) {
+export function PickupLine({ pickup, t = translator("es") }: { pickup: Pickup; t?: T }) {
   return (
     <p className={cx("flex items-center gap-2 text-sm", pickup.kind === "OTHER" ? "text-warn" : "text-ink-2")}>
       <DoorOpen className="size-4 shrink-0" aria-hidden />
-      Salió {relativeDay(pickup.at).toLowerCase()} a las {timeLabel(pickup.at)} con {pickup.personName}
-      {pickup.relation ? ` (${pickup.relation.toLowerCase()})` : ""}
+      {t("Salió {day} a las {time} con {person}", { day: relativeDay(pickup.at).toLowerCase(), time: timeLabel(pickup.at), person: pickup.personName })}
+      {pickup.relation ? ` (${t(pickup.relation).toLowerCase()})` : ""}
     </p>
   );
 }

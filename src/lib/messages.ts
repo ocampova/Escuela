@@ -66,7 +66,7 @@ export async function threadMessages(conversationId: string, viewerId: string) {
     mine: m.senderId === viewerId,
     sender: `${m.sender.name.split(" ").slice(0, 2).join(" ")}${m.sender.role === "ADMIN" ? " · Dirección" : m.sender.role === "STAFF" ? " · Secretaría" : m.sender.role === "TEACHER" ? " · Docente" : ""}`,
     time: timeLabel(m.createdAt),
-    day: relativeDay(m.createdAt) === "Hoy" || relativeDay(m.createdAt) === "Ayer" ? relativeDay(m.createdAt) : dateTimeLabel(m.createdAt, { weekday: "long", day: "numeric", month: "long" }),
+    day: ["Hoy", "Ayer", "Today", "Yesterday"].includes(relativeDay(m.createdAt)) ? relativeDay(m.createdAt) : dateTimeLabel(m.createdAt, { weekday: "long", day: "numeric", month: "long" }),
   }));
 }
 
