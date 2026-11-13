@@ -34,7 +34,7 @@ export function DailyForm({ sectionId, date, rows, activity }: { sectionId: stri
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-canvas/60 px-4 py-2.5">
         <p className="text-sm text-ink-2">Llene lo habitual de un toque y cambie solo lo distinto.</p>
-        <button type="button" onClick={fillDefaults} className="text-sm font-medium text-brand hover:underline">
+        <button type="button" onClick={fillDefaults} className="tap text-sm font-medium text-brand hover:underline">
           Llenar todos con lo habitual
         </button>
       </div>

@@ -69,7 +69,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </nav>
 
       {tab === "estructura" && (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-6">
             {levels.map((l) => (
               <section key={l.id}>
@@ -200,7 +200,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       )}
 
       {tab === "personal" && (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
           <Card className="divide-y divide-line">
             {staff.map((s) => (
               <div key={s.id} className={cx("flex flex-wrap items-center gap-3 px-4 py-3", !s.active && "opacity-60")}>
@@ -265,7 +265,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       )}
 
       {tab === "pagos" && (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section>
             <SectionHeading title="Precios y conceptos de cobro" />
             <Card className="divide-y divide-line">

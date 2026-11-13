@@ -35,7 +35,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
         <SectionPicker sections={sections} current={section?.id} href={(id) => `/escuela/tareas?seccion=${id}`} />
       </div>
       {section && (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-6">
             <section>
               <SectionHeading title="Próximas entregas" />
@@ -59,7 +59,7 @@ export default async function HomeworkPage({ searchParams }: { searchParams: Pro
             )}
           </div>
           <aside>
-            <Card className="p-5 lg:sticky lg:top-8">
+            <Card className="p-5 xl:sticky xl:top-8">
               <h2 className="mb-1 font-semibold">Nueva tarea</h2>
               <p className="mb-4 text-sm text-ink-2">
                 Para <SectionChip color={section.color} label={gradeSectionName(section)} />

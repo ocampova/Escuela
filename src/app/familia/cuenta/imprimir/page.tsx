@@ -45,7 +45,8 @@ export default async function PrintableStatement() {
                     {balUsd > 0 ? ` + ${usd(balUsd)}` : ""}
                   </span>
                 </div>
-                <table className="w-full text-sm">
+                <div className="relative overflow-x-auto">
+                <table className="w-full min-w-[300px] text-sm">
                   <thead className="text-left text-xs text-ink-2">
                     <tr className="border-b border-line">
                       <th className="py-2 font-medium">Fecha</th>
@@ -67,6 +68,7 @@ export default async function PrintableStatement() {
                       ))}
                   </tbody>
                 </table>
+                </div>
               </section>
             );
           })}

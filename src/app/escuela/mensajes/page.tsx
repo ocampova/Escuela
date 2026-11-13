@@ -76,11 +76,12 @@ export default async function StaffMessages({ searchParams }: { searchParams: Pr
             <Avatar name={`${c.student.firstName} ${c.student.lastName}`} color={c.student.section.color} size={42} />
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">
-                <p className={cx("truncate", unread ? "font-semibold" : "font-medium")}>
-                  {c.guardian.name} <span className="font-normal text-ink-2">· {c.student.firstName} ({gradeSectionName(c.student.section)})</span>
-                </p>
+                <p className={cx("truncate", unread ? "font-semibold" : "font-medium")}>{c.guardian.name}</p>
                 {last && <span className="shrink-0 text-xs text-ink-3">{relativeDay(last.createdAt)}</span>}
               </div>
+              <p className="truncate text-xs text-ink-3">
+                Sobre {c.student.firstName} · {gradeSectionName(c.student.section)}
+              </p>
               <p className={cx("truncate text-sm", unread ? "font-medium text-ink" : "text-ink-2")}>
                 {last ? `${last.senderId === user.id ? "Usted" : last.sender.name.split(" ")[0]}: ${last.body}` : "Sin mensajes"}
               </p>

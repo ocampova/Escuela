@@ -49,7 +49,7 @@ export function ObservationsForm({
               className={inputClass}
             />
             <details className="group mt-2">
-              <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-brand hover:underline">
+              <summary className="tap inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-brand hover:underline">
                 <Plus
                   className="size-3 transition-transform group-open:rotate-45"
                   aria-hidden

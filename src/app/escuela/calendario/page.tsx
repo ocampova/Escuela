@@ -38,7 +38,7 @@ export default async function StaffCalendar() {
   return (
     <div>
       <PageHeader title="Calendario" description="Lo que agregue aquí lo ven las familias del grupo elegido." />
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
           {[...months.entries()].map(([k, list]) => (
             <section key={k}>
@@ -55,7 +55,7 @@ export default async function StaffCalendar() {
                         {e.description ? ` · ${e.description}` : ""}
                       </p>
                     </div>
-                    <div className="hidden shrink-0 gap-2 sm:flex">
+                    <div className="hidden shrink-0 gap-2 md:flex">
                       <Badge>{KIND_LABEL[e.kind] ?? "Evento"}</Badge>
                       <Badge tone="brand">{e.section ? gradeSectionName(e.section) : e.level ? e.level.name : "Toda la escuela"}</Badge>
                     </div>
@@ -66,7 +66,7 @@ export default async function StaffCalendar() {
           ))}
         </div>
         <aside>
-          <div className="space-y-4 lg:sticky lg:top-8">
+          <div className="space-y-4 xl:sticky xl:top-8">
             <Card className="p-5">
               <h2 className="mb-4 font-semibold">Agregar evento</h2>
               <EventForm targets={targets} today={todayKey()} />

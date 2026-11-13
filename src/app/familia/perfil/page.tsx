@@ -1,3 +1,5 @@
+import { PushSettings } from "@/components/push-prompt";
+import { vapidPublicKey } from "@/lib/push";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { LogOut } from "lucide-react";
@@ -57,6 +59,13 @@ export default async function ProfilePage() {
           </Card>
         </section>
       </div>
+
+      <section>
+        <SectionHeading title="Notificaciones en este dispositivo" />
+        <Card className="p-4">
+          <PushSettings vapidKey={await vapidPublicKey()} />
+        </Card>
+      </section>
 
       <section>
         <SectionHeading title="Correos y fotografías" />

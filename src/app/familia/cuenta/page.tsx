@@ -73,11 +73,11 @@ export default async function FamilyAccount({ searchParams }: { searchParams: Pr
           <ButtonLink href="/familia/cuenta/reportar" size="lg" className="w-full">
             <Receipt className="size-5" aria-hidden /> Reportar un pago
           </ButtonLink>
-          <Link href="/familia/cuenta/imprimir" className="flex items-center gap-2 text-sm font-medium text-brand hover:underline">
+          <Link href="/familia/cuenta/imprimir" className="tap flex items-center gap-2 text-sm font-medium text-brand hover:underline">
             <Printer className="size-4" aria-hidden /> Imprimir o descargar el estado de cuenta
           </Link>
           <details className="group">
-            <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-brand">
+            <summary className="tap flex cursor-pointer list-none items-center justify-between text-sm font-medium text-brand">
               Cuenta para depósitos y transferencias
               <ChevronDown className="size-4 text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
             </summary>

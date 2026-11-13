@@ -4,7 +4,8 @@ import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { capitalize, dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
-import { Card, PageHeader, cx, inputClass, sectionSolid } from "@/components/ui";
+import { DateNav } from "@/components/date-nav";
+import { Card, PageHeader, cx, sectionSolid } from "@/components/ui";
 import { AttendanceForm } from "./attendance-form";
 import { ADAPTATION_SHORT } from "@/lib/student";
 
@@ -32,7 +33,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
     <div>
       <PageHeader title="Asistencia" description="Pase lista en un toque. Las familias ven el registro de inmediato." />
 
-      <div className="mb-4 flex flex-wrap items-end gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <nav aria-label="Secciones" className="flex flex-wrap gap-1.5">
           {sections.map((s) => (
             <Link
@@ -49,14 +50,7 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
             </Link>
           ))}
         </nav>
-        <form className="ml-auto flex items-end gap-2">
-          <input type="hidden" name="seccion" value={section?.id} />
-          <label className="text-sm">
-            <span className="sr-only">Fecha</span>
-            <input type="date" name="fecha" defaultValue={date} max={todayKey()} className={cx(inputClass, "h-9 py-1.5")} />
-          </label>
-          <button className="h-9 rounded-lg px-3 text-sm font-medium text-brand ring-1 ring-inset ring-line-strong hover:bg-canvas">Ver</button>
-        </form>
+        <DateNav path="/escuela/asistencia" params={{ seccion: section?.id }} value={date} max={todayKey()} className="ml-auto" />
       </div>
 
       <Card className="overflow-hidden">

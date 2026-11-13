@@ -46,7 +46,7 @@ export function CalendarSubscribe({ links: initial, className }: { links: Links;
           <button
             type="button"
             disabled={pending}
-            className="inline-flex items-center gap-1 font-medium text-brand underline-offset-2 hover:underline"
+            className="tap inline-flex items-center gap-1 font-medium text-brand underline-offset-2 hover:underline"
             onClick={() =>
               start(async () => {
                 setLinks(await rotateCalendarLink());

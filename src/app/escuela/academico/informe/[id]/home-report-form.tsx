@@ -40,7 +40,7 @@ function Phrases({
 }) {
   return (
     <details className="group">
-      <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-brand hover:underline">
+      <summary className="tap inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-brand hover:underline">
         <Plus
           className="size-3 transition-transform group-open:rotate-45"
           aria-hidden
@@ -147,7 +147,7 @@ export function HomeReportForm({
             <button
               type="button"
               onClick={copyPrevious}
-              className="inline-flex items-center gap-1.5 font-medium text-brand hover:underline"
+              className="tap inline-flex items-center gap-1.5 font-medium text-brand hover:underline"
             >
               <Copy className="size-4" aria-hidden />{" "}
               {empty

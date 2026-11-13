@@ -3,7 +3,8 @@ import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { capitalize, dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
-import { Card, EmptyState, PageHeader, cx, inputClass } from "@/components/ui";
+import { DateNav } from "@/components/date-nav";
+import { Card, EmptyState, PageHeader, cx } from "@/components/ui";
 import { SectionPicker } from "@/components/section-picker";
 import { VidaTabs } from "../vida-tabs";
 import { DailyForm } from "./daily-form";
@@ -32,16 +33,9 @@ export default async function DailyPage({ searchParams }: { searchParams: Promis
     <div>
       <PageHeader title="Vida diaria" description="Lo que pasa en el aula, para que la familia lo sepa el mismo día." />
       <VidaTabs active="/escuela/diario" />
-      <div className="mb-4 flex flex-wrap items-end gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <SectionPicker sections={sections} current={section?.id} href={(id) => `/escuela/diario?seccion=${id}&fecha=${date}`} />
-        <form className="ml-auto flex items-end gap-2">
-          <input type="hidden" name="seccion" value={section?.id} />
-          <label className="text-sm">
-            <span className="sr-only">Fecha</span>
-            <input type="date" name="fecha" defaultValue={date} max={todayKey()} className={cx(inputClass, "h-9 py-1.5")} />
-          </label>
-          <button className="h-9 rounded-lg px-3 text-sm font-medium text-brand ring-1 ring-inset ring-line-strong hover:bg-canvas">Ver</button>
-        </form>
+        <DateNav path="/escuela/diario" params={{ seccion: section?.id }} value={date} max={todayKey()} className="ml-auto" />
       </div>
 
       <Card className="overflow-hidden">

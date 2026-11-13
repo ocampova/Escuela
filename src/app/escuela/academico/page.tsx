@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { currentTerm } from "@/lib/academic";
 import { dateLabel, gradeSectionName } from "@/lib/format";
-import { Avatar, Badge, Button, Card, EmptyState, PageHeader, cx } from "@/components/ui";
+import { Avatar, Button, Card, EmptyState, PageHeader, buttonClass, cx } from "@/components/ui";
 import { SectionPicker } from "@/components/section-picker";
 import { AcademicoTabs } from "../academico-tabs";
 import { setPublished } from "../academico-actions";
@@ -66,33 +66,33 @@ export default async function AcademicPage({ searchParams }: { searchParams: Pro
         </Card>
       ) : (
         <>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             {terms.map((t) => (
               <Link key={t.id} href={`/escuela/academico?seccion=${section.id}&periodo=${t.id}`} aria-current={t.id === term.id ? "page" : undefined} className={chip(t.id === term.id)}>
                 {t.name}
               </Link>
             ))}
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              <Link href={`/boletas/seccion/${section.id}/${term.id}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-brand hover:bg-canvas">
+          </div>
+          {/* Estado de publicación del periodo y acciones */}
+          <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-surface px-4 py-3 shadow-card">
+            <p className="min-w-0 flex-1 basis-56 text-sm">
+              {publication ? (
+                <span className="inline-flex items-center gap-1.5 font-medium text-ok">
+                  <CheckCircle2 className="size-4 shrink-0" aria-hidden /> Publicado el {dateLabel(new Date(publication.publishedAt.getTime() - 6 * 3600_000), { day: "numeric", month: "short" })}: las familias ya lo ven.
+                </span>
+              ) : (
+                <span className="text-ink-2">{descriptive ? "Los informes" : "Las boletas"} del {term.name} todavía no los ven las familias.</span>
+              )}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href={`/boletas/seccion/${section.id}/${term.id}`} className={buttonClass("ghost", "sm")}>
                 <Printer className="size-4" aria-hidden /> {descriptive ? "Imprimir todos" : "Imprimir todas"}
               </Link>
-              {publication ? (
-                <>
-                  <Badge tone="ok">
-                    <CheckCircle2 className="size-3.5" aria-hidden /> Publicado el {dateLabel(new Date(publication.publishedAt.getTime() - 6 * 3600_000), { day: "numeric", month: "short" })}
-                  </Badge>
-                  <form action={setPublished.bind(null, section.id, term.id, false)}>
-                    <Button variant="ghost" size="sm">Ocultar a las familias</Button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm text-ink-2">Las familias todavía no lo ven</span>
-                  <form action={setPublished.bind(null, section.id, term.id, true)}>
-                    <Button size="sm">{descriptive ? "Publicar informes" : "Publicar boletas"}</Button>
-                  </form>
-                </>
-              )}
+              <form action={setPublished.bind(null, section.id, term.id, !publication)}>
+                <Button variant={publication ? "secondary" : "primary"} size="sm">
+                  {publication ? "Ocultar a las familias" : descriptive ? "Publicar informes" : "Publicar boletas"}
+                </Button>
+              </form>
             </div>
           </div>
 
@@ -179,7 +179,7 @@ async function DescriptiveList({ students, termId, areas, sectionColor }: { stud
           <div key={s.id} className="flex items-center gap-3 px-4 py-3">
             <Avatar name={`${s.firstName} ${s.lastName}`} color={sectionColor} size={36} />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">
+              <p className="font-medium break-words">
                 {s.firstName} {s.lastName}
               </p>
               <p className={cx("text-sm", done === areas && areas > 0 ? "text-ok" : "text-ink-2")}>
@@ -191,7 +191,7 @@ async function DescriptiveList({ students, termId, areas, sectionColor }: { stud
             </Link>
             <Link href={`/escuela/academico/informe/${s.id}?periodo=${termId}`} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm font-medium text-brand ring-1 ring-inset ring-line-strong hover:bg-canvas">
               <FileText className="size-4" aria-hidden /> {done ? "Editar" : "Escribir"}
-              <ChevronRight className="size-4" aria-hidden />
+              <ChevronRight className="hidden size-4 sm:block" aria-hidden />
             </Link>
           </div>
         );

@@ -74,7 +74,7 @@ export default async function PrivacyPage() {
           </section>
         ))}
         <p className="text-xs text-ink-3">Versión 1 · noviembre de 2026.</p>
-        <Link href="/login" className="inline-block text-sm font-medium text-brand hover:underline">
+        <Link href="/login" className="tap inline-block text-sm font-medium text-brand hover:underline">
           Volver a la plataforma
         </Link>
       </div>

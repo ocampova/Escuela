@@ -75,11 +75,11 @@ export function FamilyTopNav({ pendingCount, unreadMessages = 0, messaging = tru
                 href={t.href}
                 aria-current={active ? "page" : undefined}
                 className={cx(
-                  "relative flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors duration-150",
+                  "relative flex h-10 items-center gap-2 rounded-lg px-2.5 text-sm font-medium whitespace-nowrap transition-colors duration-150 lg:px-3",
                   active ? "bg-white/15 text-white" : "text-white/75 hover:bg-white/10 hover:text-white",
                 )}
               >
-                <Icon className="size-[18px]" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
+                <Icon className="hidden size-[18px] lg:block" strokeWidth={active ? 2.25 : 1.75} aria-hidden />
                 {t.label}
                 {n > 0 && (
                   <span className="tabular rounded-full bg-scs-orange-strong px-1.5 py-0.5 text-[10px] leading-none font-semibold text-white">

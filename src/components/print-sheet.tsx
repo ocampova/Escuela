@@ -19,14 +19,14 @@ export function SheetArticle({ title, subtitle, children, school, className = ""
   return (
       <article className={`${className} mx-auto max-w-2xl overflow-hidden rounded-xl bg-surface shadow-card print:max-w-none print:rounded-none print:shadow-none`}>
         <BrandStripe />
-        <header className="flex items-center gap-4 border-b border-line px-6 py-5">
+        <header className="flex items-center gap-4 border-b border-line px-4 py-5 sm:px-6">
           <Image src="/logo-scs.png" alt="" width={56} height={56} className="rounded-full" />
           <div className="min-w-0 flex-1">
             <p className="font-semibold">{school.name}</p>
             <p className="text-sm text-ink-2">Santa Gertrudis Norte, Grecia, Costa Rica{school.email ? ` · ${school.email}` : ""}</p>
           </div>
         </header>
-        <div className="px-6 py-6">
+        <div className="px-4 py-6 sm:px-6">
           <h1 className="text-xl font-semibold">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-ink-2">{subtitle}</p>}
           <div className="mt-6">{children}</div>

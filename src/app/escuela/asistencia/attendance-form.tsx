@@ -34,7 +34,7 @@ export function AttendanceForm({ sectionId, date, rows, alreadyTaken }: { sectio
         <button
           type="button"
           onClick={() => setValues(Object.fromEntries(rows.map((r) => [r.id, "PRESENT"])))}
-          className="text-sm font-medium text-brand hover:underline"
+          className="tap text-sm font-medium text-brand hover:underline"
         >
           Marcar todos presentes
         </button>

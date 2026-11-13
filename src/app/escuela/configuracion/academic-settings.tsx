@@ -13,7 +13,7 @@ export async function AcademicSettings({ schoolId, yearId }: { schoolId: string;
   ]);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-8">
         {levels.map((l) => {
           const descriptive = l.evaluation === "DESCRIPTIVE";
@@ -73,7 +73,7 @@ export async function AcademicSettings({ schoolId, yearId }: { schoolId: string;
         })}
       </div>
       <aside>
-        <Card className="p-5 lg:sticky lg:top-8">
+        <Card className="p-5 xl:sticky xl:top-8">
           <h2 className="mb-1 font-semibold">Periodos del curso</h2>
           <p className="mb-4 text-sm text-ink-2">Trimestres o semestres, según defina la escuela.</p>
           <ul className="mb-4 divide-y divide-line rounded-lg ring-1 ring-line">

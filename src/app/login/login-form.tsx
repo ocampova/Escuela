@@ -42,7 +42,7 @@ export function LoginForm({ next, demo = false }: { next?: string; demo?: boolea
           {pending ? "Entrando…" : "Entrar"}
         </Button>
         <p className="text-center">
-          <Link href="/olvide" className="text-sm font-medium text-brand hover:underline">Olvidé mi contraseña</Link>
+          <Link href="/olvide" className="tap text-sm font-medium text-brand hover:underline">Olvidé mi contraseña</Link>
         </p>
       </form>
 

@@ -68,8 +68,8 @@ export default async function EnrollmentPage({ searchParams }: { searchParams: P
         )}
         {applicants.map((a) => (
           <Link key={a.id} href={`/escuela/matricula/${a.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3.5 transition-colors hover:bg-canvas">
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">
+            <div className="min-w-0 flex-1 basis-48">
+              <p className="font-medium break-words">
                 {a.childFirstName} {a.childLastName}
               </p>
               <p className="truncate text-sm text-ink-2">

@@ -9,20 +9,20 @@ const toneClass = { ok: "bg-ok-soft text-ok", warn: "bg-warn-soft text-warn" } a
 /** Reporte del día para la familia: chips con lo que marcó la docente + actividad y nota. */
 export function DailyReportView({ report, compact }: { report: Report; compact?: boolean }) {
   return (
-    <div className="space-y-3">
+    <div className="@container space-y-3">
       {report.activity && !compact && (
         <p className="text-sm">
           <span className="font-medium">Hoy trabajamos: </span>
           <span className="text-ink-2">{report.activity}</span>
         </p>
       )}
-      <dl className={cx("grid gap-2", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
+      <dl className={cx("grid gap-2", compact ? "grid-cols-2" : "grid-cols-2 @lg:grid-cols-4")}>
         {DAILY_FIELDS.map((f) => {
           const o = dailyLabel(f.key, report[f.key]);
           if (!o) return null;
           return (
             <div key={f.key} className={cx("rounded-lg px-3 py-2", toneClass[o.tone])}>
-              <dt className="text-[11px] font-medium tracking-wide uppercase opacity-80">{f.label}</dt>
+              <dt className="text-[11px] font-medium tracking-wide break-words uppercase opacity-80">{f.label}</dt>
               <dd className="text-sm font-semibold">{o.label}</dd>
             </div>
           );

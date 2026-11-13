@@ -23,7 +23,7 @@ function Item({ icon, title, detail, done, children, href }: { icon: ReactNode; 
         <div className="flex items-start justify-between gap-3">
           <p className={cx("font-medium", done && "text-ink-2")}>{title}</p>
           {href && (
-            <Link href={href} className="inline-flex shrink-0 items-center gap-0.5 text-sm font-medium text-brand hover:underline">
+            <Link href={href} className="tap inline-flex shrink-0 items-center gap-0.5 text-sm font-medium text-brand hover:underline">
               {done ? "Ver" : "Abrir"} <ChevronRight className="size-4" aria-hidden />
             </Link>
           )}

@@ -72,6 +72,25 @@
     caret-color: var(--color-brand);
     accent-color: var(--color-brand);
   }
+  /* Safari en iPhone dibuja la fecha con su propio ancho y alto: se la normaliza
+     para que respete el ancho del contenedor y no empuje a sus vecinos. */
+  input[type="date"],
+  input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 2.875rem;
+    line-height: 1.25;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.55;
+  }
   a {
     text-underline-offset: 3px;
   }
@@ -146,4 +165,14 @@
 }
 .ack-in {
   animation: ack-in 220ms var(--ease-out-expo);
+}
+
+/* Enlaces y botones de texto: área táctil de al menos 44 px sin cambiar el diseño */
+@utility tap {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -12px 0;
+  }
 }

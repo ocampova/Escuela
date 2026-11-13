@@ -24,7 +24,7 @@ export default async function FamilyLayout({ children }: { children: React.React
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 md:h-16 md:gap-6 md:px-6 lg:px-8">
           <Link href="/familia" className="flex min-w-0 items-center gap-2.5">
             <Image src="/logo-scs.png" alt="" width={34} height={34} className="rounded-full bg-white ring-2 ring-white/20" />
-            <span className="truncate text-[15px] font-semibold text-white md:hidden lg:inline">San Cayetano School</span>
+            <span className="truncate text-[15px] font-semibold text-white md:hidden lg:inline">San Cayetano</span>
           </Link>
           <FamilyTopNav pendingCount={pending} unreadMessages={unreadMessages} messaging={messaging} />
           <div className="ml-auto flex items-center gap-1">

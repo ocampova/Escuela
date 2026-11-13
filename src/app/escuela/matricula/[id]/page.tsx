@@ -59,7 +59,7 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
         <ArrowLeft className="size-4" aria-hidden /> Matrícula
       </Link>
       <div className="mt-3 mb-8 flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
           <h1 className="text-2xl font-semibold">
             {a.childFirstName} {a.childLastName}
           </h1>
@@ -74,7 +74,7 @@ export default async function ApplicantPage({ params }: { params: Promise<{ id: 
         </a>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-8">
           {[
             ["Niño o niña", child],

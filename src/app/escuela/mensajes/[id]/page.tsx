@@ -27,29 +27,31 @@ export default async function StaffThread({ params }: { params: Promise<{ id: st
 
   return (
     <div className="flex min-h-[calc(100dvh-8rem)] max-w-3xl flex-col">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Link href="/escuela/mensajes" aria-label="Volver a mensajes" className="-ml-2 flex size-9 items-center justify-center rounded-lg text-ink-2 hover:bg-surface hover:text-ink">
+      <div className="mb-4 flex items-start gap-3">
+        <Link href="/escuela/mensajes" aria-label="Volver a mensajes" className="-ml-2 flex size-10 shrink-0 items-center justify-center rounded-lg text-ink-2 hover:bg-surface hover:text-ink">
           <ArrowLeft className="size-5" aria-hidden />
         </Link>
-        <Avatar name={`${conv.student.firstName} ${conv.student.lastName}`} color={conv.student.section.color} size={42} />
+        <Avatar name={`${conv.student.firstName} ${conv.student.lastName}`} color={conv.student.section.color} size={42} className="shrink-0" />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-semibold">
+          <h1 className="font-semibold break-words">
             {conv.guardian.name}
             {link && <span className="font-normal text-ink-2"> · {link.relationship}</span>}
           </h1>
-          <p className="truncate text-sm text-ink-2">
+          <p className="text-sm text-ink-2">
             <Link href={`/escuela/alumnos/${conv.studentId}`} className="hover:underline">
               {conv.student.firstName} {conv.student.lastName}
             </Link>{" "}
             · {gradeSectionName(conv.student.section)}
           </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Badge tone="brand">{conv.channel === "TEACHER" ? "Con la docente" : "Con la oficina"}</Badge>
+            {conv.guardian.phone && (
+              <a href={`tel:${conv.guardian.phone}`} className="tap inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink">
+                <Phone className="size-4" aria-hidden /> {conv.guardian.phone}
+              </a>
+            )}
+          </div>
         </div>
-        <Badge tone="brand">{conv.channel === "TEACHER" ? "Con la docente" : "Con la oficina"}</Badge>
-        {conv.guardian.phone && (
-          <a href={`tel:${conv.guardian.phone}`} className="inline-flex items-center gap-1 text-sm text-ink-2 hover:text-ink">
-            <Phone className="size-4" aria-hidden /> {conv.guardian.phone}
-          </a>
-        )}
       </div>
       {conv.student.allergies && (
         <p className="mb-3 flex items-center gap-2 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">

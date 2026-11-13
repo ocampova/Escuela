@@ -93,20 +93,21 @@ export default async function FamilyHome() {
             );
           })}
         </section>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-sm text-white/80">
+            <CalendarX className="size-4" aria-hidden /> Avisar ausencia{students.length > 1 ? " de" : ""}
+          </span>
           {students.map((s) => (
             <Link
               key={s.id}
               href={`/familia/hijos/${s.id}/ausencia`}
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-white/20"
+              className="inline-flex h-9 items-center rounded-lg bg-white/10 px-3 text-sm font-medium text-white ring-1 ring-white/20 transition-colors hover:bg-white/20"
             >
-              <CalendarX className="size-4" aria-hidden /> {students.length > 1 ? `Avisar ausencia de ${s.firstName}` : "Avisar una ausencia"}
+              {students.length > 1 ? s.firstName : "Avisar"}
             </Link>
           ))}
         </div>
       </div>
-
-      <PushPrompt vapidKey={await vapidPublicKey()} className="lg:max-w-3xl" />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-8">
@@ -152,7 +153,7 @@ export default async function FamilyHome() {
                   )}
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <Link href={`/familia/avisos/${a.id}`} className="text-sm font-medium text-brand hover:underline">
+                  <Link href={`/familia/avisos/${a.id}`} className="tap text-sm font-medium text-brand hover:underline">
                     Leer aviso
                   </Link>
                   {a.permissionQuestion ? (
@@ -204,13 +205,15 @@ export default async function FamilyHome() {
         </section>
       )}
 
+      <PushPrompt vapidKey={await vapidPublicKey()} />
+
       {/* Avisos recientes */}
       {recent.length > 0 && (
         <section>
           <SectionHeading
             title="Avisos recientes"
             action={
-              <Link href="/familia/avisos" className="text-sm font-medium text-brand hover:underline">
+              <Link href="/familia/avisos" className="tap text-sm font-medium text-brand hover:underline">
                 Ver todos
               </Link>
             }
@@ -236,7 +239,7 @@ export default async function FamilyHome() {
           <SectionHeading
             title="Tareas para estos días"
             action={
-              <Link href="/familia/tareas" className="text-sm font-medium text-brand hover:underline">
+              <Link href="/familia/tareas" className="tap text-sm font-medium text-brand hover:underline">
                 Ver todas
               </Link>
             }
@@ -251,7 +254,7 @@ export default async function FamilyHome() {
           <SectionHeading
             title="Fotos nuevas"
             action={
-              <Link href="/familia/fotos" className="text-sm font-medium text-brand hover:underline">
+              <Link href="/familia/fotos" className="tap text-sm font-medium text-brand hover:underline">
                 Ver todas
               </Link>
             }
@@ -282,7 +285,7 @@ export default async function FamilyHome() {
         <SectionHeading
           title="Próximamente"
           action={
-            <Link href="/familia/calendario" className="text-sm font-medium text-brand hover:underline">
+            <Link href="/familia/calendario" className="tap text-sm font-medium text-brand hover:underline">
               Ver calendario
             </Link>
           }

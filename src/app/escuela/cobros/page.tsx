@@ -89,7 +89,7 @@ export default async function ChargesPage({ searchParams }: { searchParams: Prom
                       Reportado por {r.reportedBy.name} · {relativeDay(r.createdAt).toLowerCase()}
                       {r.note ? ` · «${r.note}»` : ""}
                     </p>
-                    <a href={`/escuela/cobros/comprobante/${r.id}`} target="_blank" rel="noreferrer" className="mt-1.5 inline-flex items-center gap-1.5 font-medium text-brand hover:underline">
+                    <a href={`/escuela/cobros/comprobante/${r.id}`} target="_blank" rel="noreferrer" className="tap mt-1.5 inline-flex items-center gap-1.5 font-medium text-brand hover:underline">
                       <FileText className="size-4" aria-hidden /> Ver comprobante
                     </a>
                   </div>
@@ -103,7 +103,7 @@ export default async function ChargesPage({ searchParams }: { searchParams: Prom
                     </label>
                   </ActionForm>
                   <details>
-                    <summary className="cursor-pointer text-sm text-ink-2 hover:text-danger">Rechazar…</summary>
+                    <summary className="tap cursor-pointer text-sm text-ink-2 hover:text-danger">Rechazar…</summary>
                     <ActionForm action={rejectReport} submitLabel="Rechazar" variant="secondary" className="mt-2" resetOnOk={false}>
                       <input type="hidden" name="id" value={r.id} />
                       <input name="reviewNote" required placeholder="Motivo que verá la familia" className={inputClass} />
@@ -116,7 +116,7 @@ export default async function ChargesPage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div>
           <nav aria-label="Filtro" className="mb-3 flex flex-wrap gap-1.5">
             {tabs.map((t) => (

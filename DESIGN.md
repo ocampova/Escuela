@@ -235,3 +235,11 @@ The acknowledgment button turns optimistically into a green "✓ Enterado" label
 - **Don't** use hero-metric tiles, gradients or decorative colour.
 - **Don't** use logo letter colours for actions or alerts.
 - **Don't** show times that the data does not truly represent.
+
+## Usability rules (checked with `npm run revisar-pantallas`)
+
+- Nothing overlaps or leaves its container at 320, 375, 768, 1024 and 1440 px. The check script lists any page overflow, text outside its box, overlapping controls or targets smaller than 24 px.
+- What matters most comes first for each role. The "Activar notificaciones" prompt is a compact line placed after the important content; it does not appear if notifications are blocked or the person dismissed it, and they can turn them on from their profile.
+- Date fields: iPhone Safari draws them at its own size, so they are normalised in `globals.css`. Day changes use the arrows and apply on their own (no "Ver" button).
+- Text links ("Ver todos", "Abrir") use the `tap` utility, which enlarges the tap area to 44 px without changing the look.
+- In the school view, the side menu takes up space at 1024 px: two-column pages switch to two columns only from `xl`.

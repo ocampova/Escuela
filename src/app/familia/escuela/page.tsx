@@ -48,7 +48,7 @@ export default async function SchoolInfo() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
                   <Phone className="size-4 shrink-0 text-brand" aria-hidden />
                   {phones.map((p) => (
-                    <a key={p} href={`tel:${p.replace(/\D/g, "")}`} className="tabular text-sm font-medium text-brand hover:underline">
+                    <a key={p} href={`tel:${p.replace(/\D/g, "")}`} className="tap tabular text-sm font-medium text-brand hover:underline">
                       {p}
                     </a>
                   ))}
@@ -57,7 +57,7 @@ export default async function SchoolInfo() {
               {l.address && (
                 <div className="flex gap-3 px-4 py-3">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(l.address)}`} target="_blank" rel="noreferrer" className="text-sm hover:underline">
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(l.address)}`} target="_blank" rel="noreferrer" className="tap text-sm hover:underline">
                     {l.address}
                   </a>
                 </div>
@@ -115,7 +115,7 @@ export default async function SchoolInfo() {
       </section>
 
       {school.email && (
-        <a href={`mailto:${school.email}`} className="flex items-center justify-center gap-2 text-sm font-medium text-brand hover:underline">
+        <a href={`mailto:${school.email}`} className="tap flex items-center justify-center gap-2 text-sm font-medium text-brand hover:underline">
           <Mail className="size-4" aria-hidden /> {school.email}
         </a>
       )}

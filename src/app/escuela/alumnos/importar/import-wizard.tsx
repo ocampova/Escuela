@@ -35,7 +35,7 @@ export function ImportWizard() {
             <div>
               <p className="font-medium">Descargue la plantilla y llénela en Excel</p>
               <p className="text-ink-2">Una fila por alumno. Grado y sección deben coincidir con los de Configuración (ej.: «Preparatoria» y «A»).</p>
-              <Link href="/escuela/alumnos/importar/plantilla" prefetch={false} className="mt-2 inline-flex items-center gap-1.5 font-medium text-brand hover:underline">
+              <Link href="/escuela/alumnos/importar/plantilla" prefetch={false} className="tap mt-2 inline-flex items-center gap-1.5 font-medium text-brand hover:underline">
                 <Download className="size-4" aria-hidden /> Descargar plantilla
               </Link>
             </div>

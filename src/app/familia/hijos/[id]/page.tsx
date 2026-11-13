@@ -102,7 +102,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
           </Card>
           {s.dailyReports.length > 1 && (
             <details className="group mt-2">
-              <summary className="cursor-pointer list-none text-sm font-medium text-brand hover:underline">Días anteriores</summary>
+              <summary className="tap cursor-pointer list-none text-sm font-medium text-brand hover:underline">Días anteriores</summary>
               <div className="mt-2 space-y-3">
                 {s.dailyReports.slice(1).map((r) => (
                   <Card key={r.id} tone="flat" className="p-4">
@@ -121,7 +121,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
           <SectionHeading
             title="Tareas"
             action={
-              <Link href="/familia/tareas" className="text-sm font-medium text-brand hover:underline">
+              <Link href="/familia/tareas" className="tap text-sm font-medium text-brand hover:underline">
                 Ver todas
               </Link>
             }
@@ -153,7 +153,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
         <SectionHeading title="Asistencia de las últimas 4 semanas" />
         <Card className="p-4">
           <AttendanceStrip records={[...s.attendance].reverse()} />
-          <dl className="mt-4 grid grid-cols-4 gap-2 text-center">
+          <dl className="mt-4 grid grid-cols-2 gap-2 text-center min-[360px]:grid-cols-4">
             {[
               ["Presente", counts.PRESENT, "text-ok"],
               ["Tardías", counts.LATE, "text-warn"],
@@ -200,7 +200,7 @@ export default async function ChildPage({ params, searchParams }: { params: Prom
           <SectionHeading
             title="Fotos de la sección"
             action={
-              <Link href="/familia/fotos" className="text-sm font-medium text-brand hover:underline">
+              <Link href="/familia/fotos" className="tap text-sm font-medium text-brand hover:underline">
                 Ver todas
               </Link>
             }

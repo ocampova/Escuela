@@ -43,8 +43,8 @@ export default async function FamilyThread({ params }: { params: Promise<{ stude
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="truncate font-semibold">{title}</h1>
-          <p className="truncate text-sm text-ink-2">
+          <h1 className="font-semibold break-words">{title}</h1>
+          <p className="text-sm text-ink-2">
             {subtitle} · sobre {student.firstName}
           </p>
         </div>

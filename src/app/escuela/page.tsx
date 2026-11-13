@@ -71,6 +71,7 @@ export default async function StaffHome() {
   }
 
   const firstName = user.name.split(" ")[0];
+  const vapid = await vapidPublicKey();
 
   return (
     <div>
@@ -91,18 +92,18 @@ export default async function StaffHome() {
         </div>
       </div>
 
-      <PushPrompt vapidKey={await vapidPublicKey()} className="mb-8 max-w-xl" />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="min-w-0 space-y-8">
           {!manager && <TeacherToday user={user} sections={sections} schoolDay={schoolDay} />}
+          {!manager && <PushPrompt vapidKey={vapid} />}
           {/* Asistencia de hoy */}
           {manager && (
           <section>
             <SectionHeading
               title="Asistencia de hoy"
               action={
-                <Link href="/escuela/asistencia" className="text-sm font-medium text-brand hover:underline">
+                <Link href="/escuela/asistencia" className="tap text-sm font-medium text-brand hover:underline">
                   Ir a asistencia
                 </Link>
               }
@@ -113,7 +114,7 @@ export default async function StaffHome() {
                   <tr>
                     <th className="px-4 py-2.5 font-medium">Sección</th>
                     <th className="hidden px-4 py-2.5 font-medium sm:table-cell">Docente</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Presentes</th>
+                    <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">Presentes</th>
                     <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">Ausentes</th>
                     <th className="px-4 py-2.5 font-medium"><span className="sr-only">Estado</span></th>
                   </tr>
@@ -130,16 +131,19 @@ export default async function StaffHome() {
                           <SectionChip color={s.color} label={gradeSectionName(s)} />
                         </td>
                         <td className="hidden px-4 py-3 text-ink-2 sm:table-cell">{s.teacher?.name.split(" ").slice(0, 2).join(" ")}</td>
-                        <td className="tabular px-4 py-3 text-right font-medium">{taken ? `${present}/${s._count.students}` : "—"}</td>
+                        <td className="tabular hidden px-4 py-3 text-right font-medium sm:table-cell">{taken ? `${present}/${s._count.students}` : "—"}</td>
                         <td className="tabular hidden px-4 py-3 text-right sm:table-cell">{taken ? absent : "—"}</td>
                         <td className="px-4 py-3 text-right">
                           {!schoolDay ? (
                             <Badge>Sin lecciones</Badge>
                           ) : taken ? (
-                            <Badge tone="ok">Lista pasada</Badge>
+                            <Badge tone="ok">
+                              <span className="tabular sm:hidden">{present}/{s._count.students} presentes</span>
+                              <span className="hidden sm:inline">Lista pasada</span>
+                            </Badge>
                           ) : (
                             <Link href={`/escuela/asistencia?seccion=${s.id}`}>
-                              <Badge tone="warn">Falta pasar lista</Badge>
+                              <Badge tone="warn" className="whitespace-nowrap">Falta pasar lista</Badge>
                             </Link>
                           )}
                         </td>
@@ -151,6 +155,8 @@ export default async function StaffHome() {
             </Card>
           </section>
           )}
+
+          {manager && <PushPrompt vapidKey={vapid} />}
 
           {manager && notices.length > 0 && (
             <section>
@@ -176,7 +182,7 @@ export default async function StaffHome() {
             <SectionHeading
               title="Confirmación de avisos"
               action={
-                <Link href="/escuela/avisos" className="text-sm font-medium text-brand hover:underline">
+                <Link href="/escuela/avisos" className="tap text-sm font-medium text-brand hover:underline">
                   Ver todos
                 </Link>
               }
@@ -202,7 +208,7 @@ export default async function StaffHome() {
               <SectionHeading
                 title="Cobros vencidos"
                 action={
-                  <Link href="/escuela/cobros" className="text-sm font-medium text-brand hover:underline">
+                  <Link href="/escuela/cobros" className="tap text-sm font-medium text-brand hover:underline">
                     Ir a cobros
                   </Link>
                 }
@@ -244,7 +250,7 @@ export default async function StaffHome() {
             <SectionHeading
               title="Próximos eventos"
               action={
-                <Link href="/escuela/calendario" className="text-sm font-medium text-brand hover:underline">
+                <Link href="/escuela/calendario" className="tap text-sm font-medium text-brand hover:underline">
                   Calendario
                 </Link>
               }
@@ -271,7 +277,7 @@ export default async function StaffHome() {
               <p className="text-sm text-ink-2">
                 Ve la información de <span className="font-medium text-ink">{sections.map((s) => gradeSectionName(s)).join(", ")}</span>.
               </p>
-              <Link href="/escuela/alumnos" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
+              <Link href="/escuela/alumnos" className="tap mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
                 Ver mis alumnos <ArrowRight className="size-4" aria-hidden />
               </Link>
             </Card>

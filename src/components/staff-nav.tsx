@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell, CalendarDays, GraduationCap, Sun, ClipboardCheck, FileSpreadsheet, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
@@ -22,10 +23,16 @@ const ITEMS = [
 
 export function StaffNav({ manager, variant, counts = {}, messaging = true }: { manager: boolean; variant: "rail" | "bar"; counts?: Record<string, number>; messaging?: boolean }) {
   const path = usePathname();
+  const listRef = useRef<HTMLUListElement>(null);
+  // En el celular la barra se desplaza: mantener visible la sección actual
+  useEffect(() => {
+    if (variant !== "bar") return;
+    listRef.current?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [path, variant]);
   const items = ITEMS.filter((i) => (manager || !i.managersOnly) && (messaging || i.href !== "/escuela/mensajes"));
   return (
     <nav aria-label="Principal">
-      <ul className={variant === "rail" ? "space-y-0.5" : "relative flex max-w-full gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]"}>
+      <ul ref={listRef} className={variant === "rail" ? "space-y-0.5" : "relative flex max-w-full gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]"}>
         {items.map((i) => {
           const active = i.exact ? path === i.href : [i.href, ...(("also" in i && i.also) || [])].some((h) => path.startsWith(h));
           const Icon = i.icon;
