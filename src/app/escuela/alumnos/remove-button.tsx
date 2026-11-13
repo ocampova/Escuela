@@ -16,7 +16,7 @@ export function RemoveButton({ kind, studentId, id, label }: { kind: "guardian" 
         if (!confirm(`¿Quitar a ${label}?`)) return;
         start(() => (kind === "guardian" ? removeGuardian(studentId, id) : removePickup(id)));
       }}
-      className="flex size-8 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
+      className="flex size-9 shrink-0 items-center justify-center rounded-lg text-ink-3 transition-colors hover:bg-danger-soft hover:text-danger disabled:opacity-50"
     >
       <X className="size-4" aria-hidden />
     </button>

@@ -38,10 +38,11 @@ export function InviteButton({ userId, activated, compact }: { userId: string; a
         type="button"
         disabled={pending}
         onClick={() => start(async () => setResult(await createInvite(userId)))}
-        className={cx(buttonClass(activated ? "ghost" : "secondary", "sm"), compact && "px-2")}
+        title={activated ? "Genera un enlace para que cree una contraseña nueva" : "Genera el enlace de invitación para activar la cuenta"}
+        className={cx(buttonClass("secondary", "sm"), "whitespace-nowrap", compact && "px-2")}
       >
         <Link2 className="size-3.5" aria-hidden />
-        {pending ? "Generando…" : activated ? "Enlace para cambiar contraseña" : "Invitar"}
+        {pending ? "Generando…" : activated ? "Enlace de contraseña" : "Invitar"}
       </button>
       {result?.error && <span className="text-xs text-danger">{result.error}</span>}
     </div>

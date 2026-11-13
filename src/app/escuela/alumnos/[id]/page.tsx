@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, DoorOpen, MessageCircle, Pencil, UserCheck, UserPlus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, DoorOpen, Mail, MessageCircle, Pencil, Phone, UserCheck, UserPlus } from "lucide-react";
 import { isManager, requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { METHOD_LABEL, staffSections, statementFor } from "@/lib/queries";
@@ -117,30 +117,43 @@ export default async function StaffStudent({ params, searchParams }: { params: P
             <Card className="divide-y divide-line">
               {s.guardians.length === 0 && <p className="px-4 py-3 text-sm text-ink-2">Todavía no tiene encargados.</p>}
               {s.guardians.map((g) => (
-                <div key={g.userId} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
-                  <Avatar name={g.user.name} size={36} />
-                  <div className="min-w-0 flex-1 basis-[60%] text-sm">
-                    <p className="font-medium">
-                      {g.user.name}
-                      {!g.user.passwordHash && <Badge tone="warn" className="ml-2 align-middle">Sin activar</Badge>}
-                    </p>
-                    <p className="break-words text-ink-2">
-                      {g.relationship}
-                      {g.isPrimary ? " · Principal" : ""} · {g.user.email}
-                      {g.user.phone ? ` · ${g.user.phone}` : ""}
-                    </p>
-                  </div>
-                  {user.school.messagingEnabled && (
-                    <ButtonLink href={`/escuela/mensajes/nuevo?alumno=${s.id}&encargado=${g.userId}`} variant="ghost" size="sm" aria-label={`Escribir a ${g.user.name}`}>
-                      <MessageCircle className="size-4" aria-hidden /> Escribir
-                    </ButtonLink>
-                  )}
-                  {manager && <RemoveButton kind="guardian" studentId={s.id} id={g.userId} label={g.user.name} />}
-                  {manager && (
-                    <div className="w-full pl-12">
-                      <InviteButton userId={g.userId} activated={!!g.user.passwordHash} />
+                <div key={g.userId} className="flex gap-3 px-4 py-3.5">
+                  <Avatar name={g.user.name} size={36} className="shrink-0" />
+                  <div className="min-w-0 flex-1 text-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium">
+                          {g.user.name}
+                          {!g.user.passwordHash && <Badge tone="warn" className="ml-2 align-middle">Sin activar</Badge>}
+                        </p>
+                        <p className="text-ink-2">
+                          {g.relationship}
+                          {g.isPrimary ? " · Encargado principal" : ""}
+                        </p>
+                      </div>
+                      {manager && <RemoveButton kind="guardian" studentId={s.id} id={g.userId} label={g.user.name} />}
                     </div>
-                  )}
+                    <p className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-ink-2">
+                      <span className="inline-flex min-w-0 items-center gap-1.5 break-all">
+                        <Mail className="size-3.5 shrink-0" aria-hidden /> {g.user.email}
+                      </span>
+                      {g.user.phone && (
+                        <a href={`tel:${g.user.phone}`} className="tap inline-flex items-center gap-1.5 hover:text-ink">
+                          <Phone className="size-3.5 shrink-0" aria-hidden /> {g.user.phone}
+                        </a>
+                      )}
+                    </p>
+                    {(user.school.messagingEnabled || manager) && (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                        {user.school.messagingEnabled && (
+                          <ButtonLink href={`/escuela/mensajes/nuevo?alumno=${s.id}&encargado=${g.userId}`} variant="secondary" size="sm" aria-label={`Escribir a ${g.user.name}`}>
+                            <MessageCircle className="size-4" aria-hidden /> Escribir
+                          </ButtonLink>
+                        )}
+                        {manager && <InviteButton userId={g.userId} activated={!!g.user.passwordHash} />}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </Card>
@@ -171,12 +184,17 @@ export default async function StaffStudent({ params, searchParams }: { params: P
             <Card className="divide-y divide-line">
               {s.pickups.length === 0 && <p className="px-4 py-3 text-sm text-ink-2">Nadie autorizado todavía.</p>}
               {s.pickups.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                  <UserCheck className="size-4 shrink-0 text-brand" aria-hidden />
-                  <p className="min-w-0 flex-1 font-medium">{p.name}</p>
-                  <span className="text-ink-2">
-                    {p.relationship} · {p.idNumber}
+                <div key={p.id} className="flex items-start gap-3 px-4 py-3 text-sm">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-brand">
+                    <UserCheck className="size-4" aria-hidden />
                   </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{p.name}</p>
+                    <p className="text-ink-2">
+                      {p.relationship} · Cédula {p.idNumber}
+                      {p.phone ? ` · ${p.phone}` : ""}
+                    </p>
+                  </div>
                   {manager && <RemoveButton kind="pickup" studentId={s.id} id={p.id} label={p.name} />}
                 </div>
               ))}
