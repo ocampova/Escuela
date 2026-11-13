@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
-import { capitalize, dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
+import { gradeSectionName, keyToDate, todayKey } from "@/lib/format";
 import { DateNav } from "@/components/date-nav";
 import { Card, PageHeader, cx, sectionSolid } from "@/components/ui";
 import { AttendanceForm } from "./attendance-form";
@@ -50,16 +50,15 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
             </Link>
           ))}
         </nav>
-        <DateNav path="/escuela/asistencia" params={{ seccion: section?.id }} value={date} max={todayKey()} className="ml-auto" />
       </div>
 
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3.5">
-          <div>
-            <h2 className="font-semibold">{section ? gradeSectionName(section) : "Sin secciones"}</h2>
-            <p className="text-sm text-ink-2">{capitalize(dateLabel(d, { weekday: "long", day: "numeric", month: "long" }))}</p>
+        <div className="border-b border-line px-4 py-3.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="min-w-0 font-semibold">{section ? gradeSectionName(section) : "Sin secciones"}</h2>
+            <span className={cx("shrink-0 text-right text-sm font-medium", taken ? "text-ok" : "text-warn")}>{weekend ? "Fin de semana" : taken ? "Lista pasada" : "Falta pasar lista"}</span>
           </div>
-          <span className={cx("text-sm font-medium", taken ? "text-ok" : "text-warn")}>{weekend ? "Fin de semana" : taken ? "Lista pasada" : "Falta pasar lista"}</span>
+          <DateNav path="/escuela/asistencia" params={{ seccion: section?.id }} value={date} max={todayKey()} className="mt-1" />
         </div>
         {section && (
           <AttendanceForm

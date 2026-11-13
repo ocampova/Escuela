@@ -203,21 +203,25 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
           <Card className="divide-y divide-line">
             {staff.map((s) => (
-              <div key={s.id} className={cx("flex flex-wrap items-center gap-3 px-4 py-3", !s.active && "opacity-60")}>
-                <Avatar name={s.name} size={36} />
+              <div key={s.id} className={cx("flex gap-3 px-4 py-3.5", !s.active && "opacity-60")}>
+                <Avatar name={s.name} size={36} className="shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{s.name}</p>
-                  <p className="truncate text-sm text-ink-2">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <p className="font-medium">{s.name}</p>
+                    <Badge tone={s.role === "TEACHER" ? "neutral" : "brand"}>{ROLE[s.role]}</Badge>
+                    {!s.passwordHash && s.active && <Badge tone="warn">Sin activar</Badge>}
+                    {!s.active && <Badge>Desactivada</Badge>}
+                  </div>
+                  <p className="mt-0.5 text-sm break-words text-ink-2">
                     {s.email}
                     {s.teacherOf.length > 0 && ` · ${s.teacherOf.map((t) => `${t.grade.name} ${t.name}`).join(", ")}`}
                   </p>
-                </div>
-                <Badge tone={s.role === "TEACHER" ? "neutral" : "brand"}>{ROLE[s.role]}</Badge>
-                {!s.passwordHash && s.active && <Badge tone="warn">Sin activar</Badge>}
-                {!s.active && <Badge>Desactivada</Badge>}
-                <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-                  {s.active && s.id !== user.id && <InviteButton userId={s.id} activated={!!s.passwordHash} />}
-                  {s.role !== "ADMIN" && s.id !== user.id && <ActiveToggle userId={s.id} active={s.active} />}
+                  {s.id !== user.id && (s.active || s.role !== "ADMIN") && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                      {s.active && <InviteButton userId={s.id} activated={!!s.passwordHash} />}
+                      {s.role !== "ADMIN" && <ActiveToggle userId={s.id} active={s.active} />}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

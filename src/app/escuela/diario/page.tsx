@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireStaff } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
-import { capitalize, dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
+import { gradeSectionName, keyToDate, todayKey } from "@/lib/format";
 import { DateNav } from "@/components/date-nav";
 import { Card, EmptyState, PageHeader, cx } from "@/components/ui";
 import { SectionPicker } from "@/components/section-picker";
@@ -35,18 +35,17 @@ export default async function DailyPage({ searchParams }: { searchParams: Promis
       <VidaTabs active="/escuela/diario" />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SectionPicker sections={sections} current={section?.id} href={(id) => `/escuela/diario?seccion=${id}&fecha=${date}`} />
-        <DateNav path="/escuela/diario" params={{ seccion: section?.id }} value={date} max={todayKey()} className="ml-auto" />
       </div>
 
       <Card className="overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3.5">
-          <div>
-            <h2 className="font-semibold">{section ? gradeSectionName(section) : "Sin secciones"}</h2>
-            <p className="text-sm text-ink-2">{capitalize(dateLabel(d, { weekday: "long", day: "numeric", month: "long" }))}</p>
-          </div>
-          <span className={cx("text-sm font-medium", sent ? "text-ok" : "text-ink-2")}>
+        <div className="border-b border-line px-4 py-3.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="min-w-0 font-semibold">{section ? gradeSectionName(section) : "Sin secciones"}</h2>
+            <span className={cx("shrink-0 text-right text-sm font-medium", sent ? "text-ok" : "text-ink-2")}>
             {sent ? `Enviado a ${sent} de ${students.length}` : reports.length ? "Borrador sin enviar" : "Sin llenar"}
           </span>
+          </div>
+          <DateNav path="/escuela/diario" params={{ seccion: section?.id }} value={date} max={todayKey()} className="mt-1" />
         </div>
         {!section || students.length === 0 ? (
           <EmptyState title="No hay alumnos en esta sección">Cuando se matriculen alumnos, podrá llenar su reporte aquí.</EmptyState>
