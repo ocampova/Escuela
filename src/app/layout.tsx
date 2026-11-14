@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Lexend } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/sw-register";
-import { ScrollTop } from "@/components/scroll-top";
 
 // Lexend: diseñada para facilitar la lectura; familias de todas las edades leen avisos y estados de cuenta
 const lexend = Lexend({ subsets: ["latin"], variable: "--font-lexend", display: "swap" });
@@ -19,7 +18,8 @@ export const viewport: Viewport = {
   themeColor: "#12463a",
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover",
+  // Sin viewportFit "cover": con él la página se dibuja detrás de la barra de estado y de la
+  // barra translúcida del navegador (Safari reciente, DuckDuckGo) y el inicio queda tapado.
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -28,7 +28,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-dvh font-sans">
         {children}
         <ServiceWorkerRegister />
-        <ScrollTop />
       </body>
     </html>
   );

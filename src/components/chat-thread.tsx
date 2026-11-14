@@ -71,7 +71,7 @@ export function ChatThread({
             </div>
           );
         })}
-        <div ref={endRef} data-scroll-end />
+        <div ref={endRef} />
       </div>
 
       {canSend ? (
