@@ -242,4 +242,5 @@ The acknowledgment button turns optimistically into a green "✓ Enterado" label
 - What matters most comes first for each role. The "Activar notificaciones" prompt is a compact line placed after the important content; it does not appear if notifications are blocked or the person dismissed it, and they can turn them on from their profile.
 - Date fields: iPhone Safari draws them at its own size, so they are normalised in `globals.css`. Day changes use the arrows and apply on their own (no "Ver" button).
 - Text links ("Ver todos", "Abrir") use the `tap` utility, which enlarges the tap area to 44 px without changing the look.
+- Do not use CSS scroll snapping (`snap-x`, `snap-start`): in iPhone Safari it can scroll the whole page on load to line up the snapped element, hiding the top of the page under the fixed header.
 - In the school view, the side menu takes up space at 1024 px: two-column pages switch to two columns only from `xl`.

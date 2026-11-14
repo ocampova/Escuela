@@ -67,7 +67,7 @@ export default async function FamilyHome() {
         <p className="mt-1 text-sm text-white/75 first-letter:uppercase md:text-base">{weekday}</p>
 
         {/* Hijos */}
-        <section aria-label="Mis hijos" className="-mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:mt-6 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
+        <section aria-label="Mis hijos" className="-mx-4 mt-5 flex gap-3 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none] md:mx-0 md:mt-6 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3">
           {students.map((s) => {
             const att = attendance.find((a) => a.studentId === s.id);
             const st = att ? ATT[att.status] : null;
@@ -75,7 +75,7 @@ export default async function FamilyHome() {
               <Link
                 key={s.id}
                 href={`/familia/hijos/${s.id}`}
-                className="flex min-w-[80%] snap-start flex-col rounded-xl bg-surface text-ink shadow-pop transition-[transform,box-shadow] duration-200 ease-out active:scale-[0.99] sm:min-w-[calc(50%-6px)] md:min-w-0 md:hover:-translate-y-0.5"
+                className="flex min-w-[80%] flex-col rounded-xl bg-surface text-ink shadow-pop transition-[transform,box-shadow] duration-200 ease-out active:scale-[0.99] sm:min-w-[calc(50%-6px)] md:min-w-0 md:hover:-translate-y-0.5"
               >
                 <div className="flex items-center gap-3 p-4">
                   <Avatar name={`${s.firstName} ${s.lastName}`} color={s.section.color} size={48} />
