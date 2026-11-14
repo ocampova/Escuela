@@ -611,7 +611,13 @@ async function main() {
     "Cuento de la tortuga y la liebre; dramatizamos la historia.",
   ];
   const dateOnly = (d: Date) => new Date(d.toISOString().slice(0, 10));
-  for (const [n, off] of [weekday(-2), weekday(-1), weekday(0)].entries()) {
+  // Los tres últimos días hábiles, sin repetir (en fin de semana "ayer" y "hoy" caen en viernes)
+  const lastSchoolDays: number[] = [];
+  for (let off = 0; lastSchoolDays.length < 3; off--) {
+    const dow = day(off, 12).getUTCDay();
+    if (dow !== 0 && dow !== 6) lastSchoolDays.unshift(off);
+  }
+  for (const [n, off] of lastSchoolDays.entries()) {
     const d = dateOnly(day(off, 12));
     if (d > dateOnly(day(0, 12))) continue;
     for (const [i, k] of prepKids.entries()) {
