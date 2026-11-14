@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Lexend } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { ScrollTop } from "@/components/scroll-top";
 
 // Lexend: diseñada para facilitar la lectura; familias de todas las edades leen avisos y estados de cuenta
 const lexend = Lexend({ subsets: ["latin"], variable: "--font-lexend", display: "swap" });
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-dvh font-sans">
         {children}
         <ServiceWorkerRegister />
+        <ScrollTop />
       </body>
     </html>
   );

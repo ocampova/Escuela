@@ -243,4 +243,5 @@ The acknowledgment button turns optimistically into a green "✓ Enterado" label
 - Date fields: iPhone Safari draws them at its own size, so they are normalised in `globals.css`. Day changes use the arrows and apply on their own (no "Ver" button).
 - Text links ("Ver todos", "Abrir") use the `tap` utility, which enlarges the tap area to 44 px without changing the look.
 - Do not use CSS scroll snapping (`snap-x`, `snap-start`): in iPhone Safari it can scroll the whole page on load to line up the snapped element, hiding the top of the page under the fixed header.
+- Every page opens at the top: `ScrollTop` (in the root layout) undoes the position that iPhone browsers restore or apply on load, unless there is an anchor (#), the page opens at the end (conversations, `data-scroll-end`), or the person has already touched the screen. There is no `scroll-behavior: smooth` on `html`.
 - In the school view, the side menu takes up space at 1024 px: two-column pages switch to two columns only from `xl`.
