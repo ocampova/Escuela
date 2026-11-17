@@ -12,6 +12,13 @@ async function manager() {
   return u;
 }
 
+/** Estructura, personal, curso lectivo y mensajería: solo Dirección. Pagos y precios: también Secretaría. */
+async function admin() {
+  const u = await requireStaff();
+  if (u.role !== "ADMIN") throw new Error("Solo Dirección puede cambiar esta parte de la configuración.");
+  return u;
+}
+
 const done = (ok: string): ActionState => {
   revalidatePath("/escuela", "layout");
   return { ok };
@@ -20,7 +27,7 @@ const done = (ok: string): ActionState => {
 const COLORS = ["orange", "green", "blue"] as const;
 
 export async function saveSchoolYear(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const p = z
     .object({ name: z.string().trim().min(3, "Escriba el nombre del curso lectivo."), startsOn: z.string().date("Fecha de inicio no válida."), endsOn: z.string().date("Fecha de cierre no válida.") })
     .safeParse(Object.fromEntries(f));
@@ -34,7 +41,7 @@ export async function saveSchoolYear(_p: ActionState, f: FormData): Promise<Acti
 }
 
 export async function addLevel(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const name = String(f.get("name") ?? "").trim();
   if (name.length < 3) return { error: "Escriba el nombre del nivel." };
   const count = await prisma.level.count({ where: { schoolId: u.schoolId } });
@@ -43,7 +50,7 @@ export async function addLevel(_p: ActionState, f: FormData): Promise<ActionStat
 }
 
 export async function addGrade(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const name = String(f.get("name") ?? "").trim();
   const levelId = String(f.get("levelId") ?? "");
   if (name.length < 2) return { error: "Escriba el nombre del grado." };
@@ -54,7 +61,7 @@ export async function addGrade(_p: ActionState, f: FormData): Promise<ActionStat
 }
 
 export async function addSection(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const p = z
     .object({ gradeId: z.string().min(1, "Elija el grado."), name: z.string().trim().min(1, "Escriba la letra o nombre de la sección.").max(20), color: z.enum(COLORS), teacherId: z.string().optional() })
     .safeParse(Object.fromEntries(f));
@@ -74,7 +81,7 @@ export async function addSection(_p: ActionState, f: FormData): Promise<ActionSt
 }
 
 export async function updateSection(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const id = String(f.get("id") ?? "");
   const color = String(f.get("color") ?? "");
   const teacherId = String(f.get("teacherId") ?? "") || null;
@@ -89,7 +96,7 @@ export async function updateSection(_p: ActionState, f: FormData): Promise<Actio
 const ROLES = { TEACHER: "Docente", STAFF: "Secretaría", ADMIN: "Dirección" } as const;
 
 export async function addStaff(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const p = z
     .object({
       name: z.string().trim().min(5, "Escriba nombre y apellidos."),
@@ -106,7 +113,7 @@ export async function addStaff(_p: ActionState, f: FormData): Promise<ActionStat
 }
 
 export async function setUserActive(userId: string, active: boolean) {
-  const u = await manager();
+  const u = await admin();
   if (userId === u.id) throw new Error("No puede desactivar su propia cuenta.");
   await prisma.user.updateMany({ where: { id: userId, schoolId: u.schoolId, role: { not: "ADMIN" } }, data: { active } });
   revalidatePath("/escuela/configuracion");
@@ -181,7 +188,7 @@ export async function saveConcept(_p: ActionState, f: FormData): Promise<ActionS
 }
 
 export async function saveLevelInfo(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const p = z
     .object({ id: z.string(), schedule: optText(300), phone: optText(60), address: optText(300), materials: optText(5000) })
     .safeParse(Object.fromEntries(f));
@@ -194,7 +201,7 @@ export async function saveLevelInfo(_p: ActionState, f: FormData): Promise<Actio
 }
 
 export async function saveMessageHours(_p: ActionState, f: FormData): Promise<ActionState> {
-  const u = await manager();
+  const u = await admin();
   const messageHours = String(f.get("messageHours") ?? "").trim().slice(0, 200) || null;
   await prisma.school.update({ where: { id: u.schoolId }, data: { messageHours } });
   revalidatePath("/familia", "layout");
@@ -202,7 +209,7 @@ export async function saveMessageHours(_p: ActionState, f: FormData): Promise<Ac
 }
 
 export async function setMessaging(enabled: boolean) {
-  const u = await manager();
+  const u = await admin();
   if (u.role !== "ADMIN") throw new Error("Solo Dirección cambia esta opción.");
   await prisma.school.update({ where: { id: u.schoolId }, data: { messagingEnabled: enabled } });
   revalidatePath("/escuela", "layout");

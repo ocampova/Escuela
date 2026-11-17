@@ -34,3 +34,21 @@ export async function requireStaff() {
 export function isManager(user: { role: string }) {
   return user.role === "ADMIN" || user.role === "STAFF";
 }
+
+/** Docentes y Dirección (supervisa): asistencia, vida diaria y académico. Secretaría no. */
+export function canTeach(user: { role: string }) {
+  return user.role === "TEACHER" || user.role === "ADMIN";
+}
+
+/** Páginas del aula: si es Secretaría, vuelve al panel. */
+export async function requireClassroom() {
+  const user = await requireStaff();
+  if (!canTeach(user)) redirect("/escuela");
+  return user;
+}
+
+export async function requireAdmin() {
+  const user = await requireStaff();
+  if (user.role !== "ADMIN") redirect("/escuela");
+  return user;
+}

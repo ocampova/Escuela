@@ -49,7 +49,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             <span className="block text-xs text-white/65">{year?.name ?? "Escuela"}</span>
           </span>
         </Link>
-        <StaffNav manager={manager} variant="rail" counts={counts} messaging={messaging} />
+        <StaffNav role={user.role} variant="rail" counts={counts} messaging={messaging} />
         <div className="mt-auto border-t border-white/10 px-2 pt-4">{account}</div>
       </aside>
 
@@ -64,7 +64,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             </button>
           </form>
         </div>
-        <StaffNav manager={manager} variant="bar" counts={counts} messaging={messaging} />
+        <StaffNav role={user.role} variant="bar" counts={counts} messaging={messaging} />
         <BrandStripe />
       </header>
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
-import { isManager, requireStaff } from "@/lib/auth";
+import { isManager, requireClassroom } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { currentTerm } from "@/lib/academic";
 import { gradeSectionName } from "@/lib/format";
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Informe al hogar" };
 export default async function HomeReportPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ periodo?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
-  const user = await requireStaff();
+  const user = await requireClassroom();
   const student = await prisma.student.findFirst({
     where: { id, section: { schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) } },
     include: { section: { include: { grade: { include: { level: true } } } } },

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { isManager, requireStaff } from "@/lib/auth";
+import { canTeach, isManager, requireStaff } from "@/lib/auth";
 import { keyToDate, todayKey } from "@/lib/format";
 import { notifyLater } from "@/lib/push";
 import { DAILY_FIELDS, isValidDaily } from "@/lib/daily";
@@ -12,6 +12,7 @@ export type FormState = { error?: string; ok?: string };
 
 async function assertSection(sectionId: string) {
   const user = await requireStaff();
+  if (!canTeach(user)) throw new Error("Esta acción es de la docente o de Dirección.");
   const section = await prisma.section.findFirst({
     where: { id: sectionId, schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) },
     include: { grade: true },
@@ -104,6 +105,7 @@ export async function createAlbum(_prev: FormState, form: FormData): Promise<For
 
 export async function deleteAlbum(id: string) {
   const user = await requireStaff();
+  if (!canTeach(user)) throw new Error("Esta acción es de la docente o de Dirección.");
   const album = await prisma.album.findFirst({ where: { id, section: { schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) } } });
   if (!album) throw new Error("No encontrado");
   await prisma.album.delete({ where: { id } });
@@ -114,6 +116,7 @@ export async function deleteAlbum(id: string) {
 
 export async function deletePhoto(id: string) {
   const user = await requireStaff();
+  if (!canTeach(user)) throw new Error("Esta acción es de la docente o de Dirección.");
   const photo = await prisma.albumPhoto.findFirst({ where: { id, album: { section: { schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) } } } });
   if (!photo) throw new Error("No encontrado");
   await prisma.albumPhoto.delete({ where: { id } });

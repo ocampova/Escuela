@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ClipboardList, Trash2 } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { requireClassroom } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { capitalize, dateLabel, gradeSectionName, keyToDate, todayKey } from "@/lib/format";
@@ -13,7 +13,7 @@ import { createHomework, deleteHomework } from "../academico-actions";
 export const metadata: Metadata = { title: "Tareas" };
 
 export default async function HomeworkPage({ searchParams }: { searchParams: Promise<{ seccion?: string }> }) {
-  const user = await requireStaff();
+  const user = await requireClassroom();
   const sp = await searchParams;
   const sections = await staffSections(user);
   const section = sections.find((s) => s.id === sp.seccion) ?? sections[0];

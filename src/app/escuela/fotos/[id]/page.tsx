@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft, CheckCircle2, Trash2 } from "lucide-react";
-import { isManager, requireStaff } from "@/lib/auth";
+import { isManager, requireClassroom } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { capitalize, dateLabel, gradeSectionName } from "@/lib/format";
 import { buttonClass, SectionChip } from "@/components/ui";
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Álbum" };
 export default async function StaffAlbum({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ nuevo?: string }> }) {
   const { id } = await params;
   const { nuevo } = await searchParams;
-  const user = await requireStaff();
+  const user = await requireClassroom();
   const album = await prisma.album.findFirst({
     where: { id, section: { schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) } },
     include: { section: { include: { grade: true } }, author: { select: { name: true } }, photos: { select: { id: true }, orderBy: { order: "asc" } } },

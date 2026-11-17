@@ -28,7 +28,11 @@ const COLOR_LABEL: Record<string, string> = { orange: "Naranja", green: "Verde",
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const user = await requireStaff();
   if (!isManager(user)) redirect("/escuela");
-  const { tab = "estructura" } = await searchParams;
+  // Secretaría solo administra pagos y precios; el resto es de Dirección
+  const admin = user.role === "ADMIN";
+  const tabs = admin ? TABS : TABS.filter((t) => t.key === "pagos");
+  const requested = (await searchParams).tab;
+  const tab = tabs.some((t) => t.key === requested) ? requested! : tabs[0].key;
 
   const [school, concepts, year, levels, staff] = await Promise.all([
     prisma.school.findUniqueOrThrow({ where: { id: user.schoolId } }),
@@ -51,9 +55,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <PageHeader title="Configuración" description="Estructura de la escuela, cuentas del personal y curso lectivo." />
+      <PageHeader title="Configuración" description={admin ? "Estructura de la escuela, cuentas del personal y curso lectivo." : "Conceptos de cobro, precios y la cuenta para depósitos."} />
       <nav aria-label="Secciones de configuración" className="relative mb-6 flex gap-1 overflow-x-auto border-b border-line whitespace-nowrap [scrollbar-width:none]">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <Link
             key={t.key}
             href={`/escuela/configuracion?tab=${t.key}`}

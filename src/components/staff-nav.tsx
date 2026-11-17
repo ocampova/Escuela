@@ -6,22 +6,28 @@ import { usePathname } from "next/navigation";
 import { Bell, CalendarDays, GraduationCap, Sun, ClipboardCheck, FileSpreadsheet, Inbox, LayoutGrid, MessageCircle, Settings, Users, Wallet } from "lucide-react";
 import { cx } from "./ui";
 
-const ITEMS = [
-  { href: "/escuela", label: "Panel", icon: LayoutGrid, exact: true },
-  { href: "/escuela/asistencia", label: "Asistencia", icon: ClipboardCheck },
-  { href: "/escuela/diario", label: "Vida diaria", icon: Sun, also: ["/escuela/fotos"] },
-  { href: "/escuela/academico", label: "Académico", icon: GraduationCap, also: ["/escuela/tareas"] },
-  { href: "/escuela/mensajes", label: "Mensajes", icon: MessageCircle },
-  { href: "/escuela/avisos", label: "Avisos", icon: Bell },
-  { href: "/escuela/alumnos", label: "Alumnos", icon: Users },
-  { href: "/escuela/calendario", label: "Calendario", icon: CalendarDays },
-  { href: "/escuela/cobros", label: "Cobros", icon: Wallet, managersOnly: true },
-  { href: "/escuela/reportes", label: "Reportes", icon: FileSpreadsheet },
-  { href: "/escuela/matricula", label: "Matrícula", icon: Inbox, managersOnly: true },
-  { href: "/escuela/configuracion", label: "Configuración", icon: Settings, managersOnly: true },
+type Role = "ADMIN" | "STAFF" | "TEACHER";
+const ALL: Role[] = ["ADMIN", "STAFF", "TEACHER"];
+const OFFICE: Role[] = ["ADMIN", "STAFF"];
+const CLASSROOM: Role[] = ["ADMIN", "TEACHER"];
+
+// Qué ve cada perfil: docs/ROLES.md
+const ITEMS: { href: string; label: string; icon: typeof LayoutGrid; roles: Role[]; exact?: boolean; also?: string[] }[] = [
+  { href: "/escuela", label: "Panel", icon: LayoutGrid, roles: ALL, exact: true },
+  { href: "/escuela/asistencia", label: "Asistencia", icon: ClipboardCheck, roles: CLASSROOM },
+  { href: "/escuela/diario", label: "Vida diaria", icon: Sun, roles: CLASSROOM, also: ["/escuela/fotos"] },
+  { href: "/escuela/academico", label: "Académico", icon: GraduationCap, roles: CLASSROOM, also: ["/escuela/tareas"] },
+  { href: "/escuela/mensajes", label: "Mensajes", icon: MessageCircle, roles: ALL },
+  { href: "/escuela/avisos", label: "Avisos", icon: Bell, roles: ALL },
+  { href: "/escuela/alumnos", label: "Alumnos", icon: Users, roles: ALL },
+  { href: "/escuela/cobros", label: "Cobros", icon: Wallet, roles: OFFICE },
+  { href: "/escuela/matricula", label: "Matrícula", icon: Inbox, roles: OFFICE },
+  { href: "/escuela/calendario", label: "Calendario", icon: CalendarDays, roles: ALL },
+  { href: "/escuela/reportes", label: "Reportes", icon: FileSpreadsheet, roles: ALL },
+  { href: "/escuela/configuracion", label: "Configuración", icon: Settings, roles: OFFICE },
 ];
 
-export function StaffNav({ manager, variant, counts = {}, messaging = true }: { manager: boolean; variant: "rail" | "bar"; counts?: Record<string, number>; messaging?: boolean }) {
+export function StaffNav({ role, variant, counts = {}, messaging = true }: { role: string; variant: "rail" | "bar"; counts?: Record<string, number>; messaging?: boolean }) {
   const path = usePathname();
   const listRef = useRef<HTMLUListElement>(null);
   // En el celular la barra se desplaza: mantener visible la sección actual
@@ -29,12 +35,12 @@ export function StaffNav({ manager, variant, counts = {}, messaging = true }: { 
     if (variant !== "bar") return;
     listRef.current?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "center" });
   }, [path, variant]);
-  const items = ITEMS.filter((i) => (manager || !i.managersOnly) && (messaging || i.href !== "/escuela/mensajes"));
+  const items = ITEMS.filter((i) => i.roles.includes(role as Role) && (messaging || i.href !== "/escuela/mensajes"));
   return (
     <nav aria-label="Principal">
       <ul ref={listRef} className={variant === "rail" ? "space-y-0.5" : "relative flex max-w-full gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none]"}>
         {items.map((i) => {
-          const active = i.exact ? path === i.href : [i.href, ...(("also" in i && i.also) || [])].some((h) => path.startsWith(h));
+          const active = i.exact ? path === i.href : [i.href, ...(i.also ?? [])].some((h) => path.startsWith(h));
           const Icon = i.icon;
           return (
             <li key={i.href} className="shrink-0">

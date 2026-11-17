@@ -13,7 +13,7 @@ import { quickAttendance, quickDaily } from "./quick-actions";
 type Section = { id: string; name: string; color: string; schoolYearId: string; grade: { name: string; levelId: string; level: { evaluation: string } } };
 
 /** Una tarea del día: icono, estado y la acción para resolverla ahí mismo. */
-function Item({ icon, title, detail, done, children, href }: { icon: ReactNode; title: string; detail?: ReactNode; done?: boolean; children?: ReactNode; href?: string }) {
+export function Item({ icon, title, detail, done, children, href }: { icon: ReactNode; title: string; detail?: ReactNode; done?: boolean; children?: ReactNode; href?: string }) {
   return (
     <li className="flex gap-3 px-4 py-4">
       <span className={cx("flex size-10 shrink-0 items-center justify-center rounded-full", done ? "bg-ok-soft text-ok" : "bg-brand-soft text-brand")}>

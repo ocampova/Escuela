@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { CheckCircle2, ChevronRight, Eye, FileText, Printer } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { requireClassroom } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { currentTerm } from "@/lib/academic";
@@ -20,7 +20,7 @@ const chip = (on: boolean) =>
   cx("inline-flex h-8 items-center rounded-full px-3 text-sm font-medium ring-1 ring-inset transition-colors", on ? "bg-ink text-white ring-ink" : "bg-surface text-ink-2 ring-line-strong hover:bg-canvas");
 
 export default async function AcademicPage({ searchParams }: { searchParams: Promise<{ seccion?: string; periodo?: string; materia?: string }> }) {
-  const user = await requireStaff();
+  const user = await requireClassroom();
   const sp = await searchParams;
   const sections = await staffSections(user);
   const section = sections.find((s) => s.id === sp.seccion) ?? sections[0];

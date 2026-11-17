@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireStaff } from "@/lib/auth";
+import { requireClassroom } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { gradeSectionName, todayKey } from "@/lib/format";
@@ -9,7 +9,7 @@ import { AlbumForm } from "./album-form";
 export const metadata: Metadata = { title: "Subir fotos" };
 
 export default async function NewAlbumPage({ searchParams }: { searchParams: Promise<{ seccion?: string }> }) {
-  const user = await requireStaff();
+  const user = await requireClassroom();
   const sp = await searchParams;
   const sections = await staffSections(user);
   const students = await prisma.student.findMany({

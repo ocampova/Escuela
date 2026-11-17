@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import type { AttendanceStatus, PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { isManager, requireStaff } from "@/lib/auth";
+import { canTeach, isManager, requireStaff } from "@/lib/auth";
 import { keyToDate } from "@/lib/format";
 import { notifyLater } from "@/lib/push";
 import { mailAnnouncement, mailReceipt } from "@/lib/emails";
@@ -16,6 +16,7 @@ export type FormState = { error?: string; ok?: string };
 
 async function assertSection(sectionId: string) {
   const user = await requireStaff();
+  if (!canTeach(user)) throw new Error("Esta acción es de la docente o de Dirección.");
   const section = await prisma.section.findFirst({
     where: { id: sectionId, schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) },
   });
@@ -365,4 +366,26 @@ export async function setReminders(enabled: boolean) {
   if (user.role !== "ADMIN") throw new Error("Solo Dirección cambia esta opción.");
   await prisma.school.update({ where: { id: user.schoolId }, data: { remindersEnabled: enabled } });
   revalidatePath("/escuela", "layout");
+}
+
+/* ---------- Dirección: recordar a la docente que falta pasar lista ---------- */
+
+export async function remindAttendance(sectionId: string): Promise<FormState> {
+  const user = await requireStaff();
+  if (user.role !== "ADMIN") return { error: "Solo Dirección envía este recordatorio." };
+  const section = await prisma.section.findFirst({ where: { id: sectionId, schoolYear: { schoolId: user.schoolId } }, include: { grade: true, teacher: { select: { id: true, name: true } } } });
+  if (!section?.teacher) return { error: "La sección no tiene docente asignada." };
+  try {
+    await prisma.reminderLog.create({ data: { guardianId: section.teacher.id, kind: `lista-${sectionId}`, day: keyToDate(new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10)), detail: "Recordatorio de asistencia" } });
+  } catch {
+    return { ok: "Ya se le recordó hoy." };
+  }
+  notifyLater([section.teacher.id], {
+    title: "Falta pasar lista",
+    body: `Dirección le recuerda pasar lista de ${section.grade.name} ${section.name}.`,
+    url: `/escuela/asistencia?seccion=${sectionId}`,
+    tag: `lista-${sectionId}`,
+  });
+  revalidatePath("/escuela");
+  return { ok: `Recordatorio enviado a ${section.teacher.name.split(" ")[0]}.` };
 }

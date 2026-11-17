@@ -77,7 +77,13 @@ A web platform that works on both phone and computer, for managing the school's 
 - **"Reportar pago" (report a payment):** the family uploads the deposit or transfer receipt with the date and the student; Secretaría approves it (the payment is applied) or rejects it with a reason.
 - The bank account is configured in the platform (Configuración › Pagos). **It is not saved in the code**, because the repository is public. The seed uses a demo account.
 
-Roles: Dirección (ADMIN), Secretaría (STAFF), Docente (TEACHER, sees only their sections) and Familia (GUARDIAN, sees only their own children).
+Roles and what each one sees: [docs/ROLES.md](docs/ROLES.md).
+- **Dirección (ADMIN)** supervises. Its panel shows which sections have not taken attendance, with a "Recordar" button that notifies the teacher, plus today's absences, notice confirmations, overdue fees and the office's pending items. It does not take attendance (it can if covering for a teacher).
+- **Secretaría (STAFF)** runs the office: receipts to review, enrollment, office messages, fees and payments. In Configuración it only manages "Pagos y precios". It does not see attendance, the daily report or academics.
+- **Docente (TEACHER)** sees "Mi día" and only their own sections. No fees, enrollment or configuration.
+- **Familia (GUARDIAN)** sees only their own children.
+
+Every page and server action checks the role on the server. Hiding the link is not enough.
 
 ## Stack
 

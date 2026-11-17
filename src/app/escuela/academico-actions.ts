@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { isManager, requireStaff } from "@/lib/auth";
+import { canTeach, isManager, requireStaff } from "@/lib/auth";
 import { dateLabel, keyToDate, todayKey } from "@/lib/format";
 import { notifyLater } from "@/lib/push";
 import { ACHIEVEMENTS } from "@/lib/academic";
@@ -10,6 +10,7 @@ import type { ActionState } from "@/components/action-form";
 
 async function assertSection(sectionId: string) {
   const user = await requireStaff();
+  if (!canTeach(user)) throw new Error("Esta acción es de la docente o de Dirección.");
   const section = await prisma.section.findFirst({
     where: { id: sectionId, schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) },
     include: { grade: { include: { level: true } }, schoolYear: true },
@@ -151,6 +152,7 @@ export async function createHomework(_p: ActionState, f: FormData): Promise<Acti
 
 export async function deleteHomework(id: string) {
   const user = await requireStaff();
+  if (!canTeach(user)) throw new Error("Esta acción es de la docente o de Dirección.");
   const hw = await prisma.homework.findFirst({ where: { id, section: { schoolYear: { schoolId: user.schoolId }, ...(isManager(user) ? {} : { teacherId: user.id }) } } });
   if (!hw) throw new Error("No encontrado");
   await prisma.homework.delete({ where: { id } });
@@ -161,7 +163,7 @@ export async function deleteHomework(id: string) {
 
 async function manager() {
   const u = await requireStaff();
-  if (!isManager(u)) throw new Error("Solo Dirección y Secretaría pueden cambiar la configuración.");
+  if (u.role !== "ADMIN") throw new Error("Solo Dirección cambia la configuración académica.");
   return u;
 }
 

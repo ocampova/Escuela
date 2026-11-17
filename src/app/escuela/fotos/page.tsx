@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Camera, Plus } from "lucide-react";
-import { requireStaff } from "@/lib/auth";
+import { requireClassroom } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { dateLabel, gradeSectionName } from "@/lib/format";
@@ -12,7 +12,7 @@ import { VidaTabs } from "../vida-tabs";
 export const metadata: Metadata = { title: "Fotos" };
 
 export default async function PhotosPage({ searchParams }: { searchParams: Promise<{ seccion?: string }> }) {
-  const user = await requireStaff();
+  const user = await requireClassroom();
   const sp = await searchParams;
   const sections = await staffSections(user);
   const section = sections.find((s) => s.id === sp.seccion);

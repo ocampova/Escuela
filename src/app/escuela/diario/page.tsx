@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireStaff } from "@/lib/auth";
+import { requireClassroom } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { staffSections } from "@/lib/queries";
 import { gradeSectionName, keyToDate, todayKey } from "@/lib/format";
@@ -12,7 +12,7 @@ import { DailyForm } from "./daily-form";
 export const metadata: Metadata = { title: "Reporte diario" };
 
 export default async function DailyPage({ searchParams }: { searchParams: Promise<{ seccion?: string; fecha?: string }> }) {
-  const user = await requireStaff();
+  const user = await requireClassroom();
   const sp = await searchParams;
   const sections = await staffSections(user);
   const section = sections.find((s) => s.id === sp.seccion) ?? sections.find((s) => s.grade.level.name === "Preescolar") ?? sections[0];
