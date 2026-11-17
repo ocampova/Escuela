@@ -4,7 +4,7 @@ The rule: each profile sees what is part of their job. Supervising is not the sa
 
 | Area | Dirección (supervises) | Secretaría (office and fees) | Docente (their sections) |
 |---|---|---|---|
-| **Panel** | Supervision: sections that have not taken attendance (with a "Recordar" button for the teacher), absences today, notice confirmations, overdue fees, new enrollment applications | Pending tasks: receipts to review, new applications, office messages, absences reported by families (the calls the front desk takes), overdue fees | **Mi día**: take attendance and send the daily report in one tap, messages, homework, progress of grades |
+| **Panel** | **Requiere su atención** (exceptions only): families waiting more than a day for a reply, enrollment applications not yet contacted, payment receipts unreviewed for more than 2 days, sections without attendance after 9:00 (with "Recordar"). **La escuela hoy**: enrollment for next year, fees collected this month, attendance in one line, notice reading. The week and overdue fees | Pending tasks: receipts to review, new applications, office messages, absences reported by families (the calls the front desk takes), overdue fees | **Mi día**: take attendance and send the daily report in one tap, messages, homework, progress of grades |
 | Asistencia | Read every section; can record it when covering for a teacher | Not available | Take attendance for their sections |
 | Vida diaria (daily report, photos) | Supervise; can fill it in when covering for a teacher | Not available | Fill in and send |
 | Académico (grades, home reports, homework, report cards) | Supervise and publish report cards; can fill in when covering | Not available | Fill in grades, reports and homework |

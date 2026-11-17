@@ -78,7 +78,7 @@ A web platform that works on both phone and computer, for managing the school's 
 - The bank account is configured in the platform (Configuración › Pagos). **It is not saved in the code**, because the repository is public. The seed uses a demo account.
 
 Roles and what each one sees: [docs/ROLES.md](docs/ROLES.md).
-- **Dirección (ADMIN)** supervises. Its panel shows which sections have not taken attendance, with a "Recordar" button that notifies the teacher, plus today's absences, notice confirmations, overdue fees and the office's pending items. It does not take attendance (it can if covering for a teacher).
+- **Dirección (ADMIN)** sees first only what **needs her attention**: families waiting more than a day for a reply, enrollment applications not yet contacted, payment receipts unreviewed for more than 2 days, and sections without attendance after 9:00 (with "Recordar", which notifies the teacher). Then **La escuela hoy** in four lines: enrollment for next year, fees collected this month, attendance and notice reading. Then the week and overdue fees.
 - **Secretaría (STAFF)** runs the office: receipts to review, enrollment, office messages, fees and payments. In Configuración it only manages "Pagos y precios". It does not see attendance, the daily report or academics.
 - **Docente (TEACHER)** sees "Mi día" and only their own sections. No fees, enrollment or configuration.
 - **Familia (GUARDIAN)** sees only their own children.

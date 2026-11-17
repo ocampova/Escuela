@@ -28,12 +28,15 @@ export default async function StaffMessages({ searchParams }: { searchParams: Pr
   const rows = convs.map((c) => {
     const last = c.messages[0];
     const unread = !!last && last.senderId !== user.id && last.senderId === c.guardianId && (!c.reads[0] || c.reads[0].lastReadAt < c.lastMessageAt);
-    return { c, last, unread };
+    // Espera respuesta: el último mensaje es de la familia (nadie de la escuela contestó)
+    const waiting = !!last && last.senderId === c.guardianId;
+    return { c, last, unread, waiting };
   });
-  const shown = filtro === "sin-leer" ? rows.filter((r) => r.unread) : rows;
+  const shown = filtro === "sin-leer" ? rows.filter((r) => r.unread) : filtro === "esperando" ? rows.filter((r) => r.waiting) : rows;
   const tabs = [
     { key: undefined, label: "Todas" },
     { key: "sin-leer", label: "Sin leer", n: rows.filter((r) => r.unread).length },
+    { key: "esperando", label: "Esperan respuesta", n: rows.filter((r) => r.waiting).length },
     ...(user.role === "ADMIN" ? [{ key: "docentes", label: "Docentes" }, { key: "oficina", label: "Oficina" }] : []),
   ];
 

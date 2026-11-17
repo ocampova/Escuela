@@ -5,13 +5,13 @@ import { prisma } from "@/lib/db";
 import { announcementRecipients, audienceLabel, staffSections, statementFor } from "@/lib/queries";
 import { crc, dateTimeLabel, gradeSectionName, keyToDate, relativeDay, timeLabel, todayKey } from "@/lib/format";
 import { unreadConversations } from "@/lib/messages";
-import { Badge, ButtonLink, Card, DemoNotice, SectionChip, SectionHeading } from "@/components/ui";
+import { ButtonLink, Card, DemoNotice, SectionHeading } from "@/components/ui";
 import { ReadMeter } from "@/components/read-meter";
 import { EventDateTile } from "@/components/event-tile";
 import { PushPrompt } from "@/components/push-prompt";
 import { vapidPublicKey } from "@/lib/push";
 import { Item, TeacherToday } from "./mi-dia";
-import { RemindButton } from "./remind-button";
+import { DirectorToday } from "./direccion";
 
 function greeting() {
   const h = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Costa_Rica", hour: "numeric", hour12: false }).format(new Date()));
@@ -21,7 +21,7 @@ function greeting() {
 /**
  * Panel por perfil (docs/ROLES.md):
  * - Docente: «Mi día», lo que tiene que hacer hoy.
- * - Dirección: supervisión (qué secciones pasaron lista, quién faltó, avisos, cobros, oficina).
+ * - Dirección: lo que requiere su intervención (excepciones) y el estado de la escuela (direccion.tsx).
  * - Secretaría: lo que tiene por atender (comprobantes, matrícula, mensajes de la oficina).
  */
 export default async function StaffHome() {
@@ -34,11 +34,7 @@ export default async function StaffHome() {
   const weekday = new Date(Date.now() - 6 * 3600_000).getUTCDay();
   const schoolDay = weekday !== 0 && weekday !== 6;
 
-  const [attendance, notices, anns, events, students, reminded, pendingReports, newApplicants, unreadOffice] = await Promise.all([
-    prisma.attendance.findMany({
-      where: { date: today, student: { sectionId: { in: sectionIds }, status: "ACTIVE" } },
-      select: { status: true, note: true, student: { select: { id: true, firstName: true, lastName: true, sectionId: true } } },
-    }),
+  const [notices, anns, events, students, pendingReports, newApplicants, unreadOffice] = await Promise.all([
     prisma.absenceNotice.findMany({
       where: { dateFrom: { lte: today }, dateTo: { gte: today }, student: { sectionId: { in: sectionIds }, status: "ACTIVE" } },
       include: { student: { select: { id: true, firstName: true, lastName: true, section: { include: { grade: true } } } } },
@@ -53,7 +49,6 @@ export default async function StaffHome() {
     office
       ? prisma.student.findMany({ where: { sectionId: { in: sectionIds }, status: "ACTIVE" }, include: { section: { include: { grade: true } }, guardians: { where: { isPrimary: true }, include: { user: true } } } })
       : Promise.resolve([]),
-    role === "ADMIN" ? prisma.reminderLog.findMany({ where: { day: today, kind: { startsWith: "lista-" } }, select: { kind: true } }) : Promise.resolve([]),
     office ? prisma.paymentReport.count({ where: { status: "PENDING", student: { section: { schoolYear: { schoolId: user.schoolId } } } } }) : Promise.resolve(0),
     office ? prisma.applicant.count({ where: { schoolId: user.schoolId, status: "NEW" } }) : Promise.resolve(0),
     role === "STAFF" && user.school.messagingEnabled ? unreadConversations(user) : Promise.resolve(0),
@@ -79,55 +74,11 @@ export default async function StaffHome() {
   }
 
   const vapid = await vapidPublicKey();
-  const remindedSet = new Set(reminded.map((r) => r.kind.slice("lista-".length)));
-  const absentToday = attendance.filter((a) => a.status === "ABSENT" || a.status === "LATE" || a.status === "EXCUSED");
-  const missingLists = schoolDay ? sections.filter((s) => s._count.students > 0 && !attendance.some((a) => a.student.sectionId === s.id)) : [];
 
   /* ---------- Bloques ---------- */
 
-  const supervision = (
-    <section>
-      <SectionHeading
-        title="Asistencia de hoy"
-        action={
-          <span className="text-sm text-ink-2">
-            {!schoolDay ? "Sin lecciones" : missingLists.length ? `Faltan ${missingLists.length} de ${sections.length}` : "Todas al día"}
-          </span>
-        }
-      />
-      <Card className="divide-y divide-line">
-        {sections.map((s) => {
-          const rows = attendance.filter((a) => a.student.sectionId === s.id);
-          const present = rows.filter((r) => r.status === "PRESENT" || r.status === "LATE").length;
-          const taken = rows.length > 0;
-          const teacher = s.teacher?.name.split(" ")[0];
-          return (
-            <div key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3">
-              <div className="min-w-0 flex-1">
-                <SectionChip color={s.color} label={gradeSectionName(s)} />
-                <p className="mt-1 text-xs text-ink-2">{s.teacher ? s.teacher.name.split(" ").slice(0, 2).join(" ") : "Sin docente asignada"}</p>
-              </div>
-              {!schoolDay ? (
-                <Badge>Sin lecciones</Badge>
-              ) : taken ? (
-                <span className="tabular text-sm text-ink-2">
-                  <span className="font-semibold text-ink">{present}</span>/{s._count.students} presentes
-                </span>
-              ) : (
-                <div className="flex flex-col items-end gap-1">
-                  <Badge tone="warn" className="whitespace-nowrap">Falta pasar lista</Badge>
-                  {teacher && <RemindButton sectionId={s.id} teacher={teacher} sent={remindedSet.has(s.id)} />}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </Card>
-    </section>
-  );
-
   const absences = (title: string) =>
-    (absentToday.length > 0 || notices.length > 0) && (
+    notices.length > 0 && (
       <section>
         <SectionHeading title={title} />
         <Card tone="flat" className="divide-y divide-line">
@@ -142,20 +93,6 @@ export default async function StaffHome() {
               </span>
             </Link>
           ))}
-          {role === "ADMIN" &&
-            absentToday
-              .filter((a) => !notices.some((n) => n.student.id === a.student.id))
-              .map((a) => (
-                <Link key={a.student.id} href={`/escuela/alumnos/${a.student.id}`} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm transition-colors hover:bg-canvas">
-                  <span className="font-medium">
-                    {a.student.firstName} {a.student.lastName}
-                  </span>
-                  <span className={a.status === "ABSENT" ? "text-danger" : a.status === "LATE" ? "text-warn" : "text-ink-2"}>
-                    {a.status === "ABSENT" ? "Ausente sin aviso" : a.status === "LATE" ? "Llegó tarde" : "Justificada"}
-                    {a.note ? ` · ${a.note}` : ""}
-                  </span>
-                </Link>
-              ))}
         </Card>
       </section>
     );
@@ -263,7 +200,7 @@ export default async function StaffHome() {
   const upcoming = (
     <section>
       <SectionHeading
-        title="Próximos eventos"
+        title="Próximamente"
         action={
           <Link href="/escuela/calendario" className="tap text-sm font-medium text-brand hover:underline">
             Calendario
@@ -310,18 +247,16 @@ export default async function StaffHome() {
       <div className="grid gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="min-w-0 space-y-8">
           {role === "TEACHER" && <TeacherToday user={user} sections={sections} schoolDay={schoolDay} />}
-          {role === "ADMIN" && supervision}
-          {role === "ADMIN" && absences("Ausencias de hoy")}
+          {role === "ADMIN" && <DirectorToday user={user} sections={sections} schoolDay={schoolDay} />}
           {role === "STAFF" && officeTasks}
           {role === "STAFF" && absences("Ausencias avisadas por las familias")}
           <PushPrompt vapidKey={vapid} />
-          {notifications}
+          {role !== "ADMIN" && notifications}
         </div>
 
         <div className="min-w-0 space-y-8">
-          {role === "ADMIN" && officeTasks}
-          {office && overdue}
           {upcoming}
+          {office && overdue}
         </div>
       </div>
       <DemoNotice className="mt-10" />
