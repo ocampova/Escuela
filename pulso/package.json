@@ -6,6 +6,7 @@
   "type": "module",
   "engines": { "node": "22.x" },
   "scripts": {
+    "build": "node --check server.js && node --check public/js/app.js",
     "start": "node --no-warnings=ExperimentalWarning server.js",
     "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js",
     "e2e": "node --no-warnings=ExperimentalWarning test/e2e.mjs"
