@@ -17,7 +17,7 @@ const PUBLIC = path.join(__dirname, 'public');
 const MAX_BODY = 2 * 1024 * 1024;
 const SESSION_DAYS = 30;
 
-export function createApp({ dbPath = process.env.PULSO_DB || path.join(__dirname, 'data', 'pulso.db'), secureCookies = process.env.PULSO_SECURE_COOKIES === '1' } = {}) {
+export function createApp({ dbPath = process.env.PULSO_DB || path.join(__dirname, 'data', 'pulso.db'), secureCookies = process.env.PULSO_SECURE_COOKIES === '1', trustProxy = process.env.PULSO_TRUST_PROXY === '1' } = {}) {
   if (dbPath !== ':memory:') fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec(`
@@ -138,6 +138,10 @@ export function createApp({ dbPath = process.env.PULSO_DB || path.join(__dirname
       if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, { error: 'Origen no permitido.' });
     }
 
+    if (p === '/api/health' && method === 'GET') {
+      db.prepare('SELECT 1').get();
+      return send(res, 200, { ok: true });
+    }
     if (p === '/api/auth/register' && method === 'POST') {
       const b = await body(req);
       const email = String(b.email || '').trim().toLowerCase();
@@ -152,7 +156,9 @@ export function createApp({ dbPath = process.env.PULSO_DB || path.join(__dirname
     if (p === '/api/auth/login' && method === 'POST') {
       const b = await body(req);
       const email = String(b.email || '').trim().toLowerCase();
-      const key = `${req.socket.remoteAddress}|${email}`;
+      // Detrás de un proxy (Railway), la IP real llega en X-Forwarded-For.
+      const ip = trustProxy ? String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress : req.socket.remoteAddress;
+      const key = `${ip}|${email}`;
       const att = loginAttempts.get(key);
       if (att && att.count >= 8 && att.until > Date.now()) {
         return send(res, 429, { error: 'Demasiados intentos. Esperá 15 minutos e intentá de nuevo.' });

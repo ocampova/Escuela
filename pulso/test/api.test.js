@@ -184,3 +184,9 @@ test('archivos estáticos y cabeceras de seguridad', async () => {
   assert.ok([403, 404].includes((await fetch(base + '/..%2f..%2fserver.js')).status));
   assert.equal((await fetch(base + '/js/data.js')).status, 200);
 });
+
+test('endpoint de salud para el hosting', async () => {
+  const r = await fetch(base + '/api/health');
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { ok: true });
+});

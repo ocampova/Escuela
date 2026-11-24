@@ -4,7 +4,7 @@
   "private": true,
   "description": "Pulso: alimentación, compras y seguimiento de peso y presión arterial (mobile web, español).",
   "type": "module",
-  "engines": { "node": ">=22.5" },
+  "engines": { "node": "22.x" },
   "scripts": {
     "start": "node --no-warnings=ExperimentalWarning server.js",
     "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js",
