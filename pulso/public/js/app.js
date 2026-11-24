@@ -15,7 +15,7 @@ import { GOALS, ROUTE, routeWeek, activeHabits, coachAdvice, weeklyReview, bpWee
 const $ = (sel, el = document) => el.querySelector(sel);
 const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const icon = (name, cls = '') => `<svg class="i ${cls}" aria-hidden="true" focusable="false"><use href="/icons.svg#i-${name}"></use></svg>`;
+const icon = (name, cls = '') => `<svg class="i ${cls}" aria-hidden="true" focusable="false"><use href="#i-${name}"></use></svg>`;
 const mealLabel = (id) => MEALS.find((m) => m.id === id)?.label || id;
 const MEAL_ICON = { desayuno: 'sun', almuerzo: 'salad', cena: 'moon' };
 const fmt = (n, d = 1) => formatNumber(Number(n), d);
@@ -558,7 +558,13 @@ function viewToday() {
   if (ms.list) {
     const c = coachState();
     const habits = activeHabits(week);
-    const adh = habitAdherence(S.measurements, habits, new Date(), 7);
+    const windowDays = Math.min(7, c.daysInWeek + 1);
+    const adh = habitAdherence(S.measurements, habits, new Date(), windowDays);
+    const todayDone = habits.filter((h) => todayHabitRecord()?.data.items?.[h.id]).length;
+    const h = new Date().getHours();
+    const showBp = c.goals.includes('presion') || week === 1 || week === 12;
+    const bpSlot = h < 12 ? 'de la mañana' : h >= 17 ? 'de la noche' : '';
+    const nextActions = c.actions.filter((a) => !(showBp && a.id === 'bp-week'));
     coachBlock = `
     ${latestAlertBanner()}
     <section class="focus" aria-labelledby="h-focus">
@@ -566,44 +572,50 @@ function viewToday() {
       <h2 id="h-focus">${esc(rw.title)}</h2>
       <p>${esc(rw.why)}</p>
       ${routeProgressBar(week)}
-      ${c.canAdvance ? `<div class="actions" style="margin-top:14px"><a class="btn sm light" href="#/revision">${icon('flag', 'sm')}Revisar la semana y avanzar</a></div>` : `<p class="focus-meta">Día ${Math.min(7, c.daysInWeek + 1)} de esta etapa${habits.length && adh.daysLogged ? ` · hábitos cumplidos ${adh.total}% en 7 días` : ''}</p>`}
+      ${c.canAdvance ? `<div class="actions" style="margin-top:14px"><a class="btn sm light" href="#/revision">${icon('flag', 'sm')}Revisar la semana y avanzar</a></div>` : `<p class="focus-meta">Día ${windowDays} de esta etapa${habits.length && adh.daysLogged >= 3 ? `. Cumpliste tus hábitos el ${adh.total}% de estos días.` : ''}</p>`}
     </section>
+    ${showBp ? `<a class="bp-cta" href="#/registrar/bp">${icon('heart-pulse')}<span class="grow"><strong>Registrar presión${bpSlot ? ` ${bpSlot}` : ''}</strong><span class="sub">${c.bpWeek.done ? 'Tu semana de medición está completa.' : `Semana de medición: ${c.bpWeek.completeDays} de 7 días con mañana y noche.`}</span></span>${icon('chevron-right', 'chev')}</a>` : ''}
 
     <section class="section" aria-labelledby="h-check">
-      <div class="section-head"><h2 id="h-check">${week === 1 ? 'Tu punto de partida' : 'Tu checklist de hoy'}</h2>${week > 1 ? `<span class="muted small">${Object.values(todayHabitRecord()?.data.items || {}).filter(Boolean).length ? '' : 'Tocá para marcar'}</span>` : ''}</div>
+      <div class="section-head"><h2 id="h-check">${week === 1 ? 'Tu punto de partida' : 'Tu checklist de hoy'}</h2>${week > 1 ? `<span class="muted small" id="today-count">${todayDone} de ${habits.length}</span>` : ''}</div>
       ${week === 1 ? baselineChecklist(c) : habitChecklist(week)}
     </section>
 
-    ${c.actions.length ? `<section class="section" aria-labelledby="h-next"><h2 id="h-next">Tu próximo paso</h2>
-      <div class="stack">${c.actions.map((a) => `<div class="card next">${icon(a.id.startsWith('bp') ? 'heart-pulse' : a.id.startsWith('weight') ? 'scale' : a.id.startsWith('labs') ? 'droplet' : a.id === 'strength' ? 'dumbbell' : 'footprints')}
+    ${nextActions.length ? `<section class="section" aria-labelledby="h-next"><h2 id="h-next">Tu próximo paso</h2>
+      <div class="stack">${nextActions.slice(0, 1).map((a) => `<div class="card next">${icon(a.id.startsWith('bp') ? 'heart-pulse' : a.id.startsWith('weight') ? 'scale' : a.id.startsWith('labs') ? 'droplet' : a.id === 'strength' ? 'dumbbell' : 'footprints')}
         <div class="grow"><p class="title">${esc(a.title)}</p><p class="small muted">${esc(a.detail)}</p><a class="btn sm secondary" href="${a.href}" style="margin-top:10px">${esc(a.cta)}</a></div></div>`).join('')}</div></section>` : ''}
 
-    ${c.insights.length ? `<section class="section" aria-labelledby="h-ins"><h2 id="h-ins">Lo que muestran tus datos</h2>
-      <div class="stack">${c.insights.slice(0, 3).map((i) => `<div class="banner ${i.tone === 'warn' ? 'warn' : i.tone === 'ok' ? 'ok' : 'info'}">${icon(i.tone === 'ok' ? 'trophy' : 'info')}<div><p><strong>${esc(i.title)}</strong></p><p>${esc(i.detail)}</p></div></div>`).join('')}</div></section>` : ''}`;
+    ${c.insights.length || nextActions.length > 1 ? `<section class="section"><a class="data-link" href="#/progreso" data-ptab-link="general">${icon('chart-line')}<span class="grow"><strong>Lo que muestran tus datos</strong><br>${c.insights.length ? `${c.insights.length} ${c.insights.length === 1 ? 'observación' : 'observaciones'} del coach` : 'Ver tu progreso'}</span>${icon('chevron-right', 'chev')}</a></section>` : ''}`;
   }
   const html = `
     <div class="page-head"><h1>${hello}${p.name ? `, ${esc(p.name)}` : ''}</h1><p class="muted">${formatDateLong(todayIso())}</p></div>
+    ${weekBanner()}
     ${coachBlock}
     <section class="section" aria-labelledby="h-meals">
       <div class="section-head"><h2 id="h-meals">Comidas de hoy</h2><a class="btn ghost sm" href="#/alimentacion">Menú ${icon('chevron-right', 'sm')}</a></div>
       <ul class="list">${MEALS.map((m) => {
         const r = recipeById(plan.menu[idx]?.[m.id]);
         const done = !!plan.done[`${addDays(plan.weekStart, idx)}:${m.id}`];
-        return `<li class="list-item"><span class="swatch ${m.id}" style="width:40px;height:40px">${icon(MEAL_ICON[m.id], 'sm')}</span>
+        return `<li class="list-item meal-row"><span class="swatch ${m.id}" style="width:40px;height:40px">${icon(MEAL_ICON[m.id], 'sm')}</span>
           <a class="grow" href="${r ? `#/receta/${r.id}?d=${idx}&m=${m.id}` : '#/alimentacion'}" style="color:inherit;text-decoration:none"><span class="sub">${mealLabel(m.id)} · ${esc(p.mealTimes?.[m.id] || '')}</span><br><span class="title">${r ? esc(r.name) : 'Sin receta'}</span></a>
-          <button class="icon-btn check-btn" type="button" data-act="done" data-day="${idx}" data-meal="${m.id}" aria-pressed="${done}" aria-label="${done ? 'Hecha' : 'Marcar hecha'}: ${mealLabel(m.id)}">${icon('check')}</button></li>`;
+          <button class="tick-btn" type="button" data-act="done" data-day="${idx}" data-meal="${m.id}" aria-pressed="${done}" aria-label="${done ? 'Hecha' : 'Marcar hecha'}: ${mealLabel(m.id)}"><span class="tick ${done ? 'on' : ''}">${done ? icon('check', 'sm') : ''}</span></button></li>`;
       }).join('')}</ul>
     </section>
     <section class="section" aria-labelledby="h-reg">
       <h2 id="h-reg">Registrar</h2>
-      <div class="quick">
-        <a href="#/registrar/bp">${icon('heart-pulse')}Presión</a>
-        <a href="#/registrar/weight">${icon('scale')}Peso</a>
+      <div class="quick two">
         <a href="#/registrar/activity">${icon('footprints')}Actividad</a>
-        <a href="#/registrar/sleep">${icon('moon')}Sueño</a>
-        <a href="#/registrar/lab">${icon('droplet')}Examen</a>
-        <a href="#/registrar/waist">${icon('ruler')}Cintura</a>
+        <a href="#/registrar/weight">${icon('scale')}Peso</a>
       </div>
+      <details class="more" style="margin-top:8px"><summary>Más registros</summary>
+        <div class="quick" style="margin-top:6px">
+          <a href="#/registrar/bp">${icon('heart-pulse')}Presión</a>
+          <a href="#/registrar/sleep">${icon('moon')}Sueño</a>
+          <a href="#/registrar/lab">${icon('droplet')}Examen</a>
+          <a href="#/registrar/waist">${icon('ruler')}Cintura</a>
+          <a href="#/registrar/habit">${icon('list')}Hábitos de otro día</a>
+        </div>
+      </details>
     </section>
     <section class="section"><a class="list-item card" href="#/emergencia" style="color:var(--alert-ink)">${icon('phone')}<span class="grow"><span class="title">Tengo síntomas ahora</span><br><span class="sub">Dolor de pecho, falta de aire, desmayo o síntomas neurológicos</span></span>${icon('chevron-right', 'chev')}</a></section>`;
   return {
@@ -614,6 +626,7 @@ function viewToday() {
         b.setAttribute('aria-pressed', on);
         b.querySelector('.tick').classList.toggle('on', on);
         b.querySelector('.tick').innerHTML = on ? icon('check', 'sm') : '';
+        const cnt = $('#today-count'); if (cnt) cnt.textContent = `${$$('[data-habit][aria-pressed=true]').length} de ${$$('[data-habit]').length}`;
         toggleHabit(b.dataset.habit, on);
       });
     },
@@ -651,6 +664,8 @@ function viewRoute([nRaw]) {
 function bindRouteJump() {
   $$('[data-go-week]').forEach((b) => b.onclick = () => {
     const week = Number(b.dataset.goWeek);
+    const cur = S.plan.data.coach?.week || 1;
+    if (week > cur + 1 && b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = `Saltar ${week - cur} semanas: tocá de nuevo`; return; }
     S.plan.data.coach = { week, since: todayIso() };
     planOps([{ type: 'setCoachWeek', week, since: todayIso() }], { okMsg: `Empezaste la semana ${week}: ${routeWeek(week).title}.`, rerender: false }).then(() => go('#/hoy'));
   });
@@ -678,7 +693,7 @@ function viewReview() {
       <div class="metric"><div class="k">Fuerza</div><div class="v">${r.act.strengthDays} días</div><div class="d">meta 2 por semana</div></div>
     </div></section>
     ${r.hardest ? `<section class="section"><div class="banner warn">${icon('target')}<div><p><strong>Lo que más costó: ${esc(r.hardest.label.toLowerCase())}</strong></p><p>Antes de sumar algo nuevo, podés quedarte otra semana en esta etapa. Elegí un momento fijo del día para este hábito.</p></div></div></section>` : ''}
-    <div class="thumb-bar no-print">
+    <div class="end-actions no-print">
       <a class="btn secondary" href="#/hoy">Seguir aquí</a>
       ${next ? `<button class="btn" type="button" data-go-week="${next.n}">Ir a semana ${next.n}</button>` : '<a class="btn" href="#/resumen">Resumen para tu médico</a>'}
     </div>`;
@@ -763,7 +778,7 @@ function viewFood() {
         </div>
       </section>
       <section class="section"><h2>Preparación del fin de semana</h2>${batchPlan()}</section>
-      <div class="thumb-bar no-print"><a class="btn" href="#/compras">${icon('shopping-cart')}Lista de compras</a></div>`;
+`;
   } else {
     const f = S.ui.recipeFilter;
     const allergies = S.profile.data.allergies;
@@ -914,7 +929,11 @@ function viewShopping() {
         S.plan.data.adults = v; render();
         planOps([{ type: 'setAdults', value: v }], { okMsg: `Cantidades para ${v} ${v === 1 ? 'adulto' : 'adultos'}.` });
       });
-      $('[data-act=clear-bought]')?.addEventListener('click', () => { S.plan.data.bought = {}; render(); planOps([{ type: 'clearBought' }]); });
+      $('[data-act=clear-bought]')?.addEventListener('click', () => {
+        const prev = { ...S.plan.data.bought };
+        S.plan.data.bought = {}; render();
+        planOps([{ type: 'clearBought' }], { rerender: false }).then(() => toast('Lista desmarcada.', 'ok', { label: 'Deshacer', run: () => { S.plan.data.bought = prev; render(); planOps(Object.keys(prev).map((id) => ({ type: 'setBought', id, value: true }))); } }));
+      });
       const text = () => shoppingText(shoppingList(S.plan.data), S.plan.data.adults, S.plan.data.weekStart);
       $('[data-act=share-list]').onclick = async () => {
         if (navigator.share) { try { await navigator.share({ title: 'Lista de compras', text: text() }); return; } catch (e) { if (e.name === 'AbortError') return; } }
@@ -938,7 +957,7 @@ function downloadBlob(content, filename, type) {
 // GRÁFICOS (SVG propio, con tooltip táctil)
 // ---------------------------------------------------------------------------
 const CHART = { w: 340, h: 180, l: 40, r: 12, t: 14, b: 26 };
-function lineChart({ id, series, unit, target, label }) {
+function lineChart({ id, series, unit, target, label, refLines }) {
   const pts = series.flatMap((s) => s.points);
   if (!pts.length) return '';
   const xs = pts.map((p) => p.t);
@@ -951,9 +970,14 @@ function lineChart({ id, series, unit, target, label }) {
   const { w, h, l, r, t, b } = CHART;
   const X = (v) => l + ((v - x0) / (x1 - x0)) * (w - l - r);
   const Y = (v) => t + (1 - (v - y0) / (y1 - y0)) * (h - t - b);
-  const ticks = 4;
-  const grid = Array.from({ length: ticks + 1 }, (_, i) => y0 + ((y1 - y0) * i) / ticks);
-  const fmtY = (v) => unit === 'mmHg' ? Math.round(v) : fmt(v, (y1 - y0) < 5 ? 1 : 0);
+  // Marcas del eje en valores redondos (múltiplos de 1, 2, 5, 10, 20…).
+  const raw = (y1 - y0) / 4;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const stepY = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((v) => v >= raw) || 10 * mag;
+  y0 = Math.floor(y0 / stepY) * stepY; y1 = Math.ceil(y1 / stepY) * stepY;
+  const grid = []; for (let v = y0; v <= y1 + 1e-9; v += stepY) grid.push(Math.round(v * 100) / 100);
+  const fmtY = (v) => fmt(v, stepY < 1 ? 1 : 0);
+  const refs = (refLines || []).filter((r) => r.v > y0 && r.v < y1);
   const dateTicks = [x0, (x0 + x1) / 2, x1].map((v) => ({ v, s: formatDateShort(isoDate(new Date(v))) }));
   const data = series.map((s) => ({ label: s.label, color: s.color, points: s.points.map((p) => ({ x: X(p.t), y: Y(p.y), v: p.y, d: p.d })) }));
   return `
@@ -962,8 +986,9 @@ function lineChart({ id, series, unit, target, label }) {
       <g class="grid">${grid.map((v) => `<line x1="${l}" x2="${w - r}" y1="${Y(v)}" y2="${Y(v)}"/>`).join('')}</g>
       <g class="axis">${grid.map((v) => `<text x="${l - 6}" y="${Y(v) + 4}" text-anchor="end">${fmtY(v)}</text>`).join('')}
         ${dateTicks.map((d, i) => `<text x="${X(d.v)}" y="${h - 6}" text-anchor="${i === 0 ? 'start' : i === 2 ? 'end' : 'middle'}">${d.s}</text>`).join('')}</g>
+      ${refs.map((rl) => `<line x1="${l}" x2="${w - r}" y1="${Y(rl.v)}" y2="${Y(rl.v)}" stroke="#9AA59E" stroke-width="1" stroke-dasharray="2 3"/><text class="ref" x="${l + 4}" y="${Y(rl.v) - 4}" text-anchor="start">${esc(rl.label)}</text>`).join('')}
       ${target != null ? `<line x1="${l}" x2="${w - r}" y1="${Y(target)}" y2="${Y(target)}" stroke="#5F6A64" stroke-width="1.5" stroke-dasharray="4 3"/>` : ''}
-      ${data.map((s) => `<polyline fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${s.points.map((p) => `${p.x},${p.y}`).join(' ')}"/>
+      ${data.map((s, si) => `<polyline fill="none" stroke="${s.color}" stroke-width="2" ${series[si].dashed ? 'stroke-dasharray="5 3"' : ''} stroke-linejoin="round" stroke-linecap="round" points="${s.points.map((p) => `${p.x},${p.y}`).join(' ')}"/>
         ${s.points.map((p) => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${s.color}" stroke="#fff" stroke-width="2"/>`).join('')}`).join('')}
       <line class="cross" x1="0" x2="0" y1="${t}" y2="${h - b}" stroke="#48534D" stroke-width="1" opacity="0"/>
     </svg>
@@ -1040,8 +1065,8 @@ function viewProgress() {
         </div>` : ''}
         <section class="section">
           <div class="section-head"><h2>Peso</h2><a class="btn sm" href="#/registrar/weight">${icon('plus', 'sm')}Registrar</a></div>
-          ${w.length ? `<div class="card">${lineChart({ id: 'w', series: [{ label: 'Peso', color: '#1E4D3B', points: toPoints(w, (x) => x.data.kg) }], unit: 'kg', target: m?.target, label: `Gráfico de peso con ${w.length} mediciones` })}
-            <div class="legend"><span><i style="background:#1E4D3B"></i>Peso</span>${m ? '<span><i class="dash"></i>Primer hito</span>' : ''}</div>
+          ${w.length ? `<div class="card">${lineChart({ id: 'w', series: [{ label: 'Peso', color: '#1F7A55', points: toPoints(w, (x) => x.data.kg) }], unit: 'kg', target: m?.target, label: `Gráfico de peso con ${w.length} mediciones` })}
+            <div class="legend"><span><i style="background:#1F7A55"></i>Peso</span>${m ? '<span><i class="dash"></i>Primer hito</span>' : ''}</div>
             <hr class="divider">${statsLine(s30, 'kg')}<p class="tiny muted">Últimos 30 días. Desde el inicio: ${sAll.count} mediciones.</p>
             ${p.height && last ? `<p class="tiny muted" style="margin-top:4px">IMC con tu último peso: ${fmt(bmi(last, p.height))} kg/m². Es una referencia general; no mide la composición corporal.</p>` : ''}</div>
             ${historyList(w, (x) => `${fmt(x.data.kg)} kg`)}`
@@ -1051,25 +1076,25 @@ function viewProgress() {
       const c = byType('waist');
       const items = c.map((x) => ({ measured_at: x.measured_at, value: x.data.cm }));
       body = `<div class="section-head"><h2>Cintura</h2><a class="btn sm" href="#/registrar/waist">${icon('plus', 'sm')}Registrar</a></div>
-        ${c.length ? `<div class="card">${lineChart({ series: [{ label: 'Cintura', color: '#1E4D3B', points: toPoints(c, (x) => x.data.cm) }], unit: 'cm', label: `Gráfico de cintura con ${c.length} mediciones` })}<hr class="divider">${statsLine(stats(items), 'cm')}</div>${historyList(c, (x) => `${fmt(x.data.cm)} cm`)}`
+        ${c.length ? `<div class="card">${lineChart({ series: [{ label: 'Cintura', color: '#1F7A55', points: toPoints(c, (x) => x.data.cm) }], unit: 'cm', label: `Gráfico de cintura con ${c.length} mediciones` })}<hr class="divider">${statsLine(stats(items), 'cm')}</div>${historyList(c, (x) => `${fmt(x.data.cm)} cm`)}`
         : emptyState('ruler', 'Sin medidas de cintura', 'Medí a la altura del ombligo, de pie, al final de una exhalación normal, sin apretar la cinta.', '#/registrar/waist', 'Registrar cintura')}`;
     } else if (tab === 'sueno') {
       const sl = byType('sleep');
       const items = sl.map((x) => ({ measured_at: x.measured_at, value: x.data.hours }));
       body = `<div class="section-head"><h2>Sueño</h2><a class="btn sm" href="#/registrar/sleep">${icon('plus', 'sm')}Registrar</a></div>
-        ${sl.length ? `<div class="card">${lineChart({ series: [{ label: 'Horas', color: '#4A4680', points: toPoints(sl, (x) => x.data.hours) }], unit: 'h', label: `Gráfico de horas de sueño con ${sl.length} registros` })}<hr class="divider">${statsLine(stats(items, 7), 'horas')}<p class="tiny muted">Últimos 7 días.</p></div>${historyList(sl, (x) => `${fmt(x.data.hours)} h${x.data.quality ? ` · calidad ${x.data.quality}/5` : ''}`)}`
+        ${sl.length ? `<div class="card">${lineChart({ series: [{ label: 'Horas', color: '#8A63C8', points: toPoints(sl, (x) => x.data.hours) }], unit: 'h', label: `Gráfico de horas de sueño con ${sl.length} registros` })}<hr class="divider">${statsLine(stats(items, 7), 'horas')}<p class="tiny muted">Últimos 7 días.</p></div>${historyList(sl, (x) => `${fmt(x.data.hours)} h${x.data.quality ? ` · calidad ${x.data.quality}/5` : ''}`)}`
         : emptyState('moon', 'Sin registros de sueño', 'Anotá cuántas horas dormiste anoche. Dormir bien también influye en el apetito y la presión.', '#/registrar/sleep', 'Registrar sueño')}`;
     } else {
       const hb = byType('habit');
       const HAB = activeHabits(S.plan.data.coach?.week || 1).length ? activeHabits(S.plan.data.coach?.week || 1) : HABITS.filter((h) => !h.legacy);
       body = `<div class="section-head"><h2>Hábitos</h2><a class="btn sm" href="#/registrar/habit">${icon('plus', 'sm')}Registrar hoy</a></div>
-        ${hb.length ? `<div class="card"><p>${HAB.map((h) => { const n = hb.slice(0, 7).filter((x) => x.data.items[h.id]).length; return `<span class="row spread" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(h.label)}</span><strong>${n}/${Math.min(7, hb.length)}</strong></span>`; }).join('')}</p><p class="tiny muted" style="margin-top:8px">Últimos ${Math.min(7, hb.length)} días registrados.</p></div>${historyList(hb, (x) => `${HAB.filter((h) => x.data.items[h.id]).length} de ${HAB.length} hábitos`)}`
-        : emptyState('list', 'Sin hábitos registrados', 'Cinco preguntas simples al final del día. No se trata de ser perfecto: sirve para ver qué te ayuda.', '#/registrar/habit', 'Registrar hábitos')}`;
+        ${hb.length ? `<div class="card"><p>${HAB.map((h) => { const n = habitAdherence(S.measurements, [h], new Date(), 7).byHabit[h.id].done; return `<span class="row spread" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(h.label)}</span><strong>${n}/7</strong></span>`; }).join('')}</p><p class="tiny muted" style="margin-top:8px">Últimos 7 días (hoy incluido).</p></div>${historyList(hb, (x) => `${HAB.filter((h) => x.data.items[h.id]).length} de ${HAB.length} hábitos`)}`
+        : emptyState('list', 'Sin hábitos registrados', 'Unas pocas preguntas al final del día. No se trata de ser perfecto: sirve para ver qué te ayuda.', '#/registrar/habit', 'Registrar hábitos')}`;
     }
   }
   const html = `
     <div class="page-head"><h1>Progreso</h1><p class="muted">Solo con tus registros reales.</p></div>
-    <div class="seg" role="group" aria-label="Indicador">${tabs.map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>
+    <div class="seg grid3" role="group" aria-label="Indicador">${tabs.map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>
     <div style="margin-top:18px">${body}</div>`;
   return { title: 'Progreso', html, bind: () => { bindMealActions(); $$('[data-ptab]').forEach((b) => b.onclick = () => { S.ui.progressTab = b.dataset.ptab; render(); }); } };
 }
@@ -1087,7 +1112,7 @@ function progressOverview() {
     const t = weightTrend(S.measurements, now);
     const last = w[0]?.data.kg;
     const lost = last != null && p.initialWeight ? Math.round((p.initialWeight - last) * 10) / 10 : null;
-    cards.push(`<div class="card goal"><div class="row spread"><h3>${icon('scale', 'sm')} Peso</h3><a class="btn ghost sm" href="#/registrar/weight">${icon('plus', 'sm')}Registrar</a></div>
+    cards.push(`<div class="card goal"><div class="row spread"><h2 class="h3">${icon('scale', 'sm')} Peso</h2><a class="btn ghost sm" href="#/registrar/weight">${icon('plus', 'sm')}Registrar</a></div>
       ${last != null ? `<p class="big">${fmt(last)} kg</p><p class="small muted">Inicio declarado ${fmt(p.initialWeight)} kg${lost != null ? ` · ${lost > 0 ? '−' : '+'}${fmt(Math.abs(lost))} kg` : ''}${t ? ` · tendencia ${t.perWeek > 0 ? '+' : ''}${fmt(t.perWeek, 2)} kg/semana` : ''}</p>
       ${m ? `<div class="progress-track" role="progressbar" aria-label="Avance hacia el primer hito" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.max(0, Math.min(1, (lost || 0) / m.loss)) * 100)}"><div class="progress-fill" style="width:${Math.max(0, Math.min(1, (lost || 0) / m.loss)) * 100}%"></div></div><p class="tiny muted" style="margin-top:6px">Primer hito: ${fmt(m.target)} kg (−${fmt(m.pct)}%)</p>` : ''}`
         : '<p class="muted small">Sin registros de peso todavía.</p>'}</div>`);
@@ -1095,9 +1120,10 @@ function progressOverview() {
   if (goals.includes('presion')) {
     const bp = [...byType('bp')].reverse();
     const first = bp.slice(0, 14);
-    const recent = byType('bp').filter((m) => (now - parseLocal(m.measured_at)) / 86400000 < 7);
+    const s7 = stats(byType('bp').map((m) => ({ measured_at: m.measured_at, value: m.data.sys })), 7, now);
+    const recent = s7.count ? byType('bp').filter((m) => m.measured_at >= s7.from && m.measured_at <= s7.to) : [];
     const avg = (l, k) => Math.round(l.reduce((s, m) => s + m.data[k], 0) / l.length);
-    cards.push(`<div class="card goal"><div class="row spread"><h3>${icon('heart-pulse', 'sm')} Presión</h3><a class="btn ghost sm" href="#/salud">Ver ${icon('chevron-right', 'sm')}</a></div>
+    cards.push(`<div class="card goal"><div class="row spread"><h2 class="h3">${icon('heart-pulse', 'sm')} Presión</h2><a class="btn ghost sm" href="#/salud">Ver ${icon('chevron-right', 'sm')}</a></div>
       ${recent.length ? `<p class="big">${avg(recent, 'sys')}/${avg(recent, 'dia')} <span class="small muted">mmHg</span></p><p class="small muted">Promedio de ${recent.length} ${recent.length === 1 ? 'lectura' : 'lecturas'} en 7 días${bp.length >= 20 ? ` · al inicio ${avg(first, 'sys')}/${avg(first, 'dia')} (primeras ${first.length})` : ''}</p>`
         : `<p class="muted small">${bp.length ? 'Sin lecturas en los últimos 7 días.' : 'Sin lecturas todavía.'}</p>`}
       <p class="tiny muted" style="margin-top:6px">Semana de presión: ${c.bpWeek.completeDays}/7 días con mañana y noche.</p></div>`);
@@ -1107,7 +1133,7 @@ function progressOverview() {
     const a1c = labs.filter((m) => m.data.test === 'hba1c');
     const glu = labs.filter((m) => m.data.test === 'glucosa' && m.data.context === 'ayunas');
     const line = (list, name) => list.length ? `<p><strong>${name}:</strong> ${fmt(list[0].data.value, 2)} ${esc(list[0].data.unit)} <span class="muted small">(${formatDateShort(list[0].measured_at)} ${list[0].measured_at.slice(0, 4)})</span>${list.length > 1 ? `<br><span class="small muted">Primer registro: ${fmt(list.at(-1).data.value, 2)} ${esc(list.at(-1).data.unit)} (${formatDateShort(list.at(-1).measured_at)} ${list.at(-1).measured_at.slice(0, 4)})</span>` : ''}</p>` : '';
-    cards.push(`<div class="card goal"><div class="row spread"><h3>${icon('droplet', 'sm')} Resistencia a la insulina</h3><a class="btn ghost sm" href="#/registrar/lab">${icon('plus', 'sm')}Examen</a></div>
+    cards.push(`<div class="card goal"><div class="row spread"><h2 class="h3">${icon('droplet', 'sm')} Resistencia a la insulina</h2><a class="btn ghost sm" href="#/registrar/lab">${icon('plus', 'sm')}Examen</a></div>
       ${a1c.length || glu.length ? `<div class="stack small">${line(a1c, 'HbA1c')}${line(glu, 'Glucosa en ayunas')}</div>` : '<p class="muted small">Sin HbA1c ni glucosa en ayunas registradas. Son los indicadores para ver tu avance; consultá a tu médico si corresponde medirlos.</p>'}
       <p class="tiny muted" style="margin-top:8px">Esta semana: ${c.activity.postMeal} caminatas después de comer · ${c.activity.strengthDays} de 2 días de fuerza · ${c.activity.minutes} de 150 min.</p></div>`);
   }
@@ -1159,8 +1185,8 @@ function viewHealth() {
             <div class="metric"><div class="k">Promedio 7 días</div>${s7s.count ? `<div class="v">${Math.round(s7s.avg)}/${Math.round(s7d.avg)}</div><div class="d">${s7s.count} ${s7s.count === 1 ? 'medición' : 'mediciones'} · ${formatDateShort(s7s.from)}–${formatDateShort(s7s.to)}</div>` : '<div class="v muted">—</div><div class="d">Sin mediciones</div>'}</div>
             <div class="metric"><div class="k">Promedio 30 días</div>${s30s.count ? `<div class="v">${Math.round(s30s.avg)}/${Math.round(s30d.avg)}</div><div class="d">${s30s.count} ${s30s.count === 1 ? 'medición' : 'mediciones'} · ${formatDateShort(s30s.from)}–${formatDateShort(s30s.to)}</div>` : '<div class="v muted">—</div><div class="d">Sin mediciones</div>'}</div>
           </div>
-          ${lineChart({ series: [{ label: 'Sistólica', color: '#1E4D3B', points: toPoints(recent, (x) => x.data.sys) }, { label: 'Diastólica', color: '#B0651B', points: toPoints(recent, (x) => x.data.dia) }], unit: 'mmHg', label: `Gráfico de presión arterial con ${recent.length} mediciones` })}
-          <div class="legend"><span><i style="background:#1E4D3B"></i>Sistólica (número de arriba)</span><span><i style="background:#B0651B"></i>Diastólica (número de abajo)</span></div>
+          ${lineChart({ series: [{ label: 'Sistólica', color: '#1F7A55', points: toPoints(recent, (x) => x.data.sys) }, { label: 'Diastólica', color: '#8A63C8', dashed: true, points: toPoints(recent, (x) => x.data.dia) }], refLines: [{ v: 130, label: '130' }, { v: 80, label: '80' }], unit: 'mmHg', label: `Gráfico de presión arterial con ${recent.length} mediciones` })}
+          <div class="legend"><span><i style="background:#1F7A55"></i>Sistólica (número de arriba)</span><span><i class="dia"></i>Diastólica (número de abajo)</span><span><i class="dash"></i>Referencia 130/80</span></div>
           <p class="tiny muted" style="margin-top:8px">Un promedio de varios días dice más que una lectura aislada. Llevá estos datos a tu consulta.</p>
         </div>
         <h3 style="margin:20px 0 8px">Mediciones</h3>
@@ -1207,7 +1233,7 @@ function viewHealth() {
     <a class="list-item card" href="#/emergencia" style="color:var(--alert-ink);margin-bottom:16px">${icon('phone')}<span class="grow"><span class="title">Tengo síntomas ahora</span><br><span class="sub">Qué hacer y a quién llamar</span></span>${icon('chevron-right', 'chev')}</a>
     <div class="seg" role="group" aria-label="Tipo de registro"><button type="button" data-htab="presion" aria-pressed="${tab === 'presion'}">Presión</button><button type="button" data-htab="labs" aria-pressed="${tab === 'labs'}">Laboratorios</button></div>
     <div style="margin-top:18px">${body}</div>
-    <section class="section"><h2>Fuentes oficiales</h2><ul class="list">${SOURCES.slice(0, 10).map((s) => `<li class="list-item"><span class="grow"><span class="sub">${esc(s.org)}</span><br>${extLink(s)}</span></li>`).join('')}</ul></section>`;
+    <section class="section"><details class="more"><summary>Fuentes oficiales (${SOURCES.length - 1})</summary><ul class="list sources" style="margin-top:8px">${SOURCES.slice(0, 10).map((s) => `<li class="list-item"><span class="grow"><span class="sub">${esc(s.org)}</span><br>${extLink(s)}</span></li>`).join('')}</ul></details></section>`;
   return { title: 'Salud', html, bind: () => { bindMealActions(); $$('[data-htab]').forEach((b) => b.onclick = () => { S.ui.healthTab = b.dataset.htab; render(); }); } };
 }
 
@@ -1243,6 +1269,7 @@ const FORM_META = {
   activity: { title: 'Actividad física', back: '#/progreso', icon: 'footprints' },
 };
 const formDrafts = {};
+let draftReading = 0; // 1 o 2 durante una toma doble de presión
 
 function viewForm([type, id]) {
   const meta = FORM_META[type];
@@ -1253,6 +1280,7 @@ function viewForm([type, id]) {
   if (id && !existing) return { title: meta.title, html: `<a class="back" href="${meta.back}">${icon('chevron-left')}Volver</a>${emptyState('info', 'Ese registro ya no existe', 'Puede que lo hayas eliminado en otra ventana.', meta.back, 'Volver')}` };
   const key = `${type}:${id || 'new'}`;
   const now = new Date();
+  if (type !== 'bp' || id) draftReading = 0;
   const draft = formDrafts[key] || {
     measured_at: existing?.measured_at || isoLocal(now),
     data: existing ? structuredClone(existing.data) : defaultsFor(type),
@@ -1272,20 +1300,29 @@ function viewForm([type, id]) {
     <fieldset class="fieldset"><legend>Intensidad</legend><div class="checks">${Object.entries(INTENSITIES).map(([k, l]) => `<label class="check"><input type="radio" name="intensity" value="${k}" ${d.intensity === k ? 'checked' : ''}>${esc(l)}</label>`).join('')}</div></fieldset>
     <label class="check" style="margin-top:18px"><input type="checkbox" name="afterMeal" ${d.afterMeal ? 'checked' : ''}>Fue después de una comida</label>`;
   if (type === 'habit') fields = `<fieldset class="fieldset"><legend>Marcá lo que lograste ese día</legend><div class="checks">${HABITS.filter((h) => !h.legacy || d.items?.[h.id]).map((h) => `<label class="check"><input type="checkbox" name="h_${h.id}" ${d.items?.[h.id] ? 'checked' : ''}>${esc(h.label)}</label>`).join('')}</div><span class="hint">Lo que no marques no es una falla: es información para ajustar.</span></fieldset>`;
-  if (type === 'bp') fields = `
+  if (type === 'bp') {
+    const hasSym = d.hasSymptoms ?? (d.symptoms?.length ? true : null);
+    fields = `
+    ${!existing ? `<details class="more" style="margin:-6px 0 10px"><summary>Cómo medir bien</summary><ul class="bullets small" style="margin:4px 0 8px">
+      <li>Sentado, espalda apoyada, pies en el piso y brazo a la altura del corazón.</li><li>5 minutos de reposo, sin hablar. Sin café ni cigarro 30 minutos antes.</li><li>Tomá 2 lecturas con 1 minuto de diferencia.</li></ul></details>` : ''}
+    ${draftReading ? `<p class="reading-step" style="margin-bottom:10px">${icon('circle-check', 'sm')}Lectura ${draftReading} · ${draftReading === 2 ? 'esperá 1 minuto desde la anterior' : 'primera del momento'}</p>` : ''}
     <div class="grid-2">${numField('sys', 'Sistólica', d.sys, 'mmHg', { inputmode: 'numeric', error: e.sys, hint: 'Número de arriba' })}${numField('dia', 'Diastólica', d.dia, 'mmHg', { inputmode: 'numeric', error: e.dia, hint: 'Número de abajo' })}</div>
+    <div id="bp-live" aria-live="assertive"></div>
     ${numField('pulse', 'Pulso <span class="muted">(opcional)</span>', d.pulse, 'lpm', { inputmode: 'numeric', error: e.pulse })}
-    <fieldset class="fieldset"><legend>Brazo <span class="muted">(opcional)</span></legend><div class="chips">${['izquierdo', 'derecho'].map((a) => `<label class="chip"><input type="radio" name="arm" value="${a}" ${d.arm === a ? 'checked' : ''}>${a === 'izquierdo' ? 'Izquierdo' : 'Derecho'}</label>`).join('')}</div></fieldset>
-    <fieldset class="fieldset"><legend>Síntomas</legend>
-      <span class="hint" style="margin:-2px 0 10px">Señales de alarma:</span>
-      <div class="checks">${ALARM_SYMPTOMS.map((s) => `<label class="check alarm"><input type="checkbox" name="symptoms" value="${s.id}" ${d.symptoms?.includes(s.id) ? 'checked' : ''}>${esc(s.label)}</label>`).join('')}</div>
-      <span class="hint" style="margin:14px 0 10px">Otros:</span>
-      <div class="checks">${OTHER_SYMPTOMS.map((s) => `<label class="check"><input type="checkbox" name="symptoms" value="${s.id}" ${d.symptoms?.includes(s.id) ? 'checked' : ''}>${esc(s.label)}</label>`).join('')}</div>
-    </fieldset>
-    <fieldset class="fieldset" id="now-q" ${d.symptoms?.length ? '' : 'hidden'}><legend>¿Tenés estos síntomas en este momento?</legend>
-      <div class="chips"><label class="chip"><input type="radio" name="symptomsNow" value="1" ${d.symptomsNow ? 'checked' : ''}>Sí, ahora</label><label class="chip"><input type="radio" name="symptomsNow" value="0" ${d.symptomsNow === false ? 'checked' : ''}>No, ya pasaron</label></div>
-      <span class="hint">Así distinguimos un síntoma actual de un registro histórico.</span></fieldset>
-    <div id="bp-live"></div>`;
+    <fieldset class="fieldset"><legend>¿Tenés algún síntoma?</legend>
+      <div class="chips"><label class="chip"><input type="radio" name="hasSymptoms" value="0" ${hasSym === false ? 'checked' : ''}>No</label><label class="chip"><input type="radio" name="hasSymptoms" value="1" ${hasSym ? 'checked' : ''}>Sí</label></div></fieldset>
+    <div id="sym-box" ${hasSym ? '' : 'hidden'}>
+      <fieldset class="fieldset" style="margin-top:18px"><legend>Señales de alarma</legend>
+        <div class="checks">${ALARM_SYMPTOMS.map((s) => `<label class="check alarm"><input type="checkbox" name="symptoms" value="${s.id}" ${d.symptoms?.includes(s.id) ? 'checked' : ''}>${esc(s.label)}</label>`).join('')}</div></fieldset>
+      <details class="more" ${d.symptoms?.some((x) => OTHER_SYMPTOMS.some((o) => o.id === x)) ? 'open' : ''} style="margin-top:12px"><summary>Otros síntomas</summary>
+        <div class="checks">${OTHER_SYMPTOMS.map((s) => `<label class="check"><input type="checkbox" name="symptoms" value="${s.id}" ${d.symptoms?.includes(s.id) ? 'checked' : ''}>${esc(s.label)}</label>`).join('')}</div></details>
+      <fieldset class="fieldset" id="now-q" style="margin-top:18px" ${d.symptoms?.length ? '' : 'hidden'}><legend>¿Los tenés en este momento?</legend>
+        <div class="chips"><label class="chip"><input type="radio" name="symptomsNow" value="1" ${d.symptomsNow ? 'checked' : ''}>Sí, ahora</label><label class="chip"><input type="radio" name="symptomsNow" value="0" ${d.symptomsNow === false ? 'checked' : ''}>No, ya pasaron</label></div>
+        <span class="hint">Así distinguimos un síntoma actual de un registro histórico.</span></fieldset>
+    </div>
+    <details class="more" ${d.arm ? 'open' : ''} style="margin-top:12px"><summary>Brazo</summary>
+      <div class="chips">${['izquierdo', 'derecho'].map((a) => `<label class="chip"><input type="radio" name="arm" value="${a}" ${d.arm === a ? 'checked' : ''}>${a === 'izquierdo' ? 'Izquierdo' : 'Derecho'}</label>`).join('')}</div></details>`;
+  }
   if (type === 'lab') {
     const t = LAB_TESTS[d.test] || LAB_TESTS.glucosa;
     fields = `
@@ -1314,6 +1351,7 @@ function viewForm([type, id]) {
       <label class="field" style="margin-top:18px"><span class="label">Notas <span class="muted">(opcional)</span></span><textarea class="input" name="notes" maxlength="500">${esc(d.notes || '')}</textarea></label>
       <div id="form-error"></div>
       <div class="actions" style="margin-top:22px">
+        ${type === 'bp' && !existing ? `<button class="btn secondary block" type="submit" data-again="1">${icon('refresh-cw')}Guardar y tomar otra lectura</button>` : ''}
         <button class="btn block" type="submit">${icon('check')}${existing ? 'Guardar cambios' : 'Guardar'}</button>
         ${existing ? `<button class="btn ghost" type="button" data-act="delete" style="color:var(--alert-ink)">${icon('trash-2', 'sm')}Eliminar</button>` : ''}
       </div>
@@ -1321,7 +1359,7 @@ function viewForm([type, id]) {
   return { title: meta.title, html, bind: () => bindForm(type, id, existing, key) };
 }
 function defaultsFor(type) {
-  if (type === 'bp') return { symptoms: [], symptomsNow: null };
+  if (type === 'bp') return { symptoms: [], symptomsNow: null, hasSymptoms: null };
   if (type === 'lab') return { test: 'glucosa', unit: 'mg/dL', context: 'ayunas', source: 'laboratorio' };
   if (type === 'habit') return { items: {} };
   if (type === 'activity') return { kind: 'caminar', intensity: 'moderada', afterMeal: false };
@@ -1338,7 +1376,9 @@ function readForm(type, f, draft) {
   if (type === 'habit') { d.items = Object.fromEntries(HABITS.map((h) => [h.id, !!f.elements[`h_${h.id}`]?.checked])); }
   if (type === 'bp') {
     d.sys = v('sys'); d.dia = v('dia'); d.pulse = v('pulse'); d.arm = radio('arm') || '';
-    d.symptoms = $$('input[name=symptoms]:checked', f).map((x) => x.value);
+    const hs = radio('hasSymptoms');
+    d.hasSymptoms = hs === undefined ? null : hs === '1';
+    d.symptoms = d.hasSymptoms ? $$('input[name=symptoms]:checked', f).map((x) => x.value) : [];
     const now = radio('symptomsNow');
     d.symptomsNow = now === undefined ? null : now === '1';
   }
@@ -1352,7 +1392,7 @@ function readForm(type, f, draft) {
 function bindForm(type, id, existing, key) {
   const f = $('#m-form');
   const draft = formDrafts[key];
-  f.addEventListener('input', () => readForm(type, f, draft));
+  f.addEventListener('input', () => { readForm(type, f, draft); if (type === 'bp') liveBp(); });
   f.addEventListener('change', (ev) => {
     readForm(type, f, draft);
     if (type === 'lab' && ev.target.name === 'test') {
@@ -1362,6 +1402,7 @@ function bindForm(type, id, existing, key) {
       render();
     }
     if (type === 'bp') {
+      $('#sym-box').hidden = !draft.data.hasSymptoms;
       $('#now-q').hidden = !draft.data.symptoms.length;
       liveBp();
     }
@@ -1374,7 +1415,7 @@ function bindForm(type, id, existing, key) {
     let msg = '';
     if (alarm && d.symptomsNow) msg = emergencyBanner();
     else if (sys >= 180 || dia >= 120) msg = `<div class="banner alert" role="alert">${icon('triangle-alert')}<div><p><strong>Cifra de 180/120 o más</strong></p><p>Guardá la medición, descansá sentado unos 5 minutos y volvé a medir. Si tenés síntomas de alarma, llamá al ${esc(S.profile.data.emergencyNumber || '911')} sin esperar.</p></div></div>`;
-    $('#bp-live').innerHTML = msg ? `<div style="margin-top:18px">${msg}</div>` : '';
+    $('#bp-live').innerHTML = msg ? `<div style="margin:4px 0 18px">${msg}</div>` : '';
   };
   liveBp();
   f.querySelector('[data-act=delete]')?.addEventListener('click', async (ev) => {
@@ -1396,6 +1437,7 @@ function bindForm(type, id, existing, key) {
   });
   f.onsubmit = async (ev) => {
     ev.preventDefault();
+    const again = ev.submitter?.dataset.again === '1';
     readForm(type, f, draft);
     if (type === 'bp' && draft.data.symptoms.length && draft.data.symptomsNow === null) {
       draft.errors = {};
@@ -1428,9 +1470,18 @@ function bindForm(type, id, existing, key) {
     delete formDrafts[key];
     notifyOthers('m');
     const alert = type === 'bp' ? bpAlert({ ...saved.data, measured_at: saved.measured_at }) : null;
-    if (alert === 'emergencia' || alert === 'muy_alta') { toast('Medición guardada.'); go('#/salud'); S.ui.healthTab = 'presion'; render(); return; }
+    // Ante una alerta no se celebra el guardado: el aviso de Salud dice qué hacer.
+    if (alert === 'emergencia' || alert === 'muy_alta') { draftReading = 0; S.ui.healthTab = 'presion'; go('#/salud'); return; }
+    if (again) {
+      draftReading = 2;
+      formDrafts[key] = { measured_at: isoLocal(new Date()), data: defaultsFor('bp'), errors: {} };
+      toast('Lectura guardada. Esperá 1 minuto y tomá la siguiente.');
+      render(); window.scrollTo(0, 0); $('input[name=sys]')?.focus();
+      return;
+    }
+    draftReading = 0;
     toast(existing ? 'Cambios guardados.' : 'Guardado.');
-    go(FORM_META[type].back);
+    go(type === 'bp' && !existing ? '#/hoy' : FORM_META[type].back);
   };
 }
 
@@ -1642,6 +1693,10 @@ function viewSummary() {
 // Arranque
 // ---------------------------------------------------------------------------
 async function boot() {
+  try {
+    const svg = await (await fetch('/icons.svg')).text();
+    if (svg.trim().startsWith('<svg')) { const holder = $('#icons'); holder.innerHTML = svg; holder.firstElementChild.setAttribute('aria-hidden', 'true'); }
+  } catch { /* sin íconos no se bloquea la app */ }
   const r = await loadMe();
   if (!r.ok && r.status !== 401) {
     $('#root').innerHTML = `<main class="auth"><div class="brand">${icon('activity')}<span>Pulso</span></div><div class="banner alert" role="alert">${icon('triangle-alert')}<div><p><strong>No pudimos conectar con Pulso</strong></p><p>${esc(r.data.error || 'Error del servidor.')}</p><div class="actions"><button class="btn sm" type="button" id="retry-boot">Reintentar</button></div></div></div></main>`;

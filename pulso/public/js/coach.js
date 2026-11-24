@@ -231,7 +231,7 @@ export function weightTrend(ms, now) {
   return { perWeek: Math.round(slope * 100) / 100, n: w.length, weeks: Math.round(span * 10) / 10 };
 }
 
-function bpAvg(ms, now, days) {
+export function bpAvg(ms, now, days) {
   const bp = within(of(ms, 'bp'), days, now);
   if (!bp.length) return null;
   const s = stats(bp.map((m) => ({ measured_at: m.measured_at, value: m.data.sys })));
@@ -296,9 +296,9 @@ export function coachAdvice({ profile, plan, measurements }, now = new Date()) {
   // ---------- observaciones de tendencia (no diagnósticas) ----------
   const bp7 = bpAvg(ms, now, 7);
   if (bp7 && bp7.n >= 6) {
-    if (bp7.sys >= 140 || bp7.dia >= 90) insights.push({ id: 'bp-high', title: `Promedio de 7 días: ${bp7.sys}/${bp7.dia} mmHg`, detail: `Con ${bp7.n} lecturas, está en el rango que las guías llaman hipertensión etapa 2. Conversalo pronto con tu médico; no cambies medicamentos por tu cuenta.`, tone: 'warn' });
-    else if (bp7.sys >= 130 || bp7.dia >= 80) insights.push({ id: 'bp-mid', title: `Promedio de 7 días: ${bp7.sys}/${bp7.dia} mmHg`, detail: `Con ${bp7.n} lecturas, está por encima de 130/80. Menos sal, actividad y bajar de peso son los cambios con más efecto; llevá estos datos a tu próxima cita.`, tone: 'warn' });
-    else insights.push({ id: 'bp-ok', title: `Promedio de 7 días: ${bp7.sys}/${bp7.dia} mmHg`, detail: `Con ${bp7.n} lecturas. Seguí midiendo para ver si se mantiene.`, tone: 'ok' });
+    if (bp7.sys >= 140 || bp7.dia >= 90) insights.push({ id: 'bp-high', title: `Tu presión promedio de la semana: ${bp7.sys}/${bp7.dia} mmHg`, detail: `Con ${bp7.n} lecturas, está en 140/90 o más. Conversalo pronto con tu médico y llevale el resumen; no cambies medicamentos por tu cuenta.`, tone: 'warn' });
+    else if (bp7.sys >= 130 || bp7.dia >= 80) insights.push({ id: 'bp-mid', title: `Tu presión promedio de la semana: ${bp7.sys}/${bp7.dia} mmHg`, detail: `Con ${bp7.n} lecturas, está por encima de 130/80. Menos sal, actividad y bajar de peso son los cambios con más efecto; llevá estos datos a tu próxima cita.`, tone: 'info' });
+    else insights.push({ id: 'bp-ok', title: `Tu presión promedio de la semana: ${bp7.sys}/${bp7.dia} mmHg`, detail: `Con ${bp7.n} lecturas. Seguí midiendo para ver si se mantiene.`, tone: 'ok' });
     const first = of(ms, 'bp').slice(-14);
     if (first.length >= 6 && of(ms, 'bp').length >= 20) {
       const s0 = Math.round(first.reduce((s, m) => s + m.data.sys, 0) / first.length);

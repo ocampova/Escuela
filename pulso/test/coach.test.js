@@ -75,7 +75,7 @@ test('coach: promedio de presión alto sugiere consultar, sin diagnosticar ni to
   const adv = coachAdvice({ profile, plan: plan(5), measurements: ms }, now);
   const ins = adv.insights.find((i) => i.id === 'bp-high');
   assert.ok(ins); assert.match(ins.detail, /médico/); assert.match(ins.detail, /no cambies medicamentos/);
-  assert.match(ins.title, /144\/91/);
+  assert.match(ins.title, /144\/91/); assert.doesNotMatch(ins.detail, /hipertensión/);
 });
 
 test('coach: actividad y fuerza aparecen solo desde las semanas 6 y 7', () => {
@@ -113,4 +113,17 @@ test('validación: actividad y semana de la ruta', () => {
   // Planes viejos sin "coach" siguen siendo válidos
   const old = { ...p }; delete old.coach;
   assert.equal(validatePlan(old).value.coach.week, 1);
+});
+
+test('promedio de 7 días: la misma ventana en coach (Hoy, Revisión) y en stats (Salud, Progreso, Resumen)', async () => {
+  const { stats } = await import('../public/js/logic.js');
+  const { bpAvg } = await import('../public/js/coach.js');
+  const ms = [];
+  for (let d = 0; d <= 9; d++) ms.push(m('bp', at(d, 7), { sys: 120 + d, dia: 80 }), m('bp', at(d, 19, 30), { sys: 130 + d, dia: 82 }));
+  const a = bpAvg(ms, now, 7);
+  const s = stats(ms.map((x) => ({ measured_at: x.measured_at, value: x.data.sys })), 7, now);
+  assert.equal(a.n, 14); // hoy + 6 días anteriores, 2 lecturas por día
+  assert.equal(s.count, a.n);
+  assert.equal(Math.round(s.avg), a.sys);
+  assert.equal(s.from, a.from);
 });

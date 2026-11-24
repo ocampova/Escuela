@@ -501,8 +501,10 @@ export function applyPlanOp(plan, op) {
 export function stats(items, days = null, now = new Date()) {
   let list = items.filter((x) => Number.isFinite(x.value));
   if (days) {
-    const from = new Date(now); from.setDate(from.getDate() - days); from.setHours(0, 0, 0, 0);
-    list = list.filter((x) => parseLocal(x.measured_at) >= from);
+    const until = new Date(now); until.setHours(24, 0, 0, 0);
+    // Ventana única en toda la app: hoy + (days − 1) días calendario anteriores.
+    const from = new Date(now); from.setDate(from.getDate() - (days - 1)); from.setHours(0, 0, 0, 0);
+    list = list.filter((x) => { const t = parseLocal(x.measured_at); return t >= from && t < until; });
   }
   if (!list.length) return { count: 0 };
   const sorted = [...list].sort((a, b) => a.measured_at.localeCompare(b.measured_at));

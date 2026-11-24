@@ -75,8 +75,10 @@ try {
   assert.match(todayText, /Buen(os|as) .*Allan/);
   assert.match(todayText, /Semana 1 de 12/);
   assert.match(todayText, /Tu punto de partida/);
-  assert.match(todayText, /Semana de presión: día 1 de 7/);
-  assert.match(todayText, /Sin datos de glucosa/);
+  assert.match(todayText, /Registrar presión/);
+  assert.match(todayText, /Semana de medición: 0 de 7/);
+  assert.match(todayText, /Registrá tu peso de inicio/);
+  assert.equal(await page.locator('.card.next').count(), 1, 'un solo próximo paso');
   assert.doesNotMatch(todayText, /Pescado al ajillo|papillote|atún/i, 'respeta alergia a pescado');
 
   step('marcar comida realizada');
@@ -161,6 +163,8 @@ try {
   await page.waitForSelector('[data-go-week="3"]');
   await shot('10c-ruta-semana');
   await page.click('[data-go-week="3"]');
+  await page.waitForSelector('[data-go-week="3"]:has-text("tocá de nuevo")');
+  await page.click('[data-go-week="3"]');
   await page.waitForSelector('#h-check');
   assert.match(await page.textContent('#h-focus'), /Lo que tomás/);
   assert.equal(await page.locator('[data-habit]').count(), 2);
@@ -197,12 +201,21 @@ try {
   await page.waitForSelector('input[name=sys]');
   assert.equal(await page.getAttribute('input[name=sys]', 'inputmode'), 'numeric');
   await page.fill('input[name=sys]', '128'); await page.fill('input[name=dia]', '84'); await page.fill('input[name=pulse]', '72');
-  await page.click('button[type=submit]');
+  await page.click('label.chip:has(input[name=hasSymptoms][value="0"])');
+  await page.click('button[data-again="1"]');
+  await page.waitForSelector('text=Lectura 2');
+  assert.equal(await page.inputValue('input[name=sys]'), '', 'formulario limpio para la segunda lectura');
+  await page.fill('input[name=sys]', '126'); await page.fill('input[name=dia]', '82');
+  await page.click('button[type=submit]:not([data-again])');
+  await page.waitForSelector('#h-focus');
+  await page.goto(BASE + '/#/salud');
   await page.waitForSelector('text=Promedio 7 días');
+  assert.match(await page.textContent('main'), /2 mediciones/);
   await page.goto(BASE + '/#/registrar/bp');
   await page.fill('input[name=sys]', '184'); await page.fill('input[name=dia]', '112');
-  await page.locator('input[name=dia]').dispatchEvent('change');
   await page.waitForSelector('#bp-live .banner');
+  const liveBox = await page.locator('#bp-live').boundingBox(), symBox = await page.locator('text=¿Tenés algún síntoma?').boundingBox();
+  assert.ok(liveBox.y < symBox.y, 'el aviso de 180/120 aparece antes de las preguntas de síntomas');
   await shot('11-presion-alta-form');
   await page.click('button[type=submit]');
   await page.waitForSelector('text=Lectura muy alta');
@@ -212,6 +225,8 @@ try {
 
   await page.goto(BASE + '/#/registrar/bp');
   await page.fill('input[name=sys]', '122'); await page.fill('input[name=dia]', '78');
+  assert.equal(await page.isVisible('label.check:has-text("Dolor o presión en el pecho")'), false, 'síntomas ocultos hasta responder Sí');
+  await page.click('label.chip:has(input[name=hasSymptoms][value="1"])');
   await page.click('label.check:has-text("Dolor o presión en el pecho")');
   await page.click('button[type=submit]');
   await page.waitForSelector('text=Indicá si tenés los síntomas');
@@ -221,6 +236,8 @@ try {
   await page.waitForSelector('.banner.emergency');
   assert.match(await page.textContent('.banner.emergency'), /Llamar al 911/);
   assert.equal(await page.getAttribute('.banner.emergency a.call-btn', 'href'), 'tel:911');
+  const callColors = await page.evaluate(() => { const b = document.querySelector('.banner.emergency a.call-btn'); const cs = getComputedStyle(b); return [cs.color, cs.backgroundColor]; });
+  assert.notEqual(callColors[0], callColors[1], `el texto del botón 911 debe verse (${callColors})`);
   await shot('13-emergencia');
 
   step('editar una medición histórica: síntomas ya pasaron');

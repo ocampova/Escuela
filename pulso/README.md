@@ -51,7 +51,7 @@ npm start                      # http://localhost:3000
 PORT=8080 npm start            # otro puerto
 PULSO_DB=/ruta/pulso.db npm start
 PULSO_SECURE_COOKIES=1 npm start   # detrás de HTTPS
-npm test                       # 37 pruebas de lógica, coach y API
+npm test                       # 38 pruebas de lógica, coach y API
 npm run e2e                    # flujo completo en un teléfono emulado (requiere Playwright y Chromium)
 ```
 
@@ -103,7 +103,7 @@ Una comida se puede cambiar desde una hoja inferior, que solo ofrece recetas com
 - Contraseñas guardadas con scrypt. Las sesiones usan un token aleatorio, del que solo se guarda el hash, en una cookie `HttpOnly; SameSite=Lax`. El inicio de sesión tiene límite de intentos.
 - Cada consulta filtra por `user_id`. Las pruebas verifican que una cuenta no pueda leer, editar ni borrar los registros de otra.
 - Protección CSRF: toda escritura exige el encabezado `X-Pulso: 1` y un `Origin` igual al del servidor.
-- CSP estricta para scripts (`script-src 'self'`). Sin recursos externos: las fuentes (Fraunces y Atkinson Hyperlegible Next) y los íconos (Lucide, licencia ISC) se sirven desde la propia app.
+- CSP estricta para scripts (`script-src 'self'`). Sin recursos externos: la fuente (Atkinson Hyperlegible Next, diseñada para baja visión) y los íconos (Lucide, licencia ISC) se sirven desde la propia app; el sprite de íconos se incrusta en la página para que no desaparezca sin conexión.
 - **Sin sobrescrituras entre ventanas.** El perfil y las mediciones llevan versión, y un cambio sobre una versión vieja devuelve 409: la app avisa y carga la versión actual. Los cambios del menú y de la lista de compras se envían como operaciones que el servidor aplica sobre el estado más reciente, así dos ventanas no se pisan. Las demás pestañas se enteran por `BroadcastChannel` y al volver a la pestaña.
 - Validación de fechas (incluidas fechas imposibles y futuras), rangos, unidades por tipo de examen y archivos importados (tipo, tamaño máximo de 2 MB y estructura).
 
