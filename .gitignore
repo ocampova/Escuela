@@ -45,3 +45,4 @@ next-env.d.ts
 .impeccable/review/
 .impeccable/questions/
 .impeccable/mocks/
+.impeccable/live/
