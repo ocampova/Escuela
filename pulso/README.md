@@ -125,3 +125,12 @@ Una comida se puede cambiar desde una hoja inferior, que solo ofrece recetas com
 - `PRODUCT.md`: usuario, propósito, restricciones clínicas y principios de producto (impeccable `init`).
 - `DESIGN.md` y `.impeccable/design.json`: sistema visual «El sendero acompañado». Incluye tokens, tipografía, componentes y el camino de 12 hitos (impeccable `document`).
 - Comprobar el CSS contra el sistema documentado: `./.claude/skills/impeccable/scripts/impeccable detect --json public`.
+
+## Producción (Railway)
+
+- URL: https://pulso-web-production-be5a4738.up.railway.app
+- Proyecto `pulso` › servicio `pulso-web`. Despliega solo cuando cambia algo dentro de `pulso/` en la rama `claude/pensive-goldberg-sst7em` (directorio raíz `/pulso`, Node 22, builder Railpack).
+- Disco persistente `pulso-datos` (5 GB) montado en `/data`. La base de datos está en `/data/pulso.db`.
+- Variables: `PULSO_DB=/data/pulso.db`, `PULSO_SECURE_COOKIES=1`, `PULSO_TRUST_PROXY=1`, `NODE_ENV=production`.
+- Chequeo de salud: `/api/health`.
+- Respaldos: activalos en Railway › pulso-web › volumen › Backups (diarios). Además, cada persona puede descargar su respaldo JSON desde Perfil.

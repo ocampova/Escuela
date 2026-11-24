@@ -25,7 +25,7 @@ Not a calorie counter and not a generic plan. It is a step-by-step route grounde
 
 ## Capabilities and Constraints
 - Stack: Node 22.5+ with no dependencies (`node:http`, `node:sqlite`), vanilla JS SPA in `public/`, tests in `test/`.
-- Hosting: **delegated** to the assistant. Recommendation: Railway (already used by the repo's other app) with a persistent volume for the SQLite database and `PULSO_SECURE_COOKIES=1`. Not deployed yet.
+- Hosting: **delegated** to the assistant. Deployed on Railway: project `pulso`, service `pulso-web` (branch `claude/pensive-goldberg-sst7em`, root directory `/pulso`), persistent volume `pulso-datos` at `/data`, URL https://pulso-web-production-be5a4738.up.railway.app. Volume backups are turned on from the Railway dashboard.
 - Clinical safety (non-negotiable):
   - Current alarm symptoms → urgent guidance and 911, whatever the reading.
   - 180/120 or higher → retest and seek care according to symptoms.
