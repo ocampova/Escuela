@@ -35,8 +35,15 @@ try {
   await page.fill('input[name=password]', 'clave-de-prueba-1');
   await page.click('button[type=submit]');
 
-  step('bienvenida: datos faltantes');
+  step('bienvenida: objetivos');
   await page.waitForSelector('#ob-form');
+  await page.click('button[type=submit]');
+  await page.waitForSelector('text=Elegí al menos un objetivo');
+  for (const g of ['Bajar de peso', 'Mejorar la resistencia a la insulina', 'Bajar la presión arterial']) await page.click(`label.check:has-text("${g}")`);
+  await shot('02a-objetivos');
+  await page.click('button[type=submit]');
+  step('bienvenida: datos faltantes');
+  await page.waitForSelector('input[name=name]');
   await page.fill('input[name=name]', 'Allan');
   await page.fill('input[name=age]', '41');
   await page.click('button[type=submit]');
@@ -60,21 +67,25 @@ try {
   await shot('04-bienvenida-hito');
   await page.click('button[type=submit]');
 
-  step('hoy');
-  await page.waitForSelector('#h-today');
-  await page.waitForSelector('.metrics');
+  step('hoy: coach en semana 1');
+  await page.waitForSelector('#h-focus');
+  await page.waitForSelector('#h-next');
   await shot('05-hoy');
   const todayText = await page.textContent('main');
   assert.match(todayText, /Buen(os|as) .*Allan/);
+  assert.match(todayText, /Semana 1 de 12/);
+  assert.match(todayText, /Tu punto de partida/);
+  assert.match(todayText, /Semana de presión: día 1 de 7/);
+  assert.match(todayText, /Sin datos de glucosa/);
   assert.doesNotMatch(todayText, /Pescado al ajillo|papillote|atún/i, 'respeta alergia a pescado');
 
   step('marcar comida realizada');
-  await page.click('.meal >> nth=0 >> [data-act=done]');
-  await page.waitForSelector('.meal.is-done');
+  await page.click('[aria-labelledby=h-meals] [data-act=done] >> nth=0');
+  await page.waitForSelector('[aria-labelledby=h-meals] [data-act=done][aria-pressed=true]');
   await page.waitForSelector('.toast');
 
   step('menú semanal y receta');
-  await page.click('nav >> text=Alimentación');
+  await page.click('nav >> text=Comer');
   await page.waitForSelector('.days');
   await page.click('.day-chip >> nth=3');
   await shot('06-menu');
@@ -90,13 +101,13 @@ try {
   await shot('07-receta');
 
   step('cambiar comida y ver compras actualizarse');
-  await page.click('nav >> text=Compras');
+  await page.goto(BASE + '/#/compras');
   await page.waitForSelector('.shop-item');
   const before = await page.textContent('main');
   await shot('08-compras');
   assert.match(before, /Huevos/);
   assert.doesNotMatch(before, /Filete de pescado/);
-  await page.click('nav >> text=Alimentación');
+  await page.click('nav >> text=Comer');
   await page.click('[data-tab=semana]');
   await page.click('.day-chip >> nth=0');
   await page.click('.meal >> nth=1 >> [data-act=swap]');
@@ -105,7 +116,7 @@ try {
   assert.equal(await page.locator('dialog [data-pick="pescado-ajillo"]').count(), 0, 'no ofrece pescado');
   await page.click('dialog [data-pick="olla-carne"]');
   await page.waitForSelector('.toast:has-text("Lista de compras actualizada")');
-  await page.click('nav >> text=Compras');
+  await page.goto(BASE + '/#/compras');
   await page.waitForSelector('.shop-item');
   const adultsOut = await page.textContent('main .stepper output');
   assert.equal(adultsOut.trim(), '2');
@@ -136,8 +147,50 @@ try {
   await page.goto(BASE + '/#/registrar/weight');
   await page.fill('input[name=kg]', '108,1');
   await page.click('button[type=submit]');
+  await page.waitForSelector('.goal');
+  await shot('10a-progreso-general');
+  await page.click('[data-ptab=peso]');
   await page.waitForSelector('.chart svg');
   await shot('10-progreso');
+
+  step('ruta: saltar a la semana 3 y usar el checklist');
+  await page.click('nav >> text=Ruta');
+  await page.waitForSelector('ol.route');
+  await shot('10b-ruta');
+  await page.click('ol.route >> text=Lo que tomás');
+  await page.waitForSelector('[data-go-week="3"]');
+  await shot('10c-ruta-semana');
+  await page.click('[data-go-week="3"]');
+  await page.waitForSelector('#h-check');
+  assert.match(await page.textContent('#h-focus'), /Lo que tomás/);
+  assert.equal(await page.locator('[data-habit]').count(), 2);
+  await page.click('[data-habit=verduras]');
+  await page.waitForFunction(() => document.querySelector('[data-habit=verduras]')?.getAttribute('aria-pressed') === 'true');
+  await page.waitForTimeout(600);
+  await page.click('[data-habit=sin_azucaradas]');
+  await page.waitForTimeout(600);
+  await page.reload();
+  await page.waitForSelector('[data-habit=verduras][aria-pressed=true]');
+  await page.waitForSelector('[data-habit=sin_azucaradas][aria-pressed=true]');
+  await shot('10d-hoy-semana3');
+
+  step('actividad');
+  await page.goto(BASE + '/#/registrar/activity');
+  await page.waitForSelector('input[name=minutes]');
+  await page.fill('input[name=minutes]', '15');
+  await page.click('label.check:has-text("Fue después de una comida")');
+  await page.click('button[type=submit]');
+  await page.waitForSelector('.goal');
+  await page.click('[data-ptab=actividad]');
+  await page.waitForSelector('text=15 min');
+  assert.match(await page.textContent('main'), /1 caminata después de comer/);
+
+  step('revisión semanal');
+  await page.goto(BASE + '/#/revision');
+  await page.waitForSelector('text=Revisión semanal');
+  await page.waitForSelector('text=Números de la semana');
+  assert.match(await page.textContent('main'), /Medio plato de verduras en almuerzo y cena\s*1\/7/, 'la revisión cuenta el hábito marcado hoy');
+  await shot('10e-revision');
 
   step('presión normal, luego ≥180 y luego síntomas actuales');
   await page.goto(BASE + '/#/registrar/bp');
@@ -268,15 +321,15 @@ try {
 
   step('tablet y escritorio');
   await page.setViewportSize({ width: 820, height: 1180 });
-  await page.goto(BASE + '/#/hoy'); await page.waitForSelector('#h-today');
+  await page.goto(BASE + '/#/hoy'); await page.waitForSelector('#h-focus');
   await page.screenshot({ path: path.join(SHOTS, '19-tablet.png') });
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto(BASE + '/#/alimentacion'); await page.waitForSelector('.days');
   await page.screenshot({ path: path.join(SHOTS, '20-escritorio.png') });
   await page.setViewportSize({ width: 360, height: 740 });
-  for (const route of ['hoy', 'alimentacion', 'compras', 'progreso', 'salud', 'perfil']) {
+  for (const route of ['hoy', 'ruta', 'ruta/5', 'revision', 'alimentacion', 'compras', 'progreso', 'salud', 'perfil']) {
     await page.goto(BASE + '/#/' + route); await page.waitForTimeout(250);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth) - 360;
     assert.ok(overflow <= 0, `${route} desborda ${overflow}px a 360px`);
     const small = await page.evaluate(() => [...document.querySelectorAll('main p, main li, main label, main .input')].filter((e) => e.offsetParent && parseFloat(getComputedStyle(e).fontSize) < 13).length);
     assert.equal(small, 0, `${route}: texto menor a 13px`);

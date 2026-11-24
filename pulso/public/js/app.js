@@ -5,8 +5,9 @@ import {
   isCompatible, compatibleRecipes, shoppingList, shoppingText, formatNumber, formatDateShort, formatDateLong, formatDateTime,
   bpCategory, bpAlert, ALARM_SYMPTOMS, OTHER_SYMPTOMS, symptomLabel, isRecent,
   validateMeasurement, validateProfile, LAB_TESTS, CONTEXT_LABELS, LAB_SOURCES, HABITS,
-  stats, milestone, bmi, defaultMealTimes,
+  stats, milestone, bmi, defaultMealTimes, ACTIVITY_KINDS, INTENSITIES,
 } from './logic.js';
+import { GOALS, ROUTE, routeWeek, activeHabits, coachAdvice, weeklyReview, bpWeekProgress, activityWeek, habitAdherence, weightTrend, COACH_SOURCES } from './coach.js';
 
 // ---------------------------------------------------------------------------
 // Utilidades
@@ -46,7 +47,7 @@ const S = {
   measurements: null, // [] cuando se cargan
   mLoading: false,
   mError: null,
-  ui: { foodDay: null, foodTab: 'semana', recipeFilter: 'todas', onboarding: null, healthTab: 'presion', progressTab: 'peso' },
+  ui: { foodDay: null, foodTab: 'semana', recipeFilter: 'todas', onboarding: null, healthTab: 'presion', progressTab: 'general' },
 };
 
 const channel = 'BroadcastChannel' in window ? new BroadcastChannel('pulso') : null;
@@ -117,6 +118,7 @@ function toast(msg, kind = 'ok', action) {
     el.appendChild(b);
   }
   box.appendChild(el);
+  while (box.children.length > 2) box.firstElementChild.remove();
   setTimeout(() => el.remove(), action ? 9000 : kind === 'error' ? 7000 : 3200);
 }
 
@@ -153,12 +155,12 @@ function route() {
 
 const NAV = [
   { path: 'hoy', label: 'Hoy', icon: 'house' },
-  { path: 'alimentacion', label: 'Alimentación', icon: 'utensils' },
-  { path: 'compras', label: 'Compras', icon: 'shopping-cart' },
+  { path: 'ruta', label: 'Ruta', icon: 'map' },
+  { path: 'alimentacion', label: 'Comer', icon: 'utensils' },
   { path: 'progreso', label: 'Progreso', icon: 'chart-line' },
   { path: 'salud', label: 'Salud', icon: 'heart-pulse' },
 ];
-const NAV_OF = { receta: 'alimentacion', registrar: null, perfil: null, resumen: null, emergencia: 'salud' };
+const NAV_OF = { receta: 'alimentacion', compras: 'alimentacion', registrar: null, perfil: null, resumen: null, emergencia: 'salud', revision: 'ruta' };
 
 function shell(content, { path, title = '' } = {}) {
   const active = NAV_OF[path] !== undefined ? NAV_OF[path] : path;
@@ -192,12 +194,12 @@ async function render() {
   if (path === 'bienvenida' && S.profile?.data?.onboarded && !S.ui.onboarding) { location.replace('#/hoy'); return; }
   if (path === 'bienvenida') { root.innerHTML = viewOnboarding(); bindOnboarding(); return; }
 
-  const needsM = ['hoy', 'progreso', 'salud', 'registrar', 'resumen', 'perfil'].includes(path);
+  const needsM = ['hoy', 'progreso', 'salud', 'registrar', 'resumen', 'perfil', 'ruta', 'revision'].includes(path);
   if (needsM && !S.measurements && !S.mLoading && !S.mError) {
     loadMeasurements().then(render);
   }
 
-  const views = { hoy: viewToday, alimentacion: viewFood, receta: viewRecipe, compras: viewShopping, progreso: viewProgress, salud: viewHealth, registrar: viewForm, perfil: viewProfile, resumen: viewSummary, emergencia: viewEmergency };
+  const views = { ruta: viewRoute, revision: viewReview, hoy: viewToday, alimentacion: viewFood, receta: viewRecipe, compras: viewShopping, progreso: viewProgress, salud: viewHealth, registrar: viewForm, perfil: viewProfile, resumen: viewSummary, emergencia: viewEmergency };
   const v = views[path];
   if (!v) { root.innerHTML = shell(`<div class="page-head"><h1>Página no encontrada</h1></div><a class="btn" href="#/hoy">Ir a Hoy</a>`, { path }); return; }
   const out = v(params);
@@ -286,7 +288,7 @@ function draftProfile() {
       step: 0,
       data: S.profile?.data ? structuredClone(S.profile.data) : {
         name: '', age: null, initialWeight: null, height: null, activity: '', conditions: '', medications: '', otherAllergies: '',
-        allergies: [], preferences: [], milestonePct: 5, mealTimes: defaultMealTimes(), country: 'Costa Rica', emergencyNumber: '911',
+        goals: [], allergies: [], preferences: [], milestonePct: 5, mealTimes: defaultMealTimes(), country: 'Costa Rica', emergencyNumber: '911',
       },
       adults: S.plan?.data?.adults || 1,
       errors: {},
@@ -294,7 +296,7 @@ function draftProfile() {
   }
   return S.ui.onboarding;
 }
-const STEPS = ['Sobre vos', 'Alergias y preferencias', 'Tu casa y horarios', 'Tu primer hito'];
+const STEPS = ['¿Qué querés mejorar?', 'Sobre vos', 'Alergias y preferencias', 'Tu casa y horarios', 'Tu primer hito'];
 
 function numField(name, label, value, unit, { hint = '', step = '0.1', inputmode = 'decimal', error, min, max } = {}) {
   return `<label class="field"><span class="label">${label}</span>
@@ -309,6 +311,14 @@ function viewOnboarding() {
   const d = o.data, e = o.errors;
   let body = '';
   if (o.step === 0) {
+    body = `
+      <p>Pulso es tu coach metabólico: una ruta de 12 semanas, un cambio a la vez, con seguimiento de tus datos reales.</p>
+      <fieldset class="fieldset" style="margin-top:18px"><legend>Elegí uno o más objetivos</legend>
+        <div class="checks">${GOALS.map((g) => `<label class="check"><input type="checkbox" name="goals" value="${g.id}" ${(d.goals || []).includes(g.id) ? 'checked' : ''}>${esc(g.label)}</label>`).join('')}</div>
+        ${e.goals ? `<span class="error-msg">${icon('triangle-alert', 'sm')}${esc(e.goals)}</span>` : ''}
+        <span class="hint" style="margin-top:10px">La resistencia a la insulina y la presión alta se diagnostican y tratan con tu médico. Pulso te acompaña con hábitos y registros; no reemplaza ese seguimiento ni cambia medicamentos.</span>
+      </fieldset>`;
+  } else if (o.step === 1) {
     body = `
       <label class="field"><span class="label">¿Cómo te llamás?</span><input class="input" name="name" value="${esc(d.name)}" autocomplete="given-name" ${e.name ? 'aria-invalid="true"' : ''}>${e.name ? `<span class="error-msg">${esc(e.name)}</span>` : ''}</label>
       <div class="grid-2" style="margin-top:18px">
@@ -326,7 +336,7 @@ function viewOnboarding() {
       <label class="field"><span class="label">Medicamentos que tomás <span class="muted">(opcional)</span></span>
         <textarea class="input" name="medications" placeholder="Nombre, dosis y horario">${esc(d.medications)}</textarea>
         <span class="hint">Pulso no cambia ni recomienda medicamentos; esta lista es para llevarla a tus citas.</span></label>`;
-  } else if (o.step === 1) {
+  } else if (o.step === 2) {
     body = `
       <fieldset class="fieldset"><legend>¿Tenés alguna alergia o intolerancia alimentaria?</legend>
         <span class="hint" style="margin:-2px 0 10px">Las recetas que contengan estos alimentos no se incluirán en tu menú.</span>
@@ -337,7 +347,7 @@ function viewOnboarding() {
         <div class="checks">${PREFERENCES.map((p) => `<label class="check"><input type="checkbox" name="preferences" value="${p.id}" ${d.preferences.includes(p.id) ? 'checked' : ''}>${esc(p.label)}</label>`).join('')}</div>
         <span class="hint" style="margin-top:10px">Todas las recetas de Pulso ya evitan lácteos, gluten, embutidos, frituras, bebidas azucaradas, ultraprocesados y salsas preparadas. Excluir gluten o lácteos es una preferencia personal: no es necesario para todo el mundo si no hay alergia, intolerancia o indicación médica.</span>
       </fieldset>`;
-  } else if (o.step === 2) {
+  } else if (o.step === 3) {
     body = `
       <fieldset class="fieldset"><legend>¿Para cuántos adultos cocinás?</legend>
         <div class="stepper"><button class="icon-btn" type="button" data-step="-1" aria-label="Menos adultos">−</button><output name="adults" aria-live="polite">${o.adults}</output><button class="icon-btn" type="button" data-step="1" aria-label="Más adultos">${icon('plus')}</button></div>
@@ -352,7 +362,7 @@ function viewOnboarding() {
     body = `
       <p>Un primer hito alcanzable ayuda a ver avances. Te proponemos una reducción aproximada del <strong>5%</strong> de tu peso inicial. Podés cambiarlo.</p>
       ${numField('milestonePct', 'Porcentaje del primer hito', d.milestonePct, '%', { hint: 'Entre 1% y 15%.', error: e.milestonePct })}
-      <div class="card flat" style="margin-top:16px" id="milestone-preview">${m ? `<p class="muted small">Con un peso inicial de ${fmt(d.initialWeight)} kg</p><p style="font-size:1.4rem;font-weight:700;margin-top:4px">${fmt(m.target)} kg <span class="muted small" style="font-weight:400">(−${fmt(m.loss)} kg)</span></p>` : '<p class="muted">Agregá tu peso en el paso 1 para calcular el hito.</p>'}</div>
+      <div class="card flat" style="margin-top:16px" id="milestone-preview">${m ? `<p class="muted small">Con un peso inicial de ${fmt(d.initialWeight)} kg</p><p style="font-size:1.4rem;font-weight:700;margin-top:4px">${fmt(m.target)} kg <span class="muted small" style="font-weight:400">(−${fmt(m.loss)} kg)</span></p>` : '<p class="muted">Agregá tu peso en el paso 2 para calcular el hito.</p>'}</div>
       <p class="disclaimer">Sin fecha límite ni promesas: cada cuerpo responde distinto. Si tenés condiciones de salud, conversá tu meta con tu médico o nutricionista.</p>`;
   }
   return `
@@ -376,14 +386,16 @@ function readOnboardingForm(f, o) {
   const d = o.data;
   const v = (n) => f.elements[n]?.value;
   if (o.step === 0) {
+    d.goals = $$('input[name=goals]:checked', f).map((x) => x.value);
+  } else if (o.step === 1) {
     d.name = v('name') || '';
     d.age = v('age') || null; d.initialWeight = v('initialWeight') || null; d.height = v('height') || null;
     d.activity = v('activity'); d.conditions = v('conditions'); d.medications = v('medications');
-  } else if (o.step === 1) {
+  } else if (o.step === 2) {
     d.allergies = $$('input[name=allergies]:checked', f).map((x) => x.value);
     d.preferences = $$('input[name=preferences]:checked', f).map((x) => x.value);
     d.otherAllergies = v('otherAllergies');
-  } else if (o.step === 2) {
+  } else if (o.step === 3) {
     for (const m of MEALS) d.mealTimes[m.id] = v(`time_${m.id}`);
   } else {
     d.milestonePct = v('milestonePct') || 5;
@@ -398,7 +410,7 @@ function bindOnboarding() {
     f.querySelector('output[name=adults]').textContent = o.adults;
   });
   f.querySelector('[data-back]')?.addEventListener('click', () => { readOnboardingForm(f, o); o.step--; o.errors = {}; render(); });
-  if (o.step === 3) {
+  if (o.step === 4) {
     f.elements.milestonePct.addEventListener('input', () => {
       const m = milestone(toNum(o.data.initialWeight), toNum(f.elements.milestonePct.value));
       if (m && m.pct >= 1 && m.pct <= 15) $('#milestone-preview').innerHTML = `<p class="muted small">Con un peso inicial de ${fmt(toNum(o.data.initialWeight))} kg</p><p style="font-size:1.4rem;font-weight:700;margin-top:4px">${fmt(m.target)} kg <span class="muted small" style="font-weight:400">(−${fmt(m.loss)} kg)</span></p>`;
@@ -408,9 +420,10 @@ function bindOnboarding() {
     e.preventDefault();
     readOnboardingForm(f, o);
     const v = validateProfile(o.data);
-    const stepFields = [['name', 'age', 'initialWeight', 'height', 'activity', 'conditions', 'medications'], ['allergies', 'preferences', 'otherAllergies'], MEALS.map((m) => `time_${m.id}`), ['milestonePct']][o.step];
+    const stepFields = [['goals'], ['name', 'age', 'initialWeight', 'height', 'activity', 'conditions', 'medications'], ['allergies', 'preferences', 'otherAllergies'], MEALS.map((m) => `time_${m.id}`), ['milestonePct']][o.step];
     const errs = Object.fromEntries(Object.entries(v.errors).filter(([k]) => stepFields.includes(k)));
-    if (o.step === 0 && !o.data.initialWeight) errs.initialWeight = 'Ingresá tu peso actual: es la base de tu primer hito.';
+    if (o.step === 0 && !o.data.goals.length) errs.goals = 'Elegí al menos un objetivo.';
+    if (o.step === 1 && !o.data.initialWeight) errs.initialWeight = 'Ingresá tu peso actual: es la base de tu primer hito.';
     o.errors = errs;
     if (Object.keys(errs).length) { render(); $('[aria-invalid=true]')?.focus(); return; }
     if (o.step < STEPS.length - 1) { o.step++; render(); window.scrollTo(0, 0); return; }
@@ -427,7 +440,7 @@ function bindOnboarding() {
     await planOps(ops, { rerender: false });
     S.ui.onboarding = null;
     notifyOthers('profile');
-    toast('Perfil guardado. Tu menú de la semana está listo.');
+    toast('Listo. Empezás la semana 1 de tu ruta.');
     go('#/hoy');
   };
 }
@@ -476,64 +489,200 @@ function latestAlertBanner() {
   return '';
 }
 
+function coachState() {
+  return coachAdvice({ profile: S.profile.data, plan: S.plan.data, measurements: S.measurements || [] });
+}
+const todayIso = () => isoDate(new Date());
+const todayHabitRecord = () => (S.measurements || []).find((m) => m.type === 'habit' && m.measured_at.slice(0, 10) === todayIso()) || null;
+
+// Guarda un hábito del día (crea o actualiza el registro de hoy). Cola para no pisar versiones.
+let habitQueue = Promise.resolve();
+function toggleHabit(id, value) {
+  habitQueue = habitQueue.then(async () => {
+    const attempt = async () => {
+      const rec = todayHabitRecord();
+      const items = { ...(rec?.data.items || {}), [id]: value };
+      const data = { items, ...(rec?.data.notes ? { notes: rec.data.notes } : {}) };
+      return rec
+        ? api('PUT', `/api/measurements/${rec.id}`, { measured_at: rec.measured_at, data, version: rec.version })
+        : api('POST', '/api/measurements', { type: 'habit', measured_at: `${todayIso()}T21:00`, data });
+    };
+    let r = await attempt();
+    if (r.status === 409) { await loadMeasurements(); r = await attempt(); }
+    if (r.ok) {
+      const saved = r.data.measurement;
+      S.measurements = [saved, ...(S.measurements || []).filter((m) => m.id !== saved.id)].sort((a, b) => b.measured_at.localeCompare(a.measured_at));
+      notifyOthers('m');
+    } else {
+      toast(`No se guardó el hábito. ${r.data.error || ''}`.trim(), 'error', { label: 'Reintentar', run: () => toggleHabit(id, value) });
+    }
+    if (!isEditing()) render();
+  });
+}
+
+function routeProgressBar(week) {
+  return `<div class="route-bar" aria-hidden="true">${ROUTE.map((w) => `<span class="${w.n < week ? 'done' : w.n === week ? 'now' : ''}"></span>`).join('')}</div>`;
+}
+
+function baselineChecklist(c) {
+  const ms = S.measurements || [];
+  const has = (t) => ms.some((m) => m.type === t);
+  const items = [
+    { done: has('weight'), label: 'Peso de inicio', href: '#/registrar/weight' },
+    { done: has('waist'), label: 'Medida de cintura', href: '#/registrar/waist' },
+    { done: c.bpWeek.done, label: `Semana de presión (${c.bpWeek.completeDays}/7 días con mañana y noche)`, href: '#/registrar/bp' },
+    { done: has('lab'), label: 'Exámenes que ya tengas (opcional)', href: '#/registrar/lab' },
+  ];
+  return `<ul class="list todo">${items.map((it) => `<li><a class="list-item" href="${it.href}"><span class="tick ${it.done ? 'on' : ''}">${it.done ? icon('check', 'sm') : ''}</span><span class="grow ${it.done ? 'muted' : ''}">${esc(it.label)}</span>${it.done ? '' : icon('chevron-right', 'chev')}</a></li>`).join('')}</ul>`;
+}
+
+function habitChecklist(week) {
+  const habits = activeHabits(week);
+  const rec = todayHabitRecord();
+  return `<ul class="list todo">${habits.map((h) => {
+    const on = !!rec?.data.items?.[h.id];
+    return `<li><button class="list-item" type="button" data-habit="${h.id}" aria-pressed="${on}"><span class="tick ${on ? 'on' : ''}">${on ? icon('check', 'sm') : ''}</span><span class="grow">${esc(h.label)}</span>${h.id === routeWeek(week).habit || h.id === routeWeek(week).extraHabit ? '<span class="badge">Nuevo</span>' : ''}</button></li>`;
+  }).join('')}</ul>`;
+}
+
 function viewToday() {
   const p = S.profile.data;
-  const idx = Math.min(6, Math.max(0, dayIndexToday()));
-  const inWeek = dayIndexToday() >= 0 && dayIndexToday() <= 6;
   const hour = new Date().getHours();
   const hello = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
-  const plan = S.plan.data;
-  const date = addDays(plan.weekStart, idx);
-  const doneCount = MEALS.filter((m) => plan.done[`${date}:${m.id}`]).length;
   const ms = measurementsState();
-  const missing = [];
-  if (!p.height) missing.push('tu estatura');
-  if (!p.activity) missing.push('tu nivel de actividad');
+  const idx = Math.min(6, Math.max(0, dayIndexToday()));
+  const plan = S.plan.data;
+  const week = plan.coach?.week || 1;
+  const rw = routeWeek(week);
+  let coachBlock = ms.block || '';
+  if (ms.list) {
+    const c = coachState();
+    const habits = activeHabits(week);
+    const adh = habitAdherence(S.measurements, habits, new Date(), 7);
+    coachBlock = `
+    ${latestAlertBanner()}
+    <section class="focus" aria-labelledby="h-focus">
+      <div class="row spread"><span class="focus-kicker">Semana ${week} de ${ROUTE.length}</span><a class="focus-link" href="#/ruta/${week}">Ver guía ${icon('chevron-right', 'sm')}</a></div>
+      <h2 id="h-focus">${esc(rw.title)}</h2>
+      <p>${esc(rw.why)}</p>
+      ${routeProgressBar(week)}
+      ${c.canAdvance ? `<div class="actions" style="margin-top:14px"><a class="btn sm light" href="#/revision">${icon('flag', 'sm')}Revisar la semana y avanzar</a></div>` : `<p class="focus-meta">Día ${Math.min(7, c.daysInWeek + 1)} de esta etapa${habits.length && adh.daysLogged ? ` · hábitos cumplidos ${adh.total}% en 7 días` : ''}</p>`}
+    </section>
 
-  let tracking = '';
-  if (ms.block) tracking = ms.block;
-  else {
-    const w = byType('weight');
-    const bp = byType('bp');
-    const m = milestone(p.initialWeight, p.milestonePct);
-    const lastW = w[0];
-    tracking = `
-    <div class="metrics">
-      <a class="metric" href="#/progreso" style="text-decoration:none;color:inherit">
-        <div class="k">Último peso</div>
-        ${lastW ? `<div class="v">${fmt(lastW.data.kg)} kg</div><div class="d">${formatDateShort(lastW.measured_at)}</div>` : '<div class="v muted">—</div><div class="d">Sin registros</div>'}
-      </a>
-      <a class="metric" href="#/salud" style="text-decoration:none;color:inherit">
-        <div class="k">Última presión</div>
-        ${bp[0] ? `<div class="v">${bp[0].data.sys}/${bp[0].data.dia}</div><div class="d">${formatDateTime(bp[0].measured_at)}</div>` : '<div class="v muted">—</div><div class="d">Sin registros</div>'}
-      </a>
-    </div>
-    ${m ? `<p class="small muted" style="margin-top:12px">Primer hito: ${fmt(m.target)} kg (−${fmt(m.pct)}% de ${fmt(p.initialWeight)} kg).</p>` : ''}`;
+    <section class="section" aria-labelledby="h-check">
+      <div class="section-head"><h2 id="h-check">${week === 1 ? 'Tu punto de partida' : 'Tu checklist de hoy'}</h2>${week > 1 ? `<span class="muted small">${Object.values(todayHabitRecord()?.data.items || {}).filter(Boolean).length ? '' : 'Tocá para marcar'}</span>` : ''}</div>
+      ${week === 1 ? baselineChecklist(c) : habitChecklist(week)}
+    </section>
+
+    ${c.actions.length ? `<section class="section" aria-labelledby="h-next"><h2 id="h-next">Tu próximo paso</h2>
+      <div class="stack">${c.actions.map((a) => `<div class="card next">${icon(a.id.startsWith('bp') ? 'heart-pulse' : a.id.startsWith('weight') ? 'scale' : a.id.startsWith('labs') ? 'droplet' : a.id === 'strength' ? 'dumbbell' : 'footprints')}
+        <div class="grow"><p class="title">${esc(a.title)}</p><p class="small muted">${esc(a.detail)}</p><a class="btn sm secondary" href="${a.href}" style="margin-top:10px">${esc(a.cta)}</a></div></div>`).join('')}</div></section>` : ''}
+
+    ${c.insights.length ? `<section class="section" aria-labelledby="h-ins"><h2 id="h-ins">Lo que muestran tus datos</h2>
+      <div class="stack">${c.insights.slice(0, 3).map((i) => `<div class="banner ${i.tone === 'warn' ? 'warn' : i.tone === 'ok' ? 'ok' : 'info'}">${icon(i.tone === 'ok' ? 'trophy' : 'info')}<div><p><strong>${esc(i.title)}</strong></p><p>${esc(i.detail)}</p></div></div>`).join('')}</div></section>` : ''}`;
   }
-
   const html = `
-    <div class="page-head"><h1>${hello}${p.name ? `, ${esc(p.name)}` : ''}</h1><p class="muted">${formatDateLong(isoDate(new Date()))}</p></div>
-    ${ms.list ? latestAlertBanner() : ''}
-    ${weekBanner()}
-    <section aria-labelledby="h-today">
-      <div class="section-head"><h2 id="h-today">Tus comidas de ${inWeek ? 'hoy' : DAYS[idx].toLowerCase()}</h2><span class="muted small">${doneCount} de 3</span></div>
-      ${MEALS.map((m) => mealCard(idx, m.id)).join('')}
+    <div class="page-head"><h1>${hello}${p.name ? `, ${esc(p.name)}` : ''}</h1><p class="muted">${formatDateLong(todayIso())}</p></div>
+    ${coachBlock}
+    <section class="section" aria-labelledby="h-meals">
+      <div class="section-head"><h2 id="h-meals">Comidas de hoy</h2><a class="btn ghost sm" href="#/alimentacion">Menú ${icon('chevron-right', 'sm')}</a></div>
+      <ul class="list">${MEALS.map((m) => {
+        const r = recipeById(plan.menu[idx]?.[m.id]);
+        const done = !!plan.done[`${addDays(plan.weekStart, idx)}:${m.id}`];
+        return `<li class="list-item"><span class="swatch ${m.id}" style="width:40px;height:40px">${icon(MEAL_ICON[m.id], 'sm')}</span>
+          <a class="grow" href="${r ? `#/receta/${r.id}?d=${idx}&m=${m.id}` : '#/alimentacion'}" style="color:inherit;text-decoration:none"><span class="sub">${mealLabel(m.id)} · ${esc(p.mealTimes?.[m.id] || '')}</span><br><span class="title">${r ? esc(r.name) : 'Sin receta'}</span></a>
+          <button class="icon-btn check-btn" type="button" data-act="done" data-day="${idx}" data-meal="${m.id}" aria-pressed="${done}" aria-label="${done ? 'Hecha' : 'Marcar hecha'}: ${mealLabel(m.id)}">${icon('check')}</button></li>`;
+      }).join('')}</ul>
     </section>
     <section class="section" aria-labelledby="h-reg">
       <h2 id="h-reg">Registrar</h2>
-      <div class="actions">
-        <a class="btn" href="#/registrar/bp">${icon('heart-pulse')}Presión</a>
-        <a class="btn secondary" href="#/registrar/weight">${icon('scale')}Peso</a>
-        <a class="btn secondary" href="#/registrar/habit">${icon('list')}Hábitos</a>
+      <div class="quick">
+        <a href="#/registrar/bp">${icon('heart-pulse')}Presión</a>
+        <a href="#/registrar/weight">${icon('scale')}Peso</a>
+        <a href="#/registrar/activity">${icon('footprints')}Actividad</a>
+        <a href="#/registrar/sleep">${icon('moon')}Sueño</a>
+        <a href="#/registrar/lab">${icon('droplet')}Examen</a>
+        <a href="#/registrar/waist">${icon('ruler')}Cintura</a>
       </div>
     </section>
-    <section class="section" aria-labelledby="h-seg">
-      <h2 id="h-seg">Seguimiento</h2>
-      ${tracking}
-    </section>
-    ${missing.length ? `<section class="section"><div class="banner info">${icon('info')}<div><p>Para personalizar mejor, podés agregar ${missing.join(' y ')} en tu perfil.</p><div class="actions"><a class="btn sm secondary" href="#/perfil">Completar perfil</a></div></div></div></section>` : ''}
     <section class="section"><a class="list-item card" href="#/emergencia" style="color:var(--alert-ink)">${icon('phone')}<span class="grow"><span class="title">Tengo síntomas ahora</span><br><span class="sub">Dolor de pecho, falta de aire, desmayo o síntomas neurológicos</span></span>${icon('chevron-right', 'chev')}</a></section>`;
-  return { title: 'Hoy', html, bind: bindMealActions };
+  return {
+    title: 'Hoy', html, bind: () => {
+      bindMealActions();
+      $$('[data-habit]').forEach((b) => b.onclick = () => {
+        const on = b.getAttribute('aria-pressed') !== 'true';
+        b.setAttribute('aria-pressed', on);
+        b.querySelector('.tick').classList.toggle('on', on);
+        b.querySelector('.tick').innerHTML = on ? icon('check', 'sm') : '';
+        toggleHabit(b.dataset.habit, on);
+      });
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// RUTA
+// ---------------------------------------------------------------------------
+function viewRoute([nRaw]) {
+  const cur = S.plan.data.coach?.week || 1;
+  if (nRaw) {
+    const n = Number(nRaw);
+    const w = ROUTE.find((x) => x.n === n);
+    if (!w) return { title: 'Ruta', html: emptyState('map', 'Esa semana no existe', '', '#/ruta', 'Ver la ruta') };
+    const habits = [w.habit, w.extraHabit].filter(Boolean).map((id) => activeHabits(12).find((h) => h.id === id));
+    const html = `
+      <a class="back" href="#/ruta">${icon('chevron-left')}Ruta</a>
+      <div class="focus"><span class="focus-kicker">Semana ${w.n} de ${ROUTE.length}${w.n === cur ? ' · tu semana actual' : ''}</span><h1 style="color:#fff;margin-top:6px">${esc(w.title)}</h1><p>${esc(w.why)}</p></div>
+      <section class="section"><h2>Cómo hacerlo</h2><div class="card"><ul class="bullets">${w.how.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div></section>
+      ${habits.length ? `<section class="section"><h2>Hábito que se suma a tu checklist</h2><ul class="list">${habits.map((h) => `<li class="list-item">${icon('circle-check')}<span class="grow">${esc(h.label)}</span></li>`).join('')}</ul></section>` : ''}
+      <section class="section"><p class="small muted">Para: ${w.goals.map((g) => GOALS.find((x) => x.id === g).short).join(', ')}. Fuente: ${extLink(w.source)}</p></section>
+      ${w.n !== cur ? `<div class="thumb-bar no-print"><button class="btn ${w.n > cur ? '' : 'secondary'}" type="button" data-go-week="${w.n}">${w.n > cur ? `Empezar la semana ${w.n}` : `Volver a la semana ${w.n}`}</button></div>` : ''}`;
+    return { title: w.title, html, bind: bindRouteJump };
+  }
+  const html = `
+    <div class="page-head"><h1>Tu ruta</h1><p class="muted">12 etapas, un cambio a la vez. Avanzás cuando te sentís listo; no hay fechas límite.</p></div>
+    ${routeProgressBar(cur)}
+    <ol class="route">${ROUTE.map((w) => `<li class="${w.n < cur ? 'done' : w.n === cur ? 'now' : ''}"><a href="#/ruta/${w.n}">
+      <span class="route-n">${w.n < cur ? icon('check', 'sm') : w.n}</span>
+      <span class="grow"><span class="title">${esc(w.title)}</span><br><span class="sub">${w.n === cur ? 'Semana actual' : w.n < cur ? 'Completada' : w.goals.map((g) => GOALS.find((x) => x.id === g).short).join(' · ')}</span></span>${icon('chevron-right', 'chev')}</a></li>`).join('')}</ol>
+    <div class="actions" style="margin-top:18px"><a class="btn secondary" href="#/revision">${icon('flag')}Revisión semanal</a></div>`;
+  return { title: 'Ruta', html, bind: bindRouteJump };
+}
+function bindRouteJump() {
+  $$('[data-go-week]').forEach((b) => b.onclick = () => {
+    const week = Number(b.dataset.goWeek);
+    S.plan.data.coach = { week, since: todayIso() };
+    planOps([{ type: 'setCoachWeek', week, since: todayIso() }], { okMsg: `Empezaste la semana ${week}: ${routeWeek(week).title}.`, rerender: false }).then(() => go('#/hoy'));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// REVISIÓN SEMANAL
+// ---------------------------------------------------------------------------
+function viewReview() {
+  const ms = measurementsState();
+  if (ms.block) return { title: 'Revisión semanal', html: ms.block, bind: bindMealActions };
+  const r = weeklyReview({ profile: S.profile.data, plan: S.plan.data, measurements: S.measurements });
+  const next = r.week < ROUTE.length ? routeWeek(r.week + 1) : null;
+  const bar = (pct) => `<div class="progress-track" style="margin-top:6px"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+  const html = `
+    <a class="back" href="#/ruta">${icon('chevron-left')}Ruta</a>
+    <div class="page-head"><h1>Revisión semanal</h1><p class="muted">Últimos 7 días comparados con los 7 anteriores. Semana ${r.week}: ${esc(routeWeek(r.week).title)}.</p></div>
+    ${r.wins.length ? `<div class="banner ok">${icon('trophy')}<div><p><strong>Lo que salió bien</strong></p><ul>${r.wins.map((w) => `<li>${esc(w)}</li>`).join('')}</ul></div></div>` : `<div class="banner info">${icon('info')}<p>Todavía no hay suficientes registros para comparar. Lo importante es seguir anotando: la próxima revisión será más útil.</p></div>`}
+    ${r.habits.length ? `<section class="section"><h2>Hábitos</h2><div class="card stack">${r.habits.map((h) => `<div><div class="row spread"><span>${esc(h.label)}</span><strong>${r.cur.byHabit[h.id].done}/7</strong></div>${bar(r.cur.byHabit[h.id].pct)}</div>`).join('')}
+      <p class="small muted">Días con registro de hábitos: ${r.cur.daysLogged} de 7.</p></div></section>` : ''}
+    <section class="section"><h2>Números de la semana</h2><div class="metrics">
+      <div class="metric"><div class="k">Presión promedio</div>${r.bpNow ? `<div class="v">${r.bpNow.sys}/${r.bpNow.dia}</div><div class="d">${r.bpNow.n} lecturas${r.bpPrev ? ` · antes ${r.bpPrev.sys}/${r.bpPrev.dia}` : ''}</div>` : '<div class="v muted">—</div><div class="d">Sin lecturas</div>'}</div>
+      <div class="metric"><div class="k">Peso</div>${r.wNow ? `<div class="v">${fmt(r.wNow.data.kg)} kg</div><div class="d">${r.wPrev ? `antes ${fmt(r.wPrev.data.kg)} kg` : formatDateShort(r.wNow.measured_at)}</div>` : '<div class="v muted">—</div><div class="d">Sin registro</div>'}</div>
+      <div class="metric"><div class="k">Actividad</div><div class="v">${r.act.minutes} min</div><div class="d">meta 150 · antes ${r.actPrev.minutes}</div></div>
+      <div class="metric"><div class="k">Fuerza</div><div class="v">${r.act.strengthDays} días</div><div class="d">meta 2 por semana</div></div>
+    </div></section>
+    ${r.hardest ? `<section class="section"><div class="banner warn">${icon('target')}<div><p><strong>Lo que más costó: ${esc(r.hardest.label.toLowerCase())}</strong></p><p>Antes de sumar algo nuevo, podés quedarte otra semana en esta etapa. Elegí un momento fijo del día para este hábito.</p></div></div></section>` : ''}
+    <div class="thumb-bar no-print">
+      <a class="btn secondary" href="#/hoy">Seguir aquí</a>
+      ${next ? `<button class="btn" type="button" data-go-week="${next.n}">Ir a semana ${next.n}</button>` : '<a class="btn" href="#/resumen">Resumen para tu médico</a>'}
+    </div>`;
+  return { title: 'Revisión semanal', html, bind: bindRouteJump };
 }
 
 function bindMealActions() {
@@ -614,7 +763,7 @@ function viewFood() {
         </div>
       </section>
       <section class="section"><h2>Preparación del fin de semana</h2>${batchPlan()}</section>
-      <div class="thumb-bar no-print"><a class="btn" href="#/compras">${icon('shopping-cart')}Ver lista de compras</a></div>`;
+      <div class="thumb-bar no-print"><a class="btn" href="#/compras">${icon('shopping-cart')}Lista de compras</a></div>`;
   } else {
     const f = S.ui.recipeFilter;
     const allergies = S.profile.data.allergies;
@@ -628,12 +777,12 @@ function viewFood() {
       }).join('')}</ul>`;
   }
   const html = `
-    <div class="page-head"><h1>Alimentación</h1><p class="muted">Semana del ${formatDateShort(plan.weekStart)} al ${formatDateShort(addDays(plan.weekStart, 6))}</p></div>
+    <div class="page-head"><h1>Comer</h1><p class="muted">Semana del ${formatDateShort(plan.weekStart)} al ${formatDateShort(addDays(plan.weekStart, 6))}</p></div>
     ${weekBanner()}
-    <div class="seg" role="group" aria-label="Vista"><button type="button" data-tab="semana" aria-pressed="${tab === 'semana'}">Menú semanal</button><button type="button" data-tab="recetas" aria-pressed="${tab === 'recetas'}">Recetas (${RECIPES.length})</button></div>
+    <div class="seg" role="group" aria-label="Vista"><button type="button" data-tab="semana" aria-pressed="${tab === 'semana'}">Menú</button><button type="button" data-tab="recetas" aria-pressed="${tab === 'recetas'}">Recetas</button><a href="#/compras">Compras</a></div>
     <div style="margin-top:18px">${body}</div>`;
   return {
-    title: 'Alimentación', html, bind: () => {
+    title: 'Comer', html, bind: () => {
       bindMealActions();
       $$('[data-tab]').forEach((b) => b.onclick = () => { S.ui.foodTab = b.dataset.tab; render(); });
       $$('[data-dayidx]').forEach((b) => b.onclick = () => { S.ui.foodDay = Number(b.dataset.dayidx); render(); });
@@ -679,7 +828,7 @@ function viewRecipe([idRaw]) {
     return `<li><span>${esc(def.name.replace(/ \(.*\)$/, ''))}${state}</span><span class="amt">${esc(qty || (ing.qty == null ? 'al gusto' : ing.home))}</span>${qty && ing.home && ing.home !== 'al gusto' ? `<span class="home">${esc(ing.home)}</span>` : ''}</li>`;
   };
   const html = `
-    <a class="back no-print" href="#/alimentacion">${icon('chevron-left')}Alimentación</a>
+    <a class="back no-print" href="#/alimentacion">${icon('chevron-left')}Comer</a>
     <div class="recipe-hero ${r.meals[0]}">
       <div class="row wrap">${r.meals.map((m) => `<span class="meal-tag ${m}">${mealLabel(m)}</span>`).join('')}<span class="muted small row" style="gap:4px">${icon('timer', 'sm')}${r.minutes} min</span></div>
       <h1>${esc(r.name)}</h1>
@@ -729,12 +878,14 @@ function viewShopping() {
   const total = groups.reduce((a, g) => a + g.items.length, 0);
   const bought = groups.reduce((a, g) => a + g.items.filter((i) => i.bought).length, 0);
   const html = `
-    <div class="page-head"><h1>Compras</h1><p class="muted">Calculada a partir del menú del ${formatDateShort(plan.weekStart)} al ${formatDateShort(addDays(plan.weekStart, 6))}. Se actualiza sola cuando cambiás una receta.</p></div>
+    <div class="page-head"><h1>Comer</h1></div>
+    <div class="seg" role="group" aria-label="Vista" style="margin-bottom:16px"><a href="#/alimentacion" data-food-tab="semana">Menú</a><a href="#/alimentacion" data-food-tab="recetas">Recetas</a><button type="button" aria-pressed="true">Compras</button></div>
+    <p class="muted" style="margin-bottom:16px">Calculada a partir del menú del ${formatDateShort(plan.weekStart)} al ${formatDateShort(addDays(plan.weekStart, 6))}. Se actualiza sola cuando cambiás una receta.</p>
     <div class="card row spread wrap">
       <div><p class="title" style="font-weight:700">Adultos en casa</p><p class="small muted">Multiplica todas las cantidades</p></div>
       <div class="stepper"><button class="icon-btn" type="button" data-adults="-1" aria-label="Menos adultos" ${plan.adults <= 1 ? 'disabled' : ''}>−</button><output aria-live="polite">${plan.adults}</output><button class="icon-btn" type="button" data-adults="1" aria-label="Más adultos" ${plan.adults >= 12 ? 'disabled' : ''}>${icon('plus')}</button></div>
     </div>
-    <div class="row spread" style="margin:18px 0 6px"><p class="muted small">${bought} de ${total} productos comprados</p>${bought ? '<button class="btn ghost sm" type="button" data-act="clear-bought">Desmarcar todo</button>' : ''}</div>
+    <div class="row spread" style="margin:18px 0 6px"><p class="muted small">${bought} de ${total} productos comprados</p><span class="row" style="gap:4px">${bought ? '<button class="btn ghost sm" type="button" data-act="clear-bought">Desmarcar</button>' : ''}<button class="btn ghost sm no-print" type="button" data-act="print" aria-label="Imprimir lista">${icon('printer', 'sm')}</button></span></div>
     ${groups.map((g) => `
       <section class="section" style="margin-top:14px" aria-labelledby="cat-${g.cat}">
         <h2 id="cat-${g.cat}" style="font-size:1.1rem;margin-bottom:8px">${esc(g.label)}</h2>
@@ -748,10 +899,10 @@ function viewShopping() {
     <div class="thumb-bar no-print">
       <button class="btn secondary" type="button" data-act="share-list">${icon('share-2')}Compartir</button>
       <button class="btn secondary" type="button" data-act="download-list">${icon('download')}Descargar</button>
-      <button class="icon-btn" type="button" data-act="print" aria-label="Imprimir lista">${icon('printer')}</button>
     </div>`;
   return {
     title: 'Compras', html, bind: () => {
+      $$('[data-food-tab]').forEach((a) => a.onclick = () => { S.ui.foodTab = a.dataset.foodTab; });
       $$('[data-buy]').forEach((c) => c.onchange = () => {
         const id = c.dataset.buy, value = c.checked;
         c.closest('.shop-item').classList.toggle('bought', value);
@@ -856,11 +1007,23 @@ function statsLine(s, unit, decimals = 1) {
 function viewProgress() {
   const ms = measurementsState();
   const tab = S.ui.progressTab;
-  const tabs = [['peso', 'Peso'], ['cintura', 'Cintura'], ['sueno', 'Sueño'], ['habitos', 'Hábitos']];
+  const tabs = [['general', 'General'], ['peso', 'Peso'], ['actividad', 'Actividad'], ['cintura', 'Cintura'], ['sueno', 'Sueño'], ['habitos', 'Hábitos']];
   let body = ms.block || '';
   if (ms.list) {
     const p = S.profile.data;
-    if (tab === 'peso') {
+    if (tab === 'general') {
+      body = progressOverview();
+    } else if (tab === 'actividad') {
+      const a = byType('activity');
+      const wk = activityWeek(S.measurements, new Date());
+      body = `<div class="section-head"><h2>Actividad</h2><a class="btn sm" href="#/registrar/activity">${icon('plus', 'sm')}Registrar</a></div>
+        <div class="metrics">
+          <div class="metric"><div class="k">Últimos 7 días</div><div class="v">${wk.minutes} min</div><div class="d">meta: 150 min moderados</div><div class="progress-track"><div class="progress-fill" style="width:${Math.min(100, wk.minutes / 1.5)}%"></div></div></div>
+          <div class="metric"><div class="k">Fuerza</div><div class="v">${wk.strengthDays} de 2</div><div class="d">días esta semana</div><div class="progress-track"><div class="progress-fill" style="width:${Math.min(100, wk.strengthDays * 50)}%"></div></div></div>
+        </div>
+        <p class="small muted" style="margin-top:10px">${wk.postMeal} ${wk.postMeal === 1 ? 'caminata' : 'caminatas'} después de comer en 7 días. Fuente: ${extLink(COACH_SOURCES.ahaActivity)}</p>
+        ${a.length ? historyList(a, (x) => `${x.data.minutes} min · ${ACTIVITY_KINDS[x.data.kind]}${x.data.afterMeal ? ' · después de comer' : ''}`) : `<div style="margin-top:16px">${emptyState('footprints', 'Sin actividad registrada', 'Caminar cuenta. Empezá con 10 minutos después del almuerzo.', '#/registrar/activity', 'Registrar actividad')}</div>`}`;
+    } else if (tab === 'peso') {
       const w = byType('weight');
       const m = milestone(p.initialWeight, p.milestonePct);
       const last = w[0]?.data.kg;
@@ -898,8 +1061,9 @@ function viewProgress() {
         : emptyState('moon', 'Sin registros de sueño', 'Anotá cuántas horas dormiste anoche. Dormir bien también influye en el apetito y la presión.', '#/registrar/sleep', 'Registrar sueño')}`;
     } else {
       const hb = byType('habit');
+      const HAB = activeHabits(S.plan.data.coach?.week || 1).length ? activeHabits(S.plan.data.coach?.week || 1) : HABITS.filter((h) => !h.legacy);
       body = `<div class="section-head"><h2>Hábitos</h2><a class="btn sm" href="#/registrar/habit">${icon('plus', 'sm')}Registrar hoy</a></div>
-        ${hb.length ? `<div class="card"><p>${HABITS.map((h) => { const n = hb.slice(0, 7).filter((x) => x.data.items[h.id]).length; return `<span class="row spread" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(h.label)}</span><strong>${n}/${Math.min(7, hb.length)}</strong></span>`; }).join('')}</p><p class="tiny muted" style="margin-top:8px">Últimos ${Math.min(7, hb.length)} días registrados.</p></div>${historyList(hb, (x) => `${Object.values(x.data.items).filter(Boolean).length} de ${HABITS.length} hábitos`)}`
+        ${hb.length ? `<div class="card"><p>${HAB.map((h) => { const n = hb.slice(0, 7).filter((x) => x.data.items[h.id]).length; return `<span class="row spread" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(h.label)}</span><strong>${n}/${Math.min(7, hb.length)}</strong></span>`; }).join('')}</p><p class="tiny muted" style="margin-top:8px">Últimos ${Math.min(7, hb.length)} días registrados.</p></div>${historyList(hb, (x) => `${HAB.filter((h) => x.data.items[h.id]).length} de ${HAB.length} hábitos`)}`
         : emptyState('list', 'Sin hábitos registrados', 'Cinco preguntas simples al final del día. No se trata de ser perfecto: sirve para ver qué te ayuda.', '#/registrar/habit', 'Registrar hábitos')}`;
     }
   }
@@ -908,6 +1072,49 @@ function viewProgress() {
     <div class="seg" role="group" aria-label="Indicador">${tabs.map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>
     <div style="margin-top:18px">${body}</div>`;
   return { title: 'Progreso', html, bind: () => { bindMealActions(); $$('[data-ptab]').forEach((b) => b.onclick = () => { S.ui.progressTab = b.dataset.ptab; render(); }); } };
+}
+
+// Vista general de progreso por objetivo, solo con datos reales.
+function progressOverview() {
+  const p = S.profile.data;
+  const goals = p.goals?.length ? p.goals : GOALS.map((g) => g.id);
+  const now = new Date();
+  const c = coachState();
+  const cards = [];
+  if (goals.includes('peso')) {
+    const w = byType('weight');
+    const m = milestone(p.initialWeight, p.milestonePct);
+    const t = weightTrend(S.measurements, now);
+    const last = w[0]?.data.kg;
+    const lost = last != null && p.initialWeight ? Math.round((p.initialWeight - last) * 10) / 10 : null;
+    cards.push(`<div class="card goal"><div class="row spread"><h3>${icon('scale', 'sm')} Peso</h3><a class="btn ghost sm" href="#/registrar/weight">${icon('plus', 'sm')}Registrar</a></div>
+      ${last != null ? `<p class="big">${fmt(last)} kg</p><p class="small muted">Inicio declarado ${fmt(p.initialWeight)} kg${lost != null ? ` · ${lost > 0 ? '−' : '+'}${fmt(Math.abs(lost))} kg` : ''}${t ? ` · tendencia ${t.perWeek > 0 ? '+' : ''}${fmt(t.perWeek, 2)} kg/semana` : ''}</p>
+      ${m ? `<div class="progress-track" role="progressbar" aria-label="Avance hacia el primer hito" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.max(0, Math.min(1, (lost || 0) / m.loss)) * 100)}"><div class="progress-fill" style="width:${Math.max(0, Math.min(1, (lost || 0) / m.loss)) * 100}%"></div></div><p class="tiny muted" style="margin-top:6px">Primer hito: ${fmt(m.target)} kg (−${fmt(m.pct)}%)</p>` : ''}`
+        : '<p class="muted small">Sin registros de peso todavía.</p>'}</div>`);
+  }
+  if (goals.includes('presion')) {
+    const bp = [...byType('bp')].reverse();
+    const first = bp.slice(0, 14);
+    const recent = byType('bp').filter((m) => (now - parseLocal(m.measured_at)) / 86400000 < 7);
+    const avg = (l, k) => Math.round(l.reduce((s, m) => s + m.data[k], 0) / l.length);
+    cards.push(`<div class="card goal"><div class="row spread"><h3>${icon('heart-pulse', 'sm')} Presión</h3><a class="btn ghost sm" href="#/salud">Ver ${icon('chevron-right', 'sm')}</a></div>
+      ${recent.length ? `<p class="big">${avg(recent, 'sys')}/${avg(recent, 'dia')} <span class="small muted">mmHg</span></p><p class="small muted">Promedio de ${recent.length} ${recent.length === 1 ? 'lectura' : 'lecturas'} en 7 días${bp.length >= 20 ? ` · al inicio ${avg(first, 'sys')}/${avg(first, 'dia')} (primeras ${first.length})` : ''}</p>`
+        : `<p class="muted small">${bp.length ? 'Sin lecturas en los últimos 7 días.' : 'Sin lecturas todavía.'}</p>`}
+      <p class="tiny muted" style="margin-top:6px">Semana de presión: ${c.bpWeek.completeDays}/7 días con mañana y noche.</p></div>`);
+  }
+  if (goals.includes('insulina')) {
+    const labs = byType('lab');
+    const a1c = labs.filter((m) => m.data.test === 'hba1c');
+    const glu = labs.filter((m) => m.data.test === 'glucosa' && m.data.context === 'ayunas');
+    const line = (list, name) => list.length ? `<p><strong>${name}:</strong> ${fmt(list[0].data.value, 2)} ${esc(list[0].data.unit)} <span class="muted small">(${formatDateShort(list[0].measured_at)} ${list[0].measured_at.slice(0, 4)})</span>${list.length > 1 ? `<br><span class="small muted">Primer registro: ${fmt(list.at(-1).data.value, 2)} ${esc(list.at(-1).data.unit)} (${formatDateShort(list.at(-1).measured_at)} ${list.at(-1).measured_at.slice(0, 4)})</span>` : ''}</p>` : '';
+    cards.push(`<div class="card goal"><div class="row spread"><h3>${icon('droplet', 'sm')} Resistencia a la insulina</h3><a class="btn ghost sm" href="#/registrar/lab">${icon('plus', 'sm')}Examen</a></div>
+      ${a1c.length || glu.length ? `<div class="stack small">${line(a1c, 'HbA1c')}${line(glu, 'Glucosa en ayunas')}</div>` : '<p class="muted small">Sin HbA1c ni glucosa en ayunas registradas. Son los indicadores para ver tu avance; consultá a tu médico si corresponde medirlos.</p>'}
+      <p class="tiny muted" style="margin-top:8px">Esta semana: ${c.activity.postMeal} caminatas después de comer · ${c.activity.strengthDays} de 2 días de fuerza · ${c.activity.minutes} de 150 min.</p></div>`);
+  }
+  return `
+    <div class="stack">${cards.join('')}</div>
+    ${c.insights.length ? `<section class="section"><h2>Lectura del coach</h2><div class="stack">${c.insights.map((i) => `<div class="banner ${i.tone === 'warn' ? 'warn' : i.tone === 'ok' ? 'ok' : 'info'}">${icon(i.tone === 'ok' ? 'trophy' : 'info')}<div><p><strong>${esc(i.title)}</strong></p><p>${esc(i.detail)}</p></div></div>`).join('')}</div></section>` : `<section class="section"><div class="empty">${icon('chart-line')}<p><strong>Las observaciones aparecen con tus registros</strong></p><p class="muted small">Con 2 semanas de peso o 6 lecturas de presión, el coach empieza a mostrar tendencias.</p></div></section>`}
+    <p class="disclaimer">Pulso describe tus datos; no diagnostica. Llevá el resumen a tu médico para interpretar resultados.</p>`;
 }
 
 function historyList(list, label, limit = 10) {
@@ -1033,6 +1240,7 @@ const FORM_META = {
   lab: { title: 'Resultado de laboratorio', back: '#/salud', icon: 'droplet' },
   sleep: { title: 'Sueño', back: '#/progreso', icon: 'moon' },
   habit: { title: 'Hábitos del día', back: '#/progreso', icon: 'list' },
+  activity: { title: 'Actividad física', back: '#/progreso', icon: 'footprints' },
 };
 const formDrafts = {};
 
@@ -1058,7 +1266,12 @@ function viewForm([type, id]) {
   if (type === 'waist') fields = numField('cm', 'Cintura', d.cm, 'cm', { error: e.cm, hint: 'A la altura del ombligo, de pie, al final de una exhalación normal.' });
   if (type === 'sleep') fields = `${numField('hours', 'Horas dormidas', d.hours, 'h', { error: e.hours, hint: 'Por ejemplo 6,5 para seis horas y media.' })}
     <fieldset class="fieldset"><legend>¿Cómo dormiste? <span class="muted">(opcional)</span></legend><div class="chips">${[1, 2, 3, 4, 5].map((q) => `<label class="chip"><input type="radio" name="quality" value="${q}" ${Number(d.quality) === q ? 'checked' : ''}>${['Muy mal', 'Mal', 'Regular', 'Bien', 'Muy bien'][q - 1]}</label>`).join('')}</div></fieldset>`;
-  if (type === 'habit') fields = `<fieldset class="fieldset"><legend>Marcá lo que lograste hoy</legend><div class="checks">${HABITS.map((h) => `<label class="check"><input type="checkbox" name="h_${h.id}" ${d.items?.[h.id] ? 'checked' : ''}>${esc(h.label)}</label>`).join('')}</div><span class="hint">Lo que no marques no es una falla: es información para ajustar.</span></fieldset>`;
+  if (type === 'activity') fields = `
+    ${numField('minutes', 'Minutos', d.minutes, 'min', { inputmode: 'numeric', error: e.minutes })}
+    <fieldset class="fieldset"><legend>Tipo</legend><div class="chips">${Object.entries(ACTIVITY_KINDS).map(([k, l]) => `<label class="chip"><input type="radio" name="kind" value="${k}" ${d.kind === k ? 'checked' : ''}>${esc(l.split(',')[0])}</label>`).join('')}</div></fieldset>
+    <fieldset class="fieldset"><legend>Intensidad</legend><div class="checks">${Object.entries(INTENSITIES).map(([k, l]) => `<label class="check"><input type="radio" name="intensity" value="${k}" ${d.intensity === k ? 'checked' : ''}>${esc(l)}</label>`).join('')}</div></fieldset>
+    <label class="check" style="margin-top:18px"><input type="checkbox" name="afterMeal" ${d.afterMeal ? 'checked' : ''}>Fue después de una comida</label>`;
+  if (type === 'habit') fields = `<fieldset class="fieldset"><legend>Marcá lo que lograste ese día</legend><div class="checks">${HABITS.filter((h) => !h.legacy || d.items?.[h.id]).map((h) => `<label class="check"><input type="checkbox" name="h_${h.id}" ${d.items?.[h.id] ? 'checked' : ''}>${esc(h.label)}</label>`).join('')}</div><span class="hint">Lo que no marques no es una falla: es información para ajustar.</span></fieldset>`;
   if (type === 'bp') fields = `
     <div class="grid-2">${numField('sys', 'Sistólica', d.sys, 'mmHg', { inputmode: 'numeric', error: e.sys, hint: 'Número de arriba' })}${numField('dia', 'Diastólica', d.dia, 'mmHg', { inputmode: 'numeric', error: e.dia, hint: 'Número de abajo' })}</div>
     ${numField('pulse', 'Pulso <span class="muted">(opcional)</span>', d.pulse, 'lpm', { inputmode: 'numeric', error: e.pulse })}
@@ -1111,6 +1324,7 @@ function defaultsFor(type) {
   if (type === 'bp') return { symptoms: [], symptomsNow: null };
   if (type === 'lab') return { test: 'glucosa', unit: 'mg/dL', context: 'ayunas', source: 'laboratorio' };
   if (type === 'habit') return { items: {} };
+  if (type === 'activity') return { kind: 'caminar', intensity: 'moderada', afterMeal: false };
   return {};
 }
 function readForm(type, f, draft) {
@@ -1119,6 +1333,7 @@ function readForm(type, f, draft) {
   const d = draft.data;
   if (type === 'weight') d.kg = v('kg');
   if (type === 'waist') d.cm = v('cm');
+  if (type === 'activity') { d.minutes = v('minutes'); d.kind = radio('kind'); d.intensity = radio('intensity'); d.afterMeal = !!f.elements.afterMeal?.checked; }
   if (type === 'sleep') { d.hours = v('hours'); d.quality = radio('quality') ? Number(radio('quality')) : null; }
   if (type === 'habit') { d.items = Object.fromEntries(HABITS.map((h) => [h.id, !!f.elements[`h_${h.id}`]?.checked])); }
   if (type === 'bp') {
@@ -1237,6 +1452,9 @@ function viewProfile() {
       <label class="field"><span class="label">Diagnósticos indicados por tu médico</span><textarea class="input" name="conditions">${esc(p.conditions)}</textarea></label>
       <label class="field"><span class="label">Medicamentos</span><textarea class="input" name="medications">${esc(p.medications)}</textarea><span class="hint">Solo para tu resumen de consulta. Pulso no modifica medicamentos.</span></label>
       <hr class="divider">
+      <h2>Objetivos</h2>
+      <div class="chips" style="margin-top:12px">${GOALS.map((g) => `<label class="chip"><input type="checkbox" name="goals" value="${g.id}" ${(p.goals || []).includes(g.id) ? 'checked' : ''}>${esc(g.short)}</label>`).join('')}</div>
+      <hr class="divider">
       <h2>Alergias y preferencias</h2>
       <div class="chips" style="margin-top:12px">${ALLERGENS.map((a) => `<label class="chip"><input type="checkbox" name="allergies" value="${a.id}" ${p.allergies.includes(a.id) ? 'checked' : ''}>${esc(a.label)}</label>`).join('')}</div>
       <label class="field" style="margin-top:14px"><span class="label">Otras alergias</span><input class="input" name="otherAllergies" value="${esc(p.otherAllergies)}"></label>
@@ -1281,6 +1499,7 @@ function bindProfile() {
       ...S.profile.data,
       name: v('name'), age: v('age'), height: v('height'), initialWeight: v('initialWeight'), milestonePct: v('milestonePct'),
       activity: v('activity'), conditions: v('conditions'), medications: v('medications'), otherAllergies: v('otherAllergies'),
+      goals: $$('input[name=goals]:checked', f).map((x) => x.value),
       allergies: $$('input[name=allergies]:checked', f).map((x) => x.value), preferences: $$('input[name=preferences]:checked', f).map((x) => x.value),
       mealTimes: Object.fromEntries(MEALS.map((m) => [m.id, v(`time_${m.id}`)])), emergencyNumber: v('emergencyNumber'), onboarded: true,
     };

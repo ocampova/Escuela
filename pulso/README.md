@@ -1,6 +1,43 @@
 # Pulso
 
-Mobile web app en español para resolver **qué comer, cuánto, cómo prepararlo y qué comprar**, y para llevar el seguimiento de peso, presión arterial y salud metabólica. Pensada para Costa Rica. Sirve para varias personas: cada una tiene su cuenta, su perfil y sus objetivos.
+**Coach metabólico** en español, como app web para el teléfono: una guía completa para progresar en tres objetivos, **bajar de peso, mejorar la resistencia a la insulina y bajar la presión arterial**. Combina una ruta de 12 semanas, hábitos diarios, un motor de recomendaciones basado en tus datos reales, alimentación tica con lista de compras, y seguimiento clínico. Pensada para Costa Rica y para varias personas: cada una tiene su cuenta, su perfil y sus objetivos.
+
+## El coach
+
+- **Objetivos:** al empezar elegís uno o más (peso, insulina, presión). Las recomendaciones se ajustan a esa elección.
+- **Ruta de 12 semanas, un cambio a la vez:**
+  1. Punto de partida (mediciones de base)
+  2. El plato
+  3. Lo que tomás
+  4. Caminar después de comer
+  5. Menos sal
+  6. 150 minutos por semana
+  7. Fuerza
+  8. Fibra y proteína
+  9. Sueño
+  10. Estrés y presión
+  11. Comer fuera y fines de semana
+  12. Revisión y siguiente etapa
+
+  Cada semana explica por qué y cómo, y trae una fuente oficial. Avanzás cuando te sentís listo: no hay fechas límite.
+- **Checklist diario:** los hábitos de cada semana se suman a un checklist que se marca con un toque.
+- **Hoy:** muestra el foco de la semana, el checklist, «Tu próximo paso» (hasta 3 acciones priorizadas) y «Lo que muestran tus datos».
+- **Recomendaciones, todas a partir de registros reales:**
+  - semana de presión: 2 lecturas en la mañana y 2 en la noche durante 7 días;
+  - recordatorio de pesarse una vez por semana;
+  - exámenes de glucosa o HbA1c faltantes o con más de 6 meses;
+  - minutos de actividad frente a la meta de 150 y días de fuerza frente a la meta de 2;
+  - sueño de menos de 7 horas;
+  - tendencia de peso: avisa si es demasiado rápida (más de 1 kg por semana) o si se estancó;
+  - promedio de presión de 7 días con 6 o más lecturas, comparado con el inicio;
+  - cambios en la HbA1c.
+- **Revisión semanal:** compara los últimos 7 días con los 7 anteriores. Muestra logros, el hábito que más costó y permite avanzar de etapa o quedarse en la misma.
+- **Progreso › General:** una tarjeta por objetivo (peso con el hito, presión inicial y actual, HbA1c y glucosa) y la lectura del coach.
+- **Actividad física:** minutos, tipo (caminar, fuerza, cardio u otra), intensidad y si fue después de comer.
+
+Las observaciones describen datos y sugieren conversar con el médico; nunca diagnostican ni cambian medicamentos.
+
+## Alimentación y seguimiento
 
 > Pulso es una herramienta de organización y registro. No diagnostica, no prescribe calorías y no cambia medicamentos.
 
@@ -14,13 +51,13 @@ npm start                      # http://localhost:3000
 PORT=8080 npm start            # otro puerto
 PULSO_DB=/ruta/pulso.db npm start
 PULSO_SECURE_COOKIES=1 npm start   # detrás de HTTPS
-npm test                       # 25 pruebas de lógica y API
+npm test                       # 37 pruebas de lógica, coach y API
 npm run e2e                    # flujo completo en un teléfono emulado (requiere Playwright y Chromium)
 ```
 
 Los datos se guardan en `pulso/data/pulso.db` (SQLite). Esa carpeta está excluida de git.
 
-## Qué incluye
+### Qué incluye
 
 **Hoy.** Las tres comidas del día con su horario, el botón para marcarlas como hechas, accesos rápidos para registrar presión, peso y hábitos, el último registro de cada uno y el primer hito. También hay un acceso fijo a «Tengo síntomas ahora».
 
@@ -32,7 +69,7 @@ Los datos se guardan en `pulso/data/pulso.db` (SQLite). Esa carpeta está exclui
 
 Una comida se puede cambiar desde una hoja inferior, que solo ofrece recetas compatibles con las alergias del perfil. La vista también muestra la guía del plato (½ verduras, ¼ proteína, ¼ almidón) y un plan de preparación para el fin de semana armado a partir del menú.
 
-**Compras.** La lista se genera desde el menú y se recalcula sola cada vez que cambia una receta.
+**Compras** (dentro de «Comer»). La lista se genera desde el menú y se recalcula sola cada vez que cambia una receta.
 - Agrupa los ingredientes por categoría, en el orden en que se recorre una feria.
 - Multiplica las cantidades por el número de adultos.
 - Convierte los pesos cocidos a peso de compra (arroz y frijoles en seco, pollo en crudo) y explica la conversión en «¿Cómo se calculó?».
@@ -78,3 +115,7 @@ Una comida se puede cambiar desde una hoja inferior, que solo ofrece recetas com
 - La alerta de urgencia por síntomas se basa en lo que la persona marca. No reemplaza llamar al 911.
 - Las cantidades de las recetas son orientativas (método del plato). No hay cálculo de calorías ni de macronutrientes.
 - `node:sqlite` todavía es experimental en Node 22. Para varios servidores habría que pasar a PostgreSQL.
+
+## Skills de diseño
+
+`pulso/.claude/skills/` incluye los mismos skills de diseño del repositorio principal: impeccable, frontend-design, design-taste-frontend y emilkowalski-motion. Sus orígenes están en `skills-lock.json`. Así siguen disponibles si Pulso se mueve a un repositorio propio.

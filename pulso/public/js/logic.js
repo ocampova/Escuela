@@ -76,6 +76,7 @@ export function newPlan(allergies = [], today = new Date()) {
     weekStart: mondayOf(today),
     adults: 1,
     menu: buildMenu(allergies),
+    coach: { week: 1, since: isoDate(today) },
     done: {},      // { 'YYYY-MM-DD:desayuno': true }
     bought: {},    // { ingredientId: true }
   };
@@ -275,13 +276,23 @@ export const LAB_TESTS = {
 export const CONTEXT_LABELS = { ayunas: 'En ayunas', postprandial_2h: '2 horas después de comer', aleatoria: 'En cualquier momento' };
 export const LAB_SOURCES = { laboratorio: 'Laboratorio', glucometro: 'Glucómetro en casa', otro: 'Otro' };
 
-export const MEASUREMENT_TYPES = ['weight', 'waist', 'bp', 'lab', 'sleep', 'habit'];
+export const MEASUREMENT_TYPES = ['weight', 'waist', 'bp', 'lab', 'sleep', 'habit', 'activity'];
+export const ACTIVITY_KINDS = { caminar: 'Caminar', fuerza: 'Fuerza', cardio: 'Bici, baile, trote u otro cardio', otro: 'Otra actividad' };
+export const INTENSITIES = { ligera: 'Ligera', moderada: 'Moderada (podés hablar, no cantar)', vigorosa: 'Vigorosa (cuesta hablar)' };
+// Hábitos diarios. 'week' = semana de la ruta en que se incorporan al checklist.
 export const HABITS = [
-  { id: 'verduras', label: 'Medio plato de verduras en almuerzo y cena' },
-  { id: 'agua', label: 'Tomé agua como bebida principal' },
-  { id: 'sin_azucaradas', label: 'Sin bebidas azucaradas' },
-  { id: 'caminar', label: 'Me moví o caminé al menos 20 minutos' },
-  { id: 'cocinar', label: 'Cociné en casa la mayoría de las comidas' },
+  { id: 'verduras', label: 'Medio plato de verduras en almuerzo y cena', week: 2, goals: ['peso', 'insulina', 'presion'] },
+  { id: 'sin_azucaradas', label: 'Sin bebidas azucaradas ni jugos', week: 3, goals: ['peso', 'insulina'] },
+  { id: 'caminar_post', label: 'Caminé 10 minutos después de una comida', week: 4, goals: ['insulina', 'peso'] },
+  { id: 'sal', label: 'Sin sal en la mesa, ni cubitos, consomé o embutidos', week: 5, goals: ['presion'] },
+  { id: 'fibra', label: 'Frijoles, avena o fruta entera (no jugo) hoy', week: 8, goals: ['insulina', 'peso', 'presion'] },
+  { id: 'proteina_desayuno', label: 'Desayuno con proteína (huevo, frijoles, pollo)', week: 8, goals: ['peso', 'insulina'] },
+  { id: 'dormir', label: 'Me acosté a una hora que permite dormir 7 horas', week: 9, goals: ['peso', 'insulina', 'presion'] },
+  { id: 'respiracion', label: '5 minutos de respiración lenta o una pausa', week: 10, goals: ['presion'] },
+  // Hábitos de la versión anterior (se conservan para no perder registros).
+  { id: 'agua', label: 'Tomé agua como bebida principal', week: 99, legacy: true },
+  { id: 'caminar', label: 'Me moví o caminé al menos 20 minutos', week: 99, legacy: true },
+  { id: 'cocinar', label: 'Cociné en casa la mayoría de las comidas', week: 99, legacy: true },
 ];
 
 const num = (v) => (typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v.replace(',', '.')) : NaN);
@@ -361,6 +372,12 @@ export function validateMeasurement(type, measured_at, data, now = new Date()) {
       else out.quality = q;
     }
   }
+  if (type === 'activity') {
+    range('minutes', data.minutes, 1, 600, 'los minutos', 'minutos', true, 0);
+    if (!ACTIVITY_KINDS[data.kind]) errors.kind = 'Elegí el tipo de actividad.'; else out.kind = data.kind;
+    if (!INTENSITIES[data.intensity]) errors.intensity = 'Elegí la intensidad.'; else out.intensity = data.intensity;
+    out.afterMeal = !!data.afterMeal;
+  }
   if (type === 'habit') {
     const items = data.items && typeof data.items === 'object' ? data.items : {};
     out.items = {};
@@ -397,6 +414,10 @@ export function validateProfile(p) {
     if (!arr.every((x) => allowed.includes(x))) errors[k] = 'Opción no reconocida.';
     out[k] = [...new Set(arr.filter((x) => allowed.includes(x)))];
   }
+  const GOAL_IDS = ['peso', 'insulina', 'presion'];
+  const goals = Array.isArray(p.goals) ? p.goals : [];
+  if (!goals.every((x) => GOAL_IDS.includes(x))) errors.goals = 'Objetivo no reconocido.';
+  out.goals = [...new Set(goals.filter((x) => GOAL_IDS.includes(x)))];
   const ACT = ['', 'sedentaria', 'ligera', 'moderada', 'alta'];
   if (p.activity != null && !ACT.includes(p.activity)) errors.activity = 'Nivel de actividad no válido.';
   out.activity = p.activity || '';
@@ -441,7 +462,14 @@ export function validatePlan(plan) {
     if (!INGREDIENTS[k]) return { ok: false, error: 'Producto de compras desconocido.' };
     if (v) bought[k] = true;
   }
-  return { ok: true, value: { weekStart: plan.weekStart, adults, menu: plan.menu.map((d) => ({ desayuno: d.desayuno ?? null, almuerzo: d.almuerzo ?? null, cena: d.cena ?? null })), done, bought } };
+  let coach = { week: 1, since: plan.weekStart };
+  if (plan.coach != null) {
+    const wk = Number(plan.coach.week);
+    if (!Number.isInteger(wk) || wk < 1 || wk > 12) return { ok: false, error: 'Semana de la ruta no válida.' };
+    if (!parseIsoDate(plan.coach.since)) return { ok: false, error: 'Fecha de la ruta no válida.' };
+    coach = { week: wk, since: plan.coach.since };
+  }
+  return { ok: true, value: { weekStart: plan.weekStart, adults, coach, menu: plan.menu.map((d) => ({ desayuno: d.desayuno ?? null, almuerzo: d.almuerzo ?? null, cena: d.cena ?? null })), done, bought } };
 }
 
 // Aplica una operación al plan (el servidor la usa para evitar sobrescrituras entre ventanas).
@@ -459,6 +487,7 @@ export function applyPlanOp(plan, op) {
     case 'clearBought': p.bought = {}; break;
     case 'setAdults': p.adults = op.value; break;
     case 'regenerate': p.menu = buildMenu(op.allergies || [], op.offset || 0); break;
+    case 'setCoachWeek': p.coach = { week: op.week, since: op.since }; break;
     case 'newWeek': p.weekStart = op.weekStart; p.bought = {}; break;
     default: throw new Error('Operación no reconocida.');
   }
@@ -521,7 +550,8 @@ export function measurementsCsv(list) {
     if (m.type === 'bp') Object.assign(base, { tipo: 'presion', valor: d.sys, valor_2: d.dia, pulso: d.pulse ?? '', unidad: 'mmHg', sintomas: (d.symptoms || []).map(symptomLabel).join(' | '), ahora: d.symptoms?.length ? (d.symptomsNow ? 'sí' : 'no') : '' });
     if (m.type === 'lab') Object.assign(base, { tipo: 'laboratorio', valor: d.value, unidad: d.unit, examen: d.test === 'otro' ? d.name : LAB_TESTS[d.test]?.label, contexto: CONTEXT_LABELS[d.context] || '' });
     if (m.type === 'sleep') Object.assign(base, { tipo: 'sueno', valor: d.hours, valor_2: d.quality ?? '', unidad: 'horas' });
-    if (m.type === 'habit') Object.assign(base, { tipo: 'habitos', valor: Object.values(d.items || {}).filter(Boolean).length, valor_2: HABITS.length, unidad: 'hábitos cumplidos', examen: HABITS.filter((h) => d.items?.[h.id]).map((h) => h.id).join(' | ') });
+    if (m.type === 'activity') Object.assign(base, { tipo: 'actividad', valor: d.minutes, unidad: 'minutos', examen: ACTIVITY_KINDS[d.kind], contexto: (INTENSITIES[d.intensity] || '').split(' (')[0] + (d.afterMeal ? ' · después de comer' : '') });
+    if (m.type === 'habit') Object.assign(base, { tipo: 'habitos', valor: Object.values(d.items || {}).filter(Boolean).length, valor_2: HABITS.filter((h) => !h.legacy).length, unidad: 'hábitos cumplidos', examen: HABITS.filter((h) => d.items?.[h.id]).map((h) => h.id).join(' | ') });
     rows.push([base.tipo, date, time, base.valor, base.valor_2, base.pulso, base.unidad, base.examen, base.contexto, base.sintomas, base.ahora, base.notas]);
   }
   return '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
