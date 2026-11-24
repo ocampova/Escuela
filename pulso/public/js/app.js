@@ -520,8 +520,35 @@ function toggleHabit(id, value) {
   });
 }
 
-function routeProgressBar(week) {
-  return `<div class="route-bar" aria-hidden="true">${ROUTE.map((w) => `<span class="${w.n < week ? 'done' : w.n === week ? 'now' : ''}"></span>`).join('')}</div>`;
+// Camino de 12 hitos: dos filas de 6 paradas unidas por un sendero (1→6 a la derecha, 7→12 de regreso).
+const TRAIL_X = [8.33, 25, 41.67, 58.33, 75, 91.67];
+function trailPos(n) {
+  const row = n <= 6 ? 0 : 1;
+  const col = row === 0 ? n - 1 : 12 - n; // la segunda fila vuelve de derecha a izquierda
+  return { x: TRAIL_X[col], y: row === 0 ? 25 : 75 };
+}
+function trailPath(upTo) {
+  let d = '';
+  for (let n = 1; n <= upTo; n++) {
+    const p = trailPos(n);
+    if (n === 1) d += `M ${p.x} ${p.y}`;
+    else if (n === 7) d += ` C 101 25, 101 75, ${p.x} ${p.y}`;
+    else d += ` L ${p.x} ${p.y}`;
+  }
+  return d;
+}
+function routeTrail(week, { dark = false, animate = false } = {}) {
+  return `<div class="trail ${dark ? 'on-dark' : ''} ${animate ? 'animate' : ''}" role="list" aria-label="Ruta de 12 semanas: vas en la semana ${week}">
+    <svg class="trail-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <path class="todo" d="${trailPath(12)}" vector-effect="non-scaling-stroke"/>
+      ${week > 1 ? `<path class="done" pathLength="1" d="${trailPath(week)}" vector-effect="non-scaling-stroke"${animate ? ` style="--trail-from:${(1 / (week - 1)).toFixed(3)}"` : ''}/>` : ''}
+    </svg>
+    ${ROUTE.map((w) => {
+      const p = trailPos(w.n);
+      const state = w.n < week ? 'done' : w.n === week ? 'now' : 'upcoming';
+      return `<a role="listitem" class="stop ${state}" href="#/ruta/${w.n}" style="left:${p.x}%;top:${p.y}%" aria-label="Semana ${w.n}: ${esc(w.title)}${state === 'done' ? ', completada' : state === 'now' ? ', semana actual' : ''}"${state === 'now' ? ' aria-current="step"' : ''}>${icon(w.icon, 'sm')}<span class="stop-n" aria-hidden="true">${w.n}</span></a>`;
+    }).join('')}
+  </div>`;
 }
 
 function baselineChecklist(c) {
@@ -571,7 +598,7 @@ function viewToday() {
       <div class="row spread"><span class="focus-kicker">Semana ${week} de ${ROUTE.length}</span><a class="focus-link" href="#/ruta/${week}">Ver guía ${icon('chevron-right', 'sm')}</a></div>
       <h2 id="h-focus">${esc(rw.title)}</h2>
       <p>${esc(rw.why)}</p>
-      ${routeProgressBar(week)}
+      ${routeTrail(week, { dark: true, animate: S.ui.justAdvanced === week })}
       ${c.canAdvance ? `<div class="actions" style="margin-top:14px"><a class="btn sm light" href="#/revision">${icon('flag', 'sm')}Revisar la semana y avanzar</a></div>` : `<p class="focus-meta">Día ${windowDays} de esta etapa${habits.length && adh.daysLogged >= 3 ? `. Cumpliste tus hábitos el ${adh.total}% de estos días.` : ''}</p>`}
     </section>
     ${showBp ? `<a class="bp-cta" href="#/registrar/bp">${icon('heart-pulse')}<span class="grow"><strong>Registrar presión${bpSlot ? ` ${bpSlot}` : ''}</strong><span class="sub">${c.bpWeek.done ? 'Tu semana de medición está completa.' : `Semana de medición: ${c.bpWeek.completeDays} de 7 días con mañana y noche.`}</span></span>${icon('chevron-right', 'chev')}</a>` : ''}
@@ -620,6 +647,7 @@ function viewToday() {
     <section class="section"><a class="list-item card" href="#/emergencia" style="color:var(--alert-ink)">${icon('phone')}<span class="grow"><span class="title">Tengo síntomas ahora</span><br><span class="sub">Dolor de pecho, falta de aire, desmayo o síntomas neurológicos</span></span>${icon('chevron-right', 'chev')}</a></section>`;
   return {
     title: 'Hoy', html, bind: () => {
+      S.ui.justAdvanced = null; // el dibujo del tramo nuevo se ve una sola vez
       bindMealActions();
       $$('[data-habit]').forEach((b) => b.onclick = () => {
         const on = b.getAttribute('aria-pressed') !== 'true';
@@ -654,7 +682,7 @@ function viewRoute([nRaw]) {
   }
   const html = `
     <div class="page-head"><h1>Tu ruta</h1><p class="muted">12 etapas, un cambio a la vez. Avanzás cuando te sentís listo; no hay fechas límite.</p></div>
-    ${routeProgressBar(cur)}
+    <div class="card">${routeTrail(cur)}<p class="small muted" style="margin-top:6px">Semana ${cur}: <strong style="color:var(--ink)">${esc(routeWeek(cur).title)}</strong>. Tocá una parada para ver su guía.</p></div>
     <ol class="route">${ROUTE.map((w) => `<li class="${w.n < cur ? 'done' : w.n === cur ? 'now' : ''}"><a href="#/ruta/${w.n}">
       <span class="route-n">${w.n < cur ? icon('check', 'sm') : w.n}</span>
       <span class="grow"><span class="title">${esc(w.title)}</span><br><span class="sub">${w.n === cur ? 'Semana actual' : w.n < cur ? 'Completada' : w.goals.map((g) => GOALS.find((x) => x.id === g).short).join(' · ')}</span></span>${icon('chevron-right', 'chev')}</a></li>`).join('')}</ol>
@@ -667,6 +695,7 @@ function bindRouteJump() {
     const cur = S.plan.data.coach?.week || 1;
     if (week > cur + 1 && b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = `Saltar ${week - cur} semanas: tocá de nuevo`; return; }
     S.plan.data.coach = { week, since: todayIso() };
+    S.ui.justAdvanced = week === cur + 1 ? week : null;
     planOps([{ type: 'setCoachWeek', week, since: todayIso() }], { okMsg: `Empezaste la semana ${week}: ${routeWeek(week).title}.`, rerender: false }).then(() => go('#/hoy'));
   });
 }

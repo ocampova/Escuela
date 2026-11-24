@@ -119,3 +119,9 @@ Una comida se puede cambiar desde una hoja inferior, que solo ofrece recetas com
 ## Skills de diseño
 
 `pulso/.claude/skills/` incluye los mismos skills de diseño del repositorio principal: impeccable, frontend-design, design-taste-frontend y emilkowalski-motion. Sus orígenes están en `skills-lock.json`. Así siguen disponibles si Pulso se mueve a un repositorio propio.
+
+## Diseño
+
+- `PRODUCT.md`: usuario, propósito, restricciones clínicas y principios de producto (impeccable `init`).
+- `DESIGN.md` y `.impeccable/design.json`: sistema visual «El sendero acompañado». Incluye tokens, tipografía, componentes y el camino de 12 hitos (impeccable `document`).
+- Comprobar el CSS contra el sistema documentado: `./.claude/skills/impeccable/scripts/impeccable detect --json public`.

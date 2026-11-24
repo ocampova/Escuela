@@ -62,7 +62,7 @@ export const ROUTE = [
     goals: ['peso', 'insulina'], source: SRC.ahaSugar,
   },
   {
-    n: 4, title: 'Caminar después de comer', habit: 'caminar_post', icon: 'activity',
+    n: 4, title: 'Caminar después de comer', habit: 'caminar_post', icon: 'footprints',
     why: 'Los músculos usan glucosa al moverse. Unos 10–15 minutos de caminata suave después del almuerzo o la cena ayudan a bajar el pico de glucosa de esa comida.',
     how: [
       'Elegí una comida fija: por ejemplo, salir a caminar después del almuerzo.',
@@ -93,7 +93,7 @@ export const ROUTE = [
     goals: ['peso', 'insulina', 'presion'], source: SRC.ahaActivity,
   },
   {
-    n: 7, title: 'Fuerza: músculo que usa glucosa', habit: null, task: 'strength', icon: 'activity',
+    n: 7, title: 'Fuerza: músculo que usa glucosa', habit: null, task: 'strength', icon: 'dumbbell',
     why: 'El músculo es el principal lugar donde se guarda y usa la glucosa. Entrenar fuerza 2 días por semana mejora la sensibilidad a la insulina y protege la masa muscular mientras bajás de peso.',
     how: [
       'Sentadilla a una silla, flexiones contra la pared, remo con botellas o ligas, puente de glúteos.',
@@ -125,7 +125,7 @@ export const ROUTE = [
     goals: ['peso', 'insulina', 'presion'], source: SRC.ahaSleep,
   },
   {
-    n: 10, title: 'Estrés y presión', habit: 'respiracion', icon: 'heart-pulse',
+    n: 10, title: 'Estrés y presión', habit: 'respiracion', icon: 'wind',
     why: 'Una app no elimina el estrés sostenido, pero las pausas y la respiración lenta ayudan a manejarlo y a evitar comer por ansiedad. Limitar el alcohol también ayuda a la presión.',
     how: [
       'Respiración lenta: inhalá 4 segundos, exhalá 6, durante 5 minutos.',
@@ -146,7 +146,7 @@ export const ROUTE = [
     goals: ['peso', 'insulina', 'presion'], source: SRC.niddkWeight,
   },
   {
-    n: 12, title: 'Revisión y siguiente etapa', habit: null, task: 'review', icon: 'file-text',
+    n: 12, title: 'Revisión y siguiente etapa', habit: null, task: 'review', icon: 'flag',
     why: 'Comparar con tu punto de partida te muestra qué funcionó. Es un buen momento para revisar resultados con tu médico y proponer el siguiente hito.',
     how: [
       'Repetí la semana de presión (2 + 2 lecturas por 7 días).',
